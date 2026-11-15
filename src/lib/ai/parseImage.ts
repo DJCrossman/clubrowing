@@ -3,7 +3,8 @@ import { createOllama } from "ollama-ai-provider-v2";
 import { envVars } from "../env";
 
 /**
- * Parses an image using Ollama's vision model with a prompt.
+ * Parses an image with a prompt using the Vercel AI Gateway model when one is
+ * set, otherwise Ollama's vision model.
  * @param imageBase64 - Base64 encoded image string
  * @param prompt - Prompt with instructions and schema
  * @returns Raw text response from the model
@@ -23,7 +24,7 @@ export async function parseImage({
 	});
 
 	const result = await generateText({
-		model: ollama(envVars.OLLAMA_MODEL),
+		model: envVars.AI_GATEWAY_MODEL ?? ollama(envVars.OLLAMA_MODEL),
 		messages: [
 			{
 				role: "user",

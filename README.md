@@ -127,6 +127,13 @@ To switch models, set in `.env`:
 OLLAMA_MODEL=llava:34b
 ```
 
+#### Hosted Models
+
+To use a hosted model instead of Ollama, set `AI_GATEWAY_MODEL` to a [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) model. On Vercel the app signs in to the gateway by itself; anywhere else it also needs `AI_GATEWAY_API_KEY`.
+```bash
+AI_GATEWAY_MODEL=openai/gpt-4o-mini
+```
+
 ### 3. Configure Environment
 
 Copy the example environment file and configure your credentials:

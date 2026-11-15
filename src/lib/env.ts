@@ -17,6 +17,7 @@ export const envVars = z
 		OLLAMA_HOST: z.url().default("http://localhost:11434/api"),
 		OLLAMA_MODEL: z.string().default("llava:13b"),
 		OLLAMA_API_KEY: z.string().optional(),
+		AI_GATEWAY_MODEL: z.string().optional(),
 		SIGNUP_CODE: z.string().optional(),
 		NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID: z.string(),
 		DATABASE_URL: zServerOnly(z.string()),
@@ -37,6 +38,7 @@ export const envVars = z
 		OLLAMA_HOST: process.env.OLLAMA_HOST,
 		OLLAMA_MODEL: process.env.OLLAMA_MODEL,
 		OLLAMA_API_KEY: process.env.OLLAMA_API_KEY,
+		AI_GATEWAY_MODEL: process.env.AI_GATEWAY_MODEL,
 		SIGNUP_CODE: process.env.SIGNUP_CODE,
 		NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID:
 			process.env.NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID,

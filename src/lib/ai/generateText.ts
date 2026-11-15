@@ -3,7 +3,8 @@ import { createOllama } from "ollama-ai-provider-v2";
 import { envVars } from "../env";
 
 /**
- * Generates text from a prompt using Ollama.
+ * Generates text from a prompt using the Vercel AI Gateway model when one is
+ * set, otherwise Ollama.
  * @param prompt - The text prompt
  * @returns Raw text response from the model
  */
@@ -20,7 +21,7 @@ export async function generateTextFromPrompt({
 	});
 
 	const result = await generateText({
-		model: ollama(envVars.OLLAMA_MODEL),
+		model: envVars.AI_GATEWAY_MODEL ?? ollama(envVars.OLLAMA_MODEL),
 		messages: [
 			{
 				role: "user",
