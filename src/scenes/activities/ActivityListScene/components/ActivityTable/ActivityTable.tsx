@@ -26,6 +26,7 @@ import type { ActivitiesResult, Activity, Athletes } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { FilterChip } from "@/scenes/schedule/ScheduleScene/components";
 import { ActivityType } from "@/schemas";
+import { ActivityDayHeading } from "./ActivityDayHeading";
 import { SyncMenu } from "./SyncMenu";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -93,7 +94,6 @@ export function ActivityTable({
 		getCoreRowModel: getCoreRowModel(),
 	});
 
-	const now = DateTime.now();
 	const activitiesByDay = new Map<string, Activity[]>();
 	for (const activity of data.data) {
 		const day =
@@ -189,20 +189,9 @@ export function ActivityTable({
 						</li>
 					)}
 					{[...activitiesByDay].map(([day, activities]) => {
-						const date = DateTime.fromISO(day);
 						return (
 							<li key={day} className="flex flex-col gap-2 md:gap-1.5">
-								<h2 className="text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">
-									{date.hasSame(now, "day")
-										? "Today"
-										: date.hasSame(now.minus({ days: 1 }), "day")
-											? "Yesterday"
-											: date.toFormat(
-													date.hasSame(now, "year")
-														? "ccc LLL d"
-														: "ccc LLL d, yyyy",
-												)}
-								</h2>
+								<ActivityDayHeading day={day} />
 								<ul className="flex flex-col gap-2 md:gap-1.5">
 									{activities.map((activity) => (
 										<li key={activity.id}>
