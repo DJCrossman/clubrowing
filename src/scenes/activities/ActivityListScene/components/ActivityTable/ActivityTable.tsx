@@ -197,7 +197,11 @@ export function ActivityTable({
 										? "Today"
 										: date.hasSame(now.minus({ days: 1 }), "day")
 											? "Yesterday"
-											: date.toFormat("ccc LLL d")}
+											: date.toFormat(
+													date.hasSame(now, "year")
+														? "ccc LLL d"
+														: "ccc LLL d, yyyy",
+												)}
 								</h2>
 								<ul className="flex flex-col gap-2 md:gap-1.5">
 									{activities.map((activity) => (

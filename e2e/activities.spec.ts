@@ -87,3 +87,22 @@ test("an activity's details open from its row before the server responds", async
 	await expect(details).toBeHidden();
 	await expect(page).not.toHaveURL(/activityId=/);
 });
+
+test("day headers show the year only for activities from an earlier year", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/activities");
+	const dayHeaders = page
+		.getByRole("listitem")
+		.getByRole("heading", { level: 2 });
+	await expect(dayHeaders.first()).toBeVisible();
+	await expect(dayHeaders.first()).not.toHaveText(/\d{4}$/);
+
+	await page.clock.setFixedTime(
+		new Date(new Date().getFullYear() + 1, 0, 12, 9),
+	);
+	await page.reload();
+	await expect(dayHeaders.first()).toBeVisible();
+	await expect(dayHeaders.filter({ hasNotText: /\d{4}$/ })).toHaveCount(0);
+});
