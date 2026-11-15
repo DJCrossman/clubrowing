@@ -16,7 +16,7 @@ describe("submitCommand", () => {
 		expect(issue).toEqual({ number: 42, url: "https://github.com/issue/42" });
 		const { title, body, labels } = createIssue.mock.calls[0][0];
 		expect(title).toBe("Erg card");
-		expect(labels).toEqual(["enhancement"]);
+		expect(labels).toEqual(["enhancement", "factory"]);
 		expect(body).toContain("Show splits on the erg card");
 		expect(body).toContain("- **Page:** `/ergs?page=2`");
 		expect(body).toContain("- **Reporter:** athlete `ath_1` · user `user_1`");
@@ -42,7 +42,7 @@ describe("submitCommand", () => {
 		);
 
 		const { body, labels } = createIssue.mock.calls[0][0];
-		expect(labels).toEqual(["bug"]);
+		expect(labels).toEqual(["bug", "factory"]);
 		expect(body).toContain("_No description._");
 		expect(body).toContain(
 			[

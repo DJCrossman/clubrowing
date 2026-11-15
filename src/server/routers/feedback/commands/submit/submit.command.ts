@@ -33,7 +33,7 @@ export async function submitCommand(
 	return services.github.createIssue({
 		title: input.title,
 		body: buildIssueBody(input, { userId: user.id, athleteId: athlete?.id }),
-		labels: [LABELS[input.type]],
+		labels: [LABELS[input.type], "factory"],
 	});
 }
 
