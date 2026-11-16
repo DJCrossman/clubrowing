@@ -47,6 +47,16 @@
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
+	--animate-confetti-fall: confetti-fall 6s linear infinite;
+
+	@keyframes confetti-fall {
+		from {
+			transform: translateY(-2rem) rotate(0deg);
+		}
+		to {
+			transform: translateY(calc(100vh + 2rem)) rotate(720deg);
+		}
+	}
 }
 
 :root {

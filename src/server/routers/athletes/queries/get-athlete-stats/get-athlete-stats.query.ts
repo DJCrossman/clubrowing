@@ -19,6 +19,19 @@ export async function getAthleteStatsQuery(
 		},
 	});
 
+	const latestActivity = await db.activity.findFirst({
+		where: { athleteId: input.athleteId },
+		orderBy: { startDate: "desc" },
+		select: {
+			id: true,
+			type: true,
+			distance: true,
+			elapsedTime: true,
+			startDate: true,
+			conceptTwoData: true,
+		},
+	});
+
 	const getEffectiveDuration = (
 		activity: (typeof ergActivities)[number],
 		targetDistance: number,
@@ -66,10 +79,27 @@ export async function getAthleteStatsQuery(
 			? sixKmActivities.sort((a, b) => a.duration - b.duration)[0]
 			: undefined;
 
+	const earlierTestTimes = latestActivity
+		? ergActivities
+				.filter(
+					(a) =>
+						a.startDate < latestActivity.startDate &&
+						isErgTest(a, latestActivity.distance),
+				)
+				.map((a) => a.elapsedTime)
+		: [];
+
+	const isCelebratingPersonalBest =
+		!!latestActivity &&
+		[2000, 6000].some((distance) => isErgTest(latestActivity, distance)) &&
+		earlierTestTimes.length > 0 &&
+		latestActivity.elapsedTime < Math.min(...earlierTestTimes);
+
 	return {
 		lastTwoKmRaceDuration,
 		bestTwoKmRaceDuration,
 		lastSixKmRaceDuration,
 		bestSixKmRaceDuration,
+		isCelebratingPersonalBest,
 	};
 }

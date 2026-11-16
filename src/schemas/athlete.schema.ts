@@ -103,4 +103,5 @@ export interface AthleteStats {
 		date: string;
 		activityId: string;
 	};
+	isCelebratingPersonalBest: boolean;
 }

@@ -1,6 +1,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { PersonalBestConfetti } from "@/components/personal-best-confetti";
 import { CurrentUserProvider, useAuth } from "@/hooks/useAuth";
 import { SyncStatusProvider } from "@/hooks/useSyncStatus";
 
@@ -48,7 +49,10 @@ export const AuthenticatedLayout = ({
 	}
 	return (
 		<CurrentUserProvider user={user} isAdmin={isAdmin} hasAthlete={hasAthlete}>
-			<SyncStatusProvider>{children}</SyncStatusProvider>
+			<SyncStatusProvider>
+				{children}
+				<PersonalBestConfetti />
+			</SyncStatusProvider>
 		</CurrentUserProvider>
 	);
 };
