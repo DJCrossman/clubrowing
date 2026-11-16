@@ -723,6 +723,14 @@ function trainingHistory(
 						4 * (splitSeconds - 3),
 						"FixedDistanceInterval",
 					),
+					ergPiece(
+						athlete,
+						-1,
+						"2K test",
+						2000,
+						4 * (splitSeconds - 2),
+						"FixedDistanceSplits",
+					),
 				]
 			: []),
 	]);
