@@ -59,10 +59,12 @@ interface FragmentDetailsProps {
 }
 
 const FragmentDetails = ({ fragment }: FragmentDetailsProps) => {
+	const rate = fragment.rate === null ? "Open" : `R${fragment.rate}`;
+
 	if (fragment.distance) {
 		return (
 			<div className="text-sm text-muted-foreground">
-				R{fragment.rate} • {formatMeters(fragment.distance)}
+				{rate} • {formatMeters(fragment.distance)}
 			</div>
 		);
 	}
@@ -70,10 +72,10 @@ const FragmentDetails = ({ fragment }: FragmentDetailsProps) => {
 	if (fragment.elapsedTime) {
 		return (
 			<div className="text-sm text-muted-foreground">
-				R{fragment.rate} • {formatCompactDuration(fragment.elapsedTime)}
+				{rate} • {formatCompactDuration(fragment.elapsedTime)}
 			</div>
 		);
 	}
 
-	return <div className="text-sm text-muted-foreground">R{fragment.rate}</div>;
+	return <div className="text-sm text-muted-foreground">{rate}</div>;
 };
