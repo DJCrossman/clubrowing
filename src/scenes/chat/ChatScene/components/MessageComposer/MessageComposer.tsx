@@ -4,8 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	IconArrowBackUp,
 	IconAt,
+	IconCheck,
 	IconGif,
 	IconMoodSmile,
+	IconPencil,
 	IconPlus,
 	IconSend,
 	IconX,
@@ -38,6 +40,10 @@ interface MessageComposerProps {
 	quotedMessage?: ChatMessage | null;
 	onCancelQuote?: () => void;
 	onSubmit: (submission: ComposerSubmission) => Promise<unknown>;
+	editingMessage?: ChatMessage | null;
+	onCancelEdit?: () => void;
+	onSaveEdit?: (message: ChatMessage, text: string) => Promise<unknown>;
+	onEditLastMessage?: () => void;
 }
 
 export function MessageComposer({
@@ -46,10 +52,15 @@ export function MessageComposer({
 	quotedMessage,
 	onCancelQuote,
 	onSubmit,
+	editingMessage,
+	onCancelEdit,
+	onSaveEdit,
+	onEditLastMessage,
 }: MessageComposerProps) {
 	const alsoSendToId = useId();
 	const isThread = !!alsoSendToLabel;
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const draftBeforeEdit = useRef<MessageComposerValues | null>(null);
 	const form = useForm<MessageComposerValues>({
 		resolver: zodResolver(messageComposerSchema),
 		defaultValues: { text: "", alsoSendToChannel: false },
@@ -63,8 +74,32 @@ export function MessageComposer({
 		}
 	}, [quotedMessage]);
 
+	useEffect(() => {
+		if (!editingMessage) return;
+		draftBeforeEdit.current ??= form.getValues();
+		const text = editingMessage.text ?? "";
+		form.reset({ text, alsoSendToChannel: false });
+		textareaRef.current?.focus();
+		textareaRef.current?.setSelectionRange(text.length, text.length);
+	}, [editingMessage, form]);
+
+	const finishEditing = () => {
+		form.reset(
+			draftBeforeEdit.current ?? { text: "", alsoSendToChannel: false },
+		);
+		draftBeforeEdit.current = null;
+		onCancelEdit?.();
+	};
+
 	const submit = form.handleSubmit(async (values) => {
 		if (!values.text) return;
+		if (editingMessage) {
+			await onSaveEdit?.(editingMessage, values.text).then(
+				finishEditing,
+				() => undefined,
+			);
+			return;
+		}
 		form.reset({ text: "", alsoSendToChannel: false });
 		try {
 			await onSubmit(values);
@@ -75,7 +110,26 @@ export function MessageComposer({
 
 	return (
 		<div>
-			{quotedMessage && (
+			{editingMessage && (
+				<div className="flex items-center gap-2 rounded-t-[10px] border border-b-0 border-input bg-card px-2.5 py-1.5 text-[13px] text-muted-foreground">
+					<IconPencil className="size-3.5 shrink-0" />
+					<p className="min-w-0 flex-1 truncate">
+						<span className="font-medium text-foreground">Editing message</span>
+						{" · Escape to cancel, Enter to save"}
+					</p>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="size-6 text-muted-foreground"
+						aria-label="Cancel editing"
+						onClick={finishEditing}
+					>
+						<IconX />
+					</Button>
+				</div>
+			)}
+			{quotedMessage && !editingMessage && (
 				<div className="flex items-center gap-2 rounded-t-[10px] border border-b-0 border-input bg-card px-2.5 py-1.5 text-[13px] text-muted-foreground">
 					<IconArrowBackUp className="size-3.5 shrink-0" />
 					<p className="min-w-0 flex-1 truncate">
@@ -101,7 +155,8 @@ export function MessageComposer({
 				onSubmit={submit}
 				className={cn(
 					"flex flex-col rounded-[10px] border border-input bg-white/[0.043] focus-within:border-ring",
-					quotedMessage && "rounded-t-none",
+					(quotedMessage || editingMessage) && "rounded-t-none",
+					editingMessage && "border-ring",
 				)}
 			>
 				<Textarea
@@ -112,8 +167,22 @@ export function MessageComposer({
 					}}
 					rows={1}
 					placeholder={placeholder}
-					aria-label={placeholder}
+					aria-label={editingMessage ? "Edit message" : placeholder}
 					onKeyDown={(event) => {
+						if (event.key === "Escape" && editingMessage) {
+							finishEditing();
+							return;
+						}
+						if (
+							event.key === "ArrowUp" &&
+							!editingMessage &&
+							!event.currentTarget.value &&
+							onEditLastMessage
+						) {
+							event.preventDefault();
+							onEditLastMessage();
+							return;
+						}
 						if (event.key === "Escape" && quotedMessage) {
 							onCancelQuote?.();
 							return;
@@ -138,25 +207,27 @@ export function MessageComposer({
 						isThread ? "pt-0.5" : "pt-1",
 					)}
 				>
-					{!isThread && (
+					{!isThread && !editingMessage && (
 						<ComposerButton label="Attach a file (coming soon)" disabled>
 							<IconPlus />
 						</ComposerButton>
 					)}
-					<GifPicker
-						onSelect={(gif) =>
-							onSubmit({
-								gif,
-								alsoSendToChannel: form.getValues("alsoSendToChannel"),
-							})
-								.then(() => form.setValue("alsoSendToChannel", false))
-								.catch(() => undefined)
-						}
-					>
-						<ComposerButton label="Add a GIF" className="[&_svg]:size-5">
-							<IconGif />
-						</ComposerButton>
-					</GifPicker>
+					{!editingMessage && (
+						<GifPicker
+							onSelect={(gif) =>
+								onSubmit({
+									gif,
+									alsoSendToChannel: form.getValues("alsoSendToChannel"),
+								})
+									.then(() => form.setValue("alsoSendToChannel", false))
+									.catch(() => undefined)
+							}
+						>
+							<ComposerButton label="Add a GIF" className="[&_svg]:size-5">
+								<IconGif />
+							</ComposerButton>
+						</GifPicker>
+					)}
 					<EmojiPicker
 						align="start"
 						restoreFocus={false}
@@ -183,12 +254,12 @@ export function MessageComposer({
 							<IconMoodSmile />
 						</ComposerButton>
 					</EmojiPicker>
-					{!isThread && (
+					{!isThread && !editingMessage && (
 						<ComposerButton label="Mention someone (coming soon)" disabled>
 							<IconAt />
 						</ComposerButton>
 					)}
-					{alsoSendToLabel && (
+					{alsoSendToLabel && !editingMessage && (
 						<Controller
 							control={form.control}
 							name="alsoSendToChannel"
@@ -221,10 +292,11 @@ export function MessageComposer({
 								: "bg-muted text-muted-foreground",
 						)}
 						disabled={!hasText}
-						aria-label="Send message"
-						title="Send"
+						aria-label={editingMessage ? "Save edit" : "Send message"}
+						title={editingMessage ? "Save" : "Send"}
 					>
-						<IconSend />
+						{editingMessage && <IconCheck />}
+						{!editingMessage && <IconSend />}
 					</Button>
 				</div>
 				{form.formState.errors.text && (

@@ -37,6 +37,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const router = useRouter();
 	const isMobile = useIsMobile();
 	const [quote, setQuote] = useState<ChatMessage | null>(null);
+	const [editing, setEditing] = useState<ChatMessage | null>(null);
 	const [forwardingMessage, setForwardingMessage] =
 		useState<ChatMessage | null>(null);
 	const [isAddingPeople, setIsAddingPeople] = useState(false);
@@ -61,6 +62,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 		leaveDm,
 		forwardMessage,
 		deleteMessage,
+		editMessage,
 	} = useChatChannel({
 		channelId,
 		threadMessageId,
@@ -68,6 +70,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	});
 	const { isAdmin } = useCurrentUser();
 	const quotedMessage = quote?.channelId === channelId ? quote : null;
+	const editingMessage = editing?.channelId === channelId ? editing : null;
 	const channelName = channel?.name ?? "";
 	const isUnavailable = messagesQuery.error?.data?.code === "NOT_FOUND";
 
@@ -128,6 +131,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									hasOlder={messagesQuery.hasNextPage}
 									isLoadingOlder={messagesQuery.isFetchingNextPage}
 									highlightedMessageId={threadMessageId}
+									editingMessageId={editingMessage?.id}
 									firstUnreadMessageId={firstUnreadMessageId}
 									onLoadOlder={() => messagesQuery.fetchNextPage()}
 									emptyState={
@@ -164,6 +168,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									}
 									onForward={setForwardingMessage}
 									onDelete={setDeletingMessage}
+									onEdit={setEditing}
 								/>
 								<div className="shrink-0 px-4 pt-2 pb-5 lg:px-6">
 									<MessageComposer
@@ -171,6 +176,16 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 										placeholder={`Message ${channelName}`.trim()}
 										quotedMessage={quotedMessage}
 										onCancelQuote={() => setQuote(null)}
+										editingMessage={editingMessage}
+										onCancelEdit={() => setEditing(null)}
+										onSaveEdit={(message, text) =>
+											editMessage.mutateAsync({ messageId: message.id, text })
+										}
+										onEditLastMessage={() =>
+											setEditing(
+												messages.findLast((message) => message.canEdit) ?? null,
+											)
+										}
 										onSubmit={async ({ text, gif }) => {
 											await sendMessage.mutateAsync({
 												channelId,
@@ -208,6 +223,9 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							}
 							onForward={setForwardingMessage}
 							onDelete={setDeletingMessage}
+							onSaveEdit={(message, text) =>
+								editMessage.mutateAsync({ messageId: message.id, text })
+							}
 						/>
 					)}
 				</div>

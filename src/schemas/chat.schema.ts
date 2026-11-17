@@ -97,6 +97,12 @@ export type LeaveDm = z.infer<typeof leaveDmSchema>;
 export const deleteMessageSchema = z.object({ messageId: z.string() });
 export type DeleteMessage = z.infer<typeof deleteMessageSchema>;
 
+export const editMessageSchema = z.object({
+	messageId: z.string(),
+	text: messageTextSchema.min(1, "A message needs text"),
+});
+export type EditMessage = z.infer<typeof editMessageSchema>;
+
 export const messageComposerSchema = z.object({
 	text: messageTextSchema,
 	alsoSendToChannel: z.boolean(),

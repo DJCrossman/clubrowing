@@ -419,6 +419,7 @@ model message {
   forwardedFromId String?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
+  editedAt        DateTime?
   deletedAt       DateTime?
   channel         channel            @relation(fields: [channelId], references: [id], onDelete: Cascade)
   parent          message?           @relation("thread", fields: [parentId], references: [id], onDelete: Cascade)

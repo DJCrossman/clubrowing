@@ -8,6 +8,7 @@ export interface MessageHandlers {
 	onMarkUnread?: (message: ChatMessage) => void;
 	onForward: (message: ChatMessage) => void;
 	onDelete: (message: ChatMessage) => void;
+	onEdit?: (message: ChatMessage) => void;
 }
 
 export function bindMessageHandlers(
@@ -18,6 +19,7 @@ export function bindMessageHandlers(
 		onMarkUnread,
 		onForward,
 		onDelete,
+		onEdit,
 	}: MessageHandlers,
 	message: ChatMessage,
 ): MessageActionHandlers {
@@ -28,5 +30,6 @@ export function bindMessageHandlers(
 		onMarkUnread: onMarkUnread && (() => onMarkUnread(message)),
 		onForward: () => onForward(message),
 		onDelete: () => onDelete(message),
+		onEdit: onEdit && (() => onEdit(message)),
 	};
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { IconX } from "@tabler/icons-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Drawer,
@@ -10,7 +10,7 @@ import {
 	DrawerDescription,
 	DrawerTitle,
 } from "@/components/ui/drawer";
-import type { ChatThread } from "@/lib/trpc/types";
+import type { ChatMessage, ChatThread } from "@/lib/trpc/types";
 import { useScrollToOwnMessage } from "../../hooks/useScrollToOwnMessage";
 import {
 	type ComposerSubmission,
@@ -24,7 +24,7 @@ import {
 import { MessageRow } from "../MessageRow/MessageRow";
 
 interface ThreadPanelProps
-	extends Omit<MessageHandlers, "onOpenThread" | "onQuote"> {
+	extends Omit<MessageHandlers, "onOpenThread" | "onQuote" | "onEdit"> {
 	channelName: string;
 	thread: ChatThread | undefined;
 	isLoading: boolean;
@@ -32,6 +32,7 @@ interface ThreadPanelProps
 	isMobile: boolean;
 	onClose: () => void;
 	onReply: (submission: ComposerSubmission) => Promise<unknown>;
+	onSaveEdit: (message: ChatMessage, text: string) => Promise<unknown>;
 }
 
 export function ThreadPanel({ isMobile, ...props }: ThreadPanelProps) {
@@ -76,9 +77,15 @@ function ThreadContent({
 	isUnavailable,
 	onClose,
 	onReply,
+	onSaveEdit,
 	header,
 	...handlers
 }: Omit<ThreadPanelProps, "isMobile"> & { header?: ReactNode }) {
+	const [editing, setEditing] = useState<ChatMessage | null>(null);
+	const threadMessages = thread ? [thread.root, ...thread.replies] : [];
+	const editingMessage = threadMessages.some(({ id }) => id === editing?.id)
+		? editing
+		: null;
 	const replyCount = thread?.replies.length ?? 0;
 	const bottomRef = useScrollToOwnMessage(thread?.replies ?? []);
 	return (
@@ -117,7 +124,11 @@ function ThreadContent({
 								message={thread.root}
 								showThreadSummary={false}
 								compact
-								{...bindMessageHandlers(handlers, thread.root)}
+								isHighlighted={thread.root.id === editingMessage?.id}
+								{...bindMessageHandlers(
+									{ ...handlers, onEdit: setEditing },
+									thread.root,
+								)}
 							/>
 							<div className="flex items-center gap-2.5 px-4 pt-1 pb-2 text-xs text-muted-foreground">
 								{replyCount} {replyCount === 1 ? "reply" : "replies"}
@@ -129,7 +140,11 @@ function ThreadContent({
 									message={reply}
 									showThreadSummary={false}
 									compact
-									{...bindMessageHandlers(handlers, reply)}
+									isHighlighted={reply.id === editingMessage?.id}
+									{...bindMessageHandlers(
+										{ ...handlers, onEdit: setEditing },
+										reply,
+									)}
 								/>
 							))}
 						</>
@@ -144,6 +159,14 @@ function ThreadContent({
 						placeholder="Reply…"
 						alsoSendToLabel={`Also send to ${channelName}`}
 						onSubmit={onReply}
+						editingMessage={editingMessage}
+						onCancelEdit={() => setEditing(null)}
+						onSaveEdit={onSaveEdit}
+						onEditLastMessage={() =>
+							setEditing(
+								threadMessages.findLast((message) => message.canEdit) ?? null,
+							)
+						}
 					/>
 				</div>
 			)}

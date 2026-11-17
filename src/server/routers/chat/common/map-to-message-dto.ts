@@ -67,11 +67,13 @@ export function mapToMessageDto(
 		channelId: message.channelId,
 		parentId: message.parentId,
 		createdAt: message.createdAt.toISOString(),
+		editedAt: deleted ? null : (message.editedAt?.toISOString() ?? null),
 		author: getChatUser(users, message.authorUserId),
 		text: deleted ? null : message.text,
 		gif: deleted ? null : message.gif,
 		deleted,
 		isMine,
+		canEdit: !deleted && isMine && message.text !== null,
 		canDelete: !deleted && (isMine || viewer.isAdmin),
 		reactions: deleted
 			? []

@@ -68,6 +68,14 @@ export function MessageRow({
 					message.text && (
 						<p className="max-w-[720px] text-sm leading-normal break-words whitespace-pre-wrap">
 							<LinkifiedText text={message.text} />
+							{message.editedAt && (
+								<span
+									title={`Edited ${formatMessageTime(message.editedAt)}`}
+									className="ml-1 text-xs text-muted-foreground"
+								>
+									(edited)
+								</span>
+							)}
 						</p>
 					)
 				)}

@@ -38,6 +38,7 @@ const messageRow = (overrides: Partial<MessageRow> = {}): MessageRow => ({
 	forwardedFromId: null,
 	createdAt: at(0),
 	updatedAt: at(0),
+	editedAt: null,
 	deletedAt: null,
 	reactions: [],
 	quotedMessage: null,
@@ -212,6 +213,20 @@ describe("mapToMessageDto", () => {
 			text: null,
 			reactions: [],
 		});
+	});
+
+	it("lets only the author edit, and marks an edited message", () => {
+		const row = messageRow({ editedAt: at(4) });
+		expect(mapToMessageDto(row, viewer, users)).toMatchObject({
+			canEdit: true,
+			editedAt: at(4).toISOString(),
+		});
+		expect(
+			mapToMessageDto(row, { userId: mike.id, isAdmin: true }, users).canEdit,
+		).toBe(false);
+		expect(
+			mapToMessageDto({ ...row, deletedAt: at(9) }, viewer, users),
+		).toMatchObject({ canEdit: false, editedAt: null });
 	});
 });
 

@@ -1,6 +1,7 @@
 import { router } from "@/server/trpc";
 import { addDmMembersProcedure } from "./commands/add-dm-members/add-dm-members.procedure";
 import { deleteMessageProcedure } from "./commands/delete-message/delete-message.procedure";
+import { editMessageProcedure } from "./commands/edit-message/edit-message.procedure";
 import { forwardMessageProcedure } from "./commands/forward-message/forward-message.procedure";
 import { leaveDmProcedure } from "./commands/leave-dm/leave-dm.procedure";
 import { markReadProcedure } from "./commands/mark-read/mark-read.procedure";
@@ -29,4 +30,5 @@ export const chatRouter = router({
 	addDmMembers: addDmMembersProcedure,
 	leaveDm: leaveDmProcedure,
 	deleteMessage: deleteMessageProcedure,
+	editMessage: editMessageProcedure,
 });

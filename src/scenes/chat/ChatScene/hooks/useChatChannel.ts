@@ -117,6 +117,14 @@ export function useChatChannel({
 			]),
 		onError: toastError,
 	});
+	const editMessage = trpcClient.chat.editMessage.useMutation({
+		onSuccess: () =>
+			Promise.all([
+				utils.chat.getThread.invalidate(),
+				refreshChannel(channelId),
+			]),
+		onError: toastError,
+	});
 
 	return {
 		channels,
@@ -135,5 +143,6 @@ export function useChatChannel({
 		leaveDm,
 		forwardMessage,
 		deleteMessage,
+		editMessage,
 	};
 }

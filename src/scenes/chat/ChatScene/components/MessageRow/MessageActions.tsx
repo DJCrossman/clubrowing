@@ -6,6 +6,7 @@ import {
 	IconMail,
 	IconMessageReply,
 	IconMoodPlus,
+	IconPencil,
 	IconQuote,
 	IconShare3,
 	IconTrash,
@@ -13,6 +14,7 @@ import {
 import { type ComponentProps, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useDrawerContentContainer } from "@/components/ui/drawer";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -33,6 +35,7 @@ export interface MessageActionHandlers {
 	onMarkUnread?: () => void;
 	onForward: () => void;
 	onDelete: () => void;
+	onEdit?: () => void;
 }
 
 interface MessageActionsProps extends MessageActionHandlers {
@@ -47,10 +50,12 @@ export function MessageActions({
 	onMarkUnread,
 	onForward,
 	onDelete,
+	onEdit,
 }: MessageActionsProps) {
 	const [isPickerOpen, setIsPickerOpen] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const restoreFocus = useRef(true);
+	const container = useDrawerContentContainer();
 	const hasMenuItems =
 		!!onQuote || !!onMarkUnread || !!message.text || message.canDelete;
 
@@ -95,6 +100,7 @@ export function MessageActions({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
+						container={container ?? undefined}
 						finalFocus={() => {
 							const shouldRestoreFocus = restoreFocus.current;
 							restoreFocus.current = true;
@@ -122,6 +128,12 @@ export function MessageActions({
 							<DropdownMenuItem onClick={onMarkUnread}>
 								<IconMail />
 								Mark unread
+							</DropdownMenuItem>
+						)}
+						{message.canEdit && onEdit && (
+							<DropdownMenuItem onClick={selectWithoutRestoringFocus(onEdit)}>
+								<IconPencil />
+								Edit message
 							</DropdownMenuItem>
 						)}
 						{message.canDelete && (

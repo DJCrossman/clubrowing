@@ -20,6 +20,7 @@ interface MessageListProps extends MessageHandlers {
 	onLoadOlder: () => void;
 	emptyState: ReactNode;
 	highlightedMessageId?: string | null;
+	editingMessageId?: string;
 	firstUnreadMessageId?: string;
 }
 
@@ -31,6 +32,7 @@ export function MessageList({
 	onLoadOlder,
 	emptyState,
 	highlightedMessageId,
+	editingMessageId,
 	firstUnreadMessageId,
 	...handlers
 }: MessageListProps) {
@@ -73,7 +75,10 @@ export function MessageList({
 								)}
 								<MessageRow
 									message={message}
-									isHighlighted={message.id === highlightedMessageId}
+									isHighlighted={
+										message.id === highlightedMessageId ||
+										message.id === editingMessageId
+									}
 									{...bindMessageHandlers(handlers, message)}
 								/>
 							</Fragment>
