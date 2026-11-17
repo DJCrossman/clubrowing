@@ -95,11 +95,41 @@ export async function POST(request: Request) {
 	const ai = parsedAi.data;
 	const result: ParseDescriptionResult = {
 		workoutType: ai.workoutType,
-		elapsedTime: ai.elapsedTime ?? parseDuration(description),
+		elapsedTime:
+			(ai.workoutType === "time"
+				? getTimeWorkoutTotal(description, ai.fragments)
+				: undefined) ??
+			ai.elapsedTime ??
+			parseDuration(description),
 		distance: ai.distance,
 		intervalCount: ai.intervalCount ?? parseIntervals(description),
 		fragments: ai.fragments,
 	};
 
 	return NextResponse.json(result);
+}
+
+// The model's total is unreliable for a set written without one ("3 x 20' /
+// 4' rest" came back as 10 and as 90 minutes), so the text and the pieces
+// decide whenever they can.
+function getTimeWorkoutTotal(
+	description: string,
+	fragments: CreateWorkoutFragment[] = [],
+): number | undefined {
+	const openingMinutes = description.match(
+		/^\s*(\d+(?:\.\d+)?)\s*['’′]\s*[,\n]/,
+	)?.[1];
+	if (openingMinutes) {
+		return Number(openingMinutes) * 60_000;
+	}
+	if (
+		fragments.length === 0 ||
+		fragments.some((fragment) => fragment.elapsedTime === undefined)
+	) {
+		return undefined;
+	}
+	return fragments.reduce(
+		(sum, fragment) => sum + (fragment.elapsedTime ?? 0),
+		0,
+	);
 }

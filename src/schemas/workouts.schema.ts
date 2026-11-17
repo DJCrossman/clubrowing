@@ -38,7 +38,7 @@ export const zoneMinutesSchema = z.object({
 export type ZoneMinutes = z.infer<typeof zoneMinutesSchema>;
 
 export const createWorkoutFragmentSchema = z.object({
-	rate: z.number().optional(),
+	rate: z.number().nullish(),
 	elapsedTime: z.number().optional(),
 	distance: z.number().optional(),
 	relativeTo: z.enum(["2K", "6K"]),

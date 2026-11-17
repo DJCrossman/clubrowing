@@ -33,6 +33,23 @@ describe("getPromptEventFormValues", () => {
 		});
 	});
 
+	it("keeps a piece rowed at an open rate", () => {
+		const values = getPromptEventFormValues(training, {
+			workoutType: "time",
+			elapsedTime: 5_400_000,
+			intervalCount: 4,
+			fragments: [
+				{
+					rate: null,
+					elapsedTime: 60_000,
+					relativeTo: "2K",
+					relativeSplit: 6000,
+				},
+			],
+		});
+		expect(eventFormSchema.parse(values).workout?.fragments).toHaveLength(1);
+	});
+
 	it("falls back to an other workout when the length is missing", () => {
 		const unparsed = getPromptEventFormValues(training);
 		expect(eventFormSchema.parse(unparsed).workout?.workoutType).toBe("other");
