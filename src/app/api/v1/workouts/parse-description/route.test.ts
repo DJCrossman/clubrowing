@@ -1,14 +1,28 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ParseDescriptionResult } from "./route";
 
-const generateTextFromPrompt = vi.fn();
+const generateObjectFromPrompt = vi.fn();
 
-vi.mock("@/lib/ai/generateText", () => ({ generateTextFromPrompt }));
+vi.mock("@/lib/ai/generateObject", () => ({ generateObjectFromPrompt }));
 vi.mock("@/lib/auth", () => ({ requireAuth: vi.fn() }));
 
 const { POST } = await import("./route");
 
 describe("POST /api/v1/workouts/parse-description", () => {
+	beforeEach(() => {
+		generateObjectFromPrompt.mockReset();
+	});
+
+	it("reads a plain description without asking the model", async () => {
+		const workout = await parseDescription("2x2000m w/ 5' rest", {});
+		expect(generateObjectFromPrompt).not.toHaveBeenCalled();
+		expect(workout).toEqual({
+			workoutType: "distance",
+			distance: 4000,
+			intervalCount: 2,
+		});
+	});
+
 	it("keeps a piece rowed at an open rate", async () => {
 		const workout = await parseDescription(
 			"90', 4x8' w/5' active recovery, 4'@R24, 3'@R28, 1' open",
@@ -94,7 +108,7 @@ async function parseDescription(
 	description: string,
 	modelReply: object,
 ): Promise<ParseDescriptionResult> {
-	generateTextFromPrompt.mockResolvedValueOnce(JSON.stringify(modelReply));
+	generateObjectFromPrompt.mockResolvedValue(modelReply);
 	const response = await POST(
 		new Request("http://localhost/api/v1/workouts/parse-description", {
 			method: "POST",

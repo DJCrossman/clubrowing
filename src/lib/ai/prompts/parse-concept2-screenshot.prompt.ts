@@ -63,16 +63,15 @@ EXAMPLES OF WHAT TO USE vs IGNORE:
 ✗ IGNORE: Any time value that is NOT the first column of the first row after first separator
 
 YOUR TASK:
-Extract the activity data and output ONLY as JSON (no explanations).
+Extract the activity data.
 
 OUTPUT FORMAT:
-Return a JSON object with these EXACT fields:
+Return these fields:
 - name (string): Workout description from top-left (e.g., "4x8:00/5:00r")
 - startDate (string): ISO date YYYY-MM-DD from the date shown (e.g., "Jan 17, 2026" → "2026-01-17")
 - workoutType (string): "time" if description has duration patterns (8:00, 90'), "distance" if description has distance patterns (2000m, 5km), otherwise "other"
 - elapsedTime (number): ⚠️ CRITICAL - Extract from SUMMARY ROW first column only, convert to milliseconds
 - distance (number): Extract from SUMMARY ROW second column (total meters)
-- type (string): Always "erg"
 
 ⚠️ TIME FORMAT CONVERSION:
 The summary row time is in format "MM:SS.S" (minutes:seconds.tenths) or "H:MM:SS.S" (hours:minutes:seconds.tenths)
@@ -86,11 +85,9 @@ Conversion formula:
 - "1:25:30.5" → (1 × 3600000) + (25 × 60000) + (30 × 1000) + (5 × 100) = 5130500 milliseconds
 
 IMPORTANT NOTES:
-- Do NOT include athleteId, ergId, workoutId, or timezone in output
 - Extract elapsed time from SUMMARY ROW first column, NEVER from header
 - Distance is total meters from SUMMARY ROW second column
 - Month abbreviations: Jan=01, Feb=02, Mar=03, Apr=04, May=05, Jun=06, Jul=07, Aug=08, Sep=09, Oct=10, Nov=11, Dec=12
-- Output ONLY valid JSON with NO comments (//) or explanations
 
 EXAMPLE OUTPUT:
 \`\`\`json
@@ -99,8 +96,7 @@ EXAMPLE OUTPUT:
   "startDate": "2026-01-17",
   "workoutType": "time",
   "elapsedTime": 1920000,
-  "distance": 7610,
-  "type": "erg"
+  "distance": 7610
 }
 \`\`\`
 
@@ -145,12 +141,4 @@ Follow these steps IN ORDER:
    - This is meters, use as-is
    - This is your "distance" field
 
-7. SET TYPE:
-   - Always set to "erg"
-   - This is your "type" field
-
-8. OUTPUT JSON:
-   - Create JSON with exactly these 6 fields: name, startDate, workoutType, elapsedTime, distance, type
-   - NO comments, NO explanations, ONLY valid JSON
-
-Now analyze the Concept2 screenshot and extract the activity data as JSON`;
+Now analyze the Concept2 screenshot and extract the activity data`;

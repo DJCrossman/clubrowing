@@ -4,10 +4,10 @@ INPUT:
 The START DATE the schedule begins on, then a free-text request that may describe one or many events. Examples: "Mon/Wed/Fri 6am erg 60' steady state C6", "Regatta at Wascana Saturday all day", "Volunteer shift Sunday 9-12, 4 spots".
 
 YOUR TASK:
-Output a JSON array with one object per distinct session. When the same session repeats on several days, output it ONCE and list every day in "days". When the request is written one session per line, output one object per line, in the same order. Never merge two lines and never leave a line out.
+Output an "events" array with one object per distinct session. When the same session repeats on several days, output it ONCE and list every day in "days". When the request is written one session per line, output one object per line, in the same order. Never merge two lines and never leave a line out.
 
 OUTPUT SHAPE:
-[
+{ "events": [
   {
     "type": "training" | "regatta" | "volunteer",
     "title": <string>,
@@ -25,7 +25,7 @@ OUTPUT SHAPE:
       "intensityCategory": "C1" | "C2" | "C3" | "C4" | "C5" | "C6"
     }
   }
-]
+] }
 
 FIELD RULES:
 - type: "regatta" for races/regattas/heads, "volunteer" for shifts/helping/setup/cleanup, otherwise "training".
@@ -42,7 +42,6 @@ FIELD RULES:
   - description: ONLY the workout itself, copied as the coach wrote it, e.g. "60' steady state", "2x20'", "3x5km @ R20". Leave out days, times and intensity. After "workout:", copy the rest of that line character for character. A comma does not end the workout. Add nothing and change nothing.
   - activityType: "water" (boat, on water, row out), "erg" (erg, rowing machine, indoor), "crossTrain" (bike, run, swim, XT), "strength" (weights, lift, S&C, core). Default "erg".
   - intensityCategory: as written ("C6", "cat 6"). Default "C6".
-- Output ONLY valid JSON. No comments, no explanations, no surrounding prose. Inside a string, write a double quote as \\".
 
 EXAMPLE:
 
@@ -53,7 +52,7 @@ Mon and Wed 6am water 2x5km C5 until the end of July, Saturday Wascana regatta, 
 
 Output:
 \`\`\`json
-[
+{ "events": [
   {
     "type": "training",
     "title": "Water session",
@@ -79,7 +78,7 @@ Output:
     "endTime": "11:00",
     "volunteerSpots": 3
   }
-]
+] }
 \`\`\`
 
 EXAMPLE 2 (one session per line):
@@ -94,7 +93,7 @@ Friday 7pm, title: Stretch, location: Gym, no workout
 
 Output:
 \`\`\`json
-[
+{ "events": [
   {
     "type": "training",
     "title": "Steady row",
@@ -127,8 +126,8 @@ Output:
     "startTime": "19:00",
     "location": "Gym"
   }
-]
+] }
 \`\`\`
 
-Now parse the following request and output ONLY the JSON array:
+Now parse the following request:
 `;

@@ -1,9 +1,18 @@
 import { DateTime } from "luxon";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { parseImage } from "@/lib/ai/parseImage";
 import { PARSE_CONCEPT2_SCREENSHOT_PROMPT } from "@/lib/ai/prompts";
 import { requireAuth } from "@/lib/auth";
-import { createActivitySchema } from "@/schemas";
+import { createActivitySchema, workoutCoreSchema } from "@/schemas";
+
+const aiActivitySchema = z.object({
+	name: z.string(),
+	startDate: z.string(),
+	workoutType: workoutCoreSchema.shape.workoutType,
+	elapsedTime: z.number(),
+	distance: z.number(),
+});
 
 export async function POST(request: Request) {
 	try {
@@ -34,42 +43,16 @@ export async function POST(request: Request) {
 		const arrayBuffer = await file.arrayBuffer();
 		const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-		const response = await parseImage({
+		const aiActivity = await parseImage({
 			imageBase64: base64,
 			prompt: PARSE_CONCEPT2_SCREENSHOT_PROMPT,
+			schema: aiActivitySchema,
 		});
 
-		let jsonData = response.trim();
-		const codeBlockMatch = jsonData.match(/```(?:json)?\n([\s\S]*?)\n```/);
-		if (codeBlockMatch) {
-			jsonData = codeBlockMatch[1];
-		}
-
-		jsonData = jsonData
-			.replace(/\/\/.*$/gm, "")
-			.replace(/\/\*[\s\S]*?\*\//g, "");
-
-		let parsedData: unknown;
-		try {
-			parsedData = JSON.parse(jsonData);
-		} catch (error) {
-			console.error("Failed to parse JSON from AI response:", error);
-			console.error("Raw response:", response);
-			return NextResponse.json({ success: false });
-		}
-
-		if (!parsedData || typeof parsedData !== "object") {
-			console.error("Invalid parsed data:", parsedData);
-			return NextResponse.json({ success: false });
-		}
-
 		const activityData = {
-			...parsedData,
+			...aiActivity,
 			type: "erg",
-			timezone:
-				"timezone" in parsedData && typeof parsedData.timezone === "string"
-					? parsedData.timezone
-					: DateTime.now().zoneName,
+			timezone: DateTime.now().zoneName,
 			athleteId,
 			ergId: typeof ergId === "string" && ergId.length > 0 ? ergId : undefined,
 			workoutId: undefined,

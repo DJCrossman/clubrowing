@@ -1,18 +1,22 @@
-import { generateText } from "ai";
+import { generateObject } from "ai";
 import { createOllama } from "ollama-ai-provider-v2";
+import type { z } from "zod";
 import { envVars } from "../env";
 
 /**
- * Generates text from a prompt using the Vercel AI Gateway model when one is
- * set, otherwise Ollama.
+ * Generates an object matching the schema from a prompt, using the Vercel AI
+ * Gateway model when one is set, otherwise Ollama.
  * @param prompt - The text prompt
- * @returns Raw text response from the model
+ * @param schema - The shape the model's answer is held to
+ * @returns The model's answer, parsed by the schema
  */
-export async function generateTextFromPrompt({
+export async function generateObjectFromPrompt<T>({
 	prompt,
+	schema,
 }: {
 	prompt: string;
-}): Promise<string> {
+	schema: z.ZodType<T>;
+}): Promise<T> {
 	const ollama = createOllama({
 		baseURL: envVars.OLLAMA_HOST,
 		headers: {
@@ -20,8 +24,9 @@ export async function generateTextFromPrompt({
 		},
 	});
 
-	const result = await generateText({
+	const result = await generateObject({
 		model: envVars.AI_GATEWAY_MODEL ?? ollama(envVars.OLLAMA_MODEL),
+		schema,
 		messages: [
 			{
 				role: "user",
@@ -32,5 +37,5 @@ export async function generateTextFromPrompt({
 		abortSignal: AbortSignal.timeout(30000),
 	});
 
-	return result.text;
+	return result.object;
 }

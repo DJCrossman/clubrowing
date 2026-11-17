@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { parseImage } from "@/lib/ai/parseImage";
 import { PARSE_WORKOUT_SCREENSHOT_PROMPT } from "@/lib/ai/prompts/parse-workout-screenshot.prompt";
 import { requireAuth } from "@/lib/auth";
 import { parseDuration } from "@/lib/parsers/parseDuration";
 import { parseIntensity } from "@/lib/parsers/parseIntensity";
 import { parseIntervals } from "@/lib/parsers/parseIntervals";
-import {
-	type CreateWorkout,
-	type WorkoutActivityType,
-	WorkoutActivityTypes,
-	workoutCoreSchema,
-} from "@/schemas";
+import { type CreateWorkout, workoutCoreSchema } from "@/schemas";
+
+const aiWorkoutsSchema = z.object({
+	workouts: z.array(
+		workoutCoreSchema
+			.omit({ intervalCount: true, intensityCategory: true, zoneMinutes: true })
+			.extend({
+				intervalCount: z.number().optional(),
+				intensityCategory: workoutCoreSchema.shape.intensityCategory.optional(),
+			}),
+	),
+});
 
 export async function POST(request: Request) {
 	try {
@@ -29,110 +36,30 @@ export async function POST(request: Request) {
 	const arrayBuffer = await file.arrayBuffer();
 	const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-	const response = await parseImage({
-		imageBase64: base64,
-		prompt: PARSE_WORKOUT_SCREENSHOT_PROMPT,
-	});
-
-	let jsonData = response.trim();
-	const codeBlockMatch = jsonData.match(/```(?:json)?\n([\s\S]*?)\n```/);
-	if (codeBlockMatch) {
-		jsonData = codeBlockMatch[1];
-	}
-
-	let parsedData: unknown;
+	let aiWorkouts: z.infer<typeof aiWorkoutsSchema>["workouts"];
 	try {
-		parsedData = JSON.parse(jsonData);
+		({ workouts: aiWorkouts } = await parseImage({
+			imageBase64: base64,
+			prompt: PARSE_WORKOUT_SCREENSHOT_PROMPT,
+			schema: aiWorkoutsSchema,
+		}));
 	} catch (error) {
 		return NextResponse.json(
-			{ error: `Failed to parse JSON data.${error}\n${jsonData}` },
-			{ status: 400 },
-		);
-	}
-	if (!parsedData) {
-		return NextResponse.json(
-			{ error: `No data parsed from image.\n${jsonData}` },
-			{ status: 400 },
-		);
-	}
-	if (typeof parsedData !== "object") {
-		return NextResponse.json(
-			{ error: `Parsed data is not a valid object.\n${jsonData}` },
-			{ status: 400 },
-		);
-	}
-	if (!("workouts" in parsedData)) {
-		return NextResponse.json(
-			{
-				error: `Parsed data is not a valid object with workouts.\n${jsonData}`,
-			},
-			{ status: 400 },
-		);
-	}
-	if (!Array.isArray(parsedData.workouts)) {
-		return NextResponse.json(
-			{ error: `Parsed workouts is not a valid array.\n${jsonData}` },
+			{ error: `No workouts could be read from the image. ${error}` },
 			{ status: 400 },
 		);
 	}
 
 	const workouts = await Promise.allSettled(
-		parsedData.workouts.map(async (item: unknown) => {
-			if (typeof item !== "object" || item === null) {
-				return Promise.reject(new Error("Invalid workout item format"));
-			}
-			const description =
-				"description" in item && typeof item.description === "string"
-					? item.description.replace(/\\n/g, "\n")
-					: "";
-			const workoutType: string =
-				"workoutType" in item && typeof item.workoutType === "string"
-					? item.workoutType
-					: "other";
-			const elapsedTime: number | undefined =
-				"elapsedTime" in item && typeof item.elapsedTime === "number"
-					? item.elapsedTime
-					: parseDuration(description);
-			const distance: number | undefined =
-				"distance" in item && typeof item.distance === "number"
-					? item.distance
-					: undefined;
-			let intervalCount: number | undefined =
-				"intervalCount" in item && typeof item.intervalCount === "number"
-					? item.intervalCount
-					: undefined;
-			if (intervalCount === undefined)
-				intervalCount = parseIntervals(description);
-			let intensityCategory: string | undefined =
-				"intensityCategory" in item &&
-				typeof item.intensityCategory === "string"
-					? item.intensityCategory
-					: undefined;
-			if (intensityCategory === undefined)
-				intensityCategory = parseIntensity(description);
-			const activityType: string =
-				"activityType" in item && isActivityType(item.activityType)
-					? item.activityType
-					: "type" in item && isActivityType(item.type)
-						? item.type
-						: "erg";
-			const fragments =
-				"fragments" in item && Array.isArray(item.fragments)
-					? item.fragments
-					: undefined;
+		aiWorkouts.map(async (item) => {
+			const description = item.description.replace(/\\n/g, "\n");
 			return workoutCoreSchema.parse({
+				...item,
 				description,
-				startDate:
-					"startDate" in item && typeof item.startDate === "string"
-						? item.startDate
-						: "",
-				workoutType,
-				activityType,
-				elapsedTime,
-				distance,
-				intervalCount,
-				intensityCategory,
-				fragments,
+				elapsedTime: item.elapsedTime ?? parseDuration(description),
+				intervalCount: item.intervalCount ?? parseIntervals(description),
+				intensityCategory:
+					item.intensityCategory ?? parseIntensity(description),
 			});
 		}),
 	);
@@ -155,6 +82,3 @@ export async function POST(request: Request) {
 export interface UploadWorkoutScreenshotResult {
 	workouts: PromiseSettledResult<CreateWorkout>[];
 }
-
-const isActivityType = (value: unknown): value is WorkoutActivityType =>
-	WorkoutActivityTypes.includes(value as WorkoutActivityType);

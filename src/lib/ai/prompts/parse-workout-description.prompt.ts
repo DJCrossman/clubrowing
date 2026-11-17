@@ -4,7 +4,7 @@ INPUT:
 A free-text description of one workout. Examples: "60' steady state", "2x2000m @ 2k+15\\"", "easy row 45 min".
 
 YOUR TASK:
-Extract structured fields and output as a single JSON object (NOT an array).
+Extract structured fields.
 
 OUTPUT SHAPE:
 {
@@ -27,7 +27,6 @@ FIELD RULES:
   - relativeTo: "2K" or "6K" — reference pace (default "2K" if just "+20\\"").
   - relativeSplit: split offset in milliseconds. "2k+20\\"" = 20000, "6k+15\\"" = 15000.
 - DO NOT output description, startDate, or intensityCategory — the caller supplies those.
-- Output ONLY valid JSON. No comments, no explanations, no surrounding prose.
 
 EXAMPLES:
 
@@ -105,5 +104,5 @@ Output:
 }
 \`\`\`
 
-Now parse the following workout description and output ONLY the JSON object:
+Now parse the following workout description:
 `;

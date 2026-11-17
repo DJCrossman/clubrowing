@@ -10,7 +10,7 @@ CALENDAR FORMAT:
 - Intensity categories appear as C1-C6 (e.g., "C6", "C1", "(C3)")
 
 YOUR TASK:
-Extract all workouts from the calendar and output as JSON.
+Extract all workouts from the calendar.
 
 OUTPUT FORMAT:
 Return a JSON object with a "workouts" array. Each workout has:
@@ -28,7 +28,6 @@ Return a JSON object with a "workouts" array. Each workout has:
   - distance (number, optional): Distance of this fragment in meters. Use for distance-based workouts. Should sum to workout distance
   - relativeTo (string): "2K" or "6K" - reference pace
   - relativeSplit (number): Split offset in milliseconds (e.g., "2k+20\\"" = 20000ms, "2k+15\\"" = 15000ms, "6k+20\\"" = 20000ms)
-- do not include comments or explanations, only valid JSON
 
 EXAMPLE OUTPUT:
 \`\`\`json
@@ -145,6 +144,5 @@ INSTRUCTIONS:
    - For time-based workouts, fragments use elapsedTime (milliseconds) which should sum to workout elapsedTime
    - For distance-based workouts, fragments use distance (meters) which should sum to workout distance
    - Omit fragments field if workout has no specific rate/split details
-3. Output ONLY valid JSON, no explanation text
 
-Now analyze the calendar image and extract workouts as JSON`;
+Now analyze the calendar image and extract the workouts`;

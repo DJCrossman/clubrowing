@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateTextFromPrompt } from "@/lib/ai/generateText";
+import { generateObjectFromPrompt } from "@/lib/ai/generateObject";
 import { PARSE_EVENTS_PROMPT } from "@/lib/ai/prompts/parse-events-prompt.prompt";
 import { requireAuth } from "@/lib/auth";
 import {
@@ -17,9 +17,11 @@ import {
 	WorkoutActivityTypes,
 } from "@/schemas";
 
+// The regex sits behind a pipe so it stays out of the JSON schema sent to the
+// model: Ollama fails to compile this pattern into its grammar.
 const timeSchema = z
 	.string()
-	.regex(/^([01]?\d|2[0-3]):[0-5]\d$/)
+	.pipe(z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/))
 	.transform((time) => time.padStart(5, "0"));
 
 const aiEventSchema = z.object({
@@ -92,11 +94,12 @@ export async function POST(request: Request) {
 			? promptRange
 			: undefined;
 
-	let response: string;
+	let aiEvents: z.infer<typeof aiEventSchema>[];
 	try {
-		response = await generateTextFromPrompt({
+		({ events: aiEvents } = await generateObjectFromPrompt({
 			prompt: `${PARSE_EVENTS_PROMPT}\nSTART DATE: ${startDate} (${DateTime.fromISO(startDate).toFormat("cccc")})\nTYPE: every event is "${type}".\n\nREQUEST:\n${prompt}`,
-		});
+			schema: z.object({ events: z.array(aiEventSchema) }),
+		}));
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		return NextResponse.json(
@@ -105,27 +108,8 @@ export async function POST(request: Request) {
 		);
 	}
 
-	let jsonData = response.trim();
-	const codeBlockMatch = jsonData.match(/```(?:json)?\n([\s\S]*?)\n```/);
-	if (codeBlockMatch) {
-		jsonData = codeBlockMatch[1];
-	}
-
-	let aiData: unknown;
-	try {
-		aiData = JSON.parse(jsonData);
-	} catch (error) {
-		return NextResponse.json(
-			{ error: `Failed to parse AI JSON. ${error}\n${jsonData}` },
-			{ status: 502 },
-		);
-	}
-
-	const items = Array.isArray(aiData) ? aiData : [aiData];
-	const events = items.flatMap((item): ParsedPromptEvent[] => {
-		const parsed = aiEventSchema.safeParse(item);
-		if (!parsed.success) return [];
-		const { days, until, weeks, workout, ...event } = parsed.data;
+	const events = aiEvents.flatMap((item): ParsedPromptEvent[] => {
+		const { days, until, weeks, workout, ...event } = item;
 		// Small models pad sessions with workouts borrowed from the prompt's
 		// examples, so a workout must be one the coach actually wrote.
 		const isWritten =

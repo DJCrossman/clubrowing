@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateTextFromPrompt } from "@/lib/ai/generateText";
+import { generateObjectFromPrompt } from "@/lib/ai/generateObject";
 import { PARSE_WORKOUT_DESCRIPTION_PROMPT } from "@/lib/ai/prompts/parse-workout-description.prompt";
 import { requireAuth } from "@/lib/auth";
 import { parseDuration } from "@/lib/parsers/parseDuration";
 import { parseIntervals } from "@/lib/parsers/parseIntervals";
+import { parseWorkoutDescription } from "@/lib/parsers/parseWorkoutDescription";
 import {
 	type CreateWorkoutFragment,
 	createWorkoutFragmentSchema,
@@ -53,10 +54,16 @@ export async function POST(request: Request) {
 	}
 	const { description } = parsedRequest.data;
 
-	let response: string;
+	const parsedInCode = parseWorkoutDescription(description);
+	if (parsedInCode) {
+		return NextResponse.json(parsedInCode);
+	}
+
+	let ai: z.infer<typeof parsedDescriptionSchema>;
 	try {
-		response = await generateTextFromPrompt({
+		ai = await generateObjectFromPrompt({
 			prompt: `${PARSE_WORKOUT_DESCRIPTION_PROMPT}\n${description}`,
+			schema: parsedDescriptionSchema,
 		});
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
@@ -66,33 +73,6 @@ export async function POST(request: Request) {
 		);
 	}
 
-	let jsonData = response.trim();
-	const codeBlockMatch = jsonData.match(/```(?:json)?\n([\s\S]*?)\n```/);
-	if (codeBlockMatch) {
-		jsonData = codeBlockMatch[1];
-	}
-
-	let aiData: unknown;
-	try {
-		aiData = JSON.parse(jsonData);
-	} catch (error) {
-		return NextResponse.json(
-			{ error: `Failed to parse AI JSON. ${error}\n${jsonData}` },
-			{ status: 502 },
-		);
-	}
-
-	const parsedAi = parsedDescriptionSchema.safeParse(aiData);
-	if (!parsedAi.success) {
-		return NextResponse.json(
-			{
-				error: `AI output did not match expected shape: ${parsedAi.error.message}`,
-			},
-			{ status: 502 },
-		);
-	}
-
-	const ai = parsedAi.data;
 	const result: ParseDescriptionResult = {
 		workoutType: ai.workoutType,
 		elapsedTime:
