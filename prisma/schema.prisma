@@ -164,14 +164,15 @@ model workout_zone_minute {
 }
 
 model workout_fragment {
-  id            String  @id @default(dbgenerated("generate_id('work_frag_'::text)"))
-  workoutId     String
-  rate          Int?
-  elapsedTime   Int?
-  distance      Int?
-  relativeTo    String
-  relativeSplit Float
-  workout       workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  id              String  @id @default(dbgenerated("generate_id('work_frag_'::text)"))
+  workoutId       String
+  rate            Int?
+  elapsedTime     Int?
+  distance        Int?
+  relativeTo      String
+  relativeSplitMs Float   @map("relativeSplit")
+  position        Int     @default(0)
+  workout         workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 }
 
 // ── Activity ──────────────────────────────────────────────────────────────────

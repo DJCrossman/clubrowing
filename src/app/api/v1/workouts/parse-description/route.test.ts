@@ -35,13 +35,13 @@ describe("POST /api/v1/workouts/parse-description", () => {
 						rate: 24,
 						elapsedTime: 240_000,
 						relativeTo: "2K",
-						relativeSplit: 10_000,
+						relativeSplitMs: 10_000,
 					},
 					{
 						rate: null,
 						elapsedTime: 60_000,
 						relativeTo: "2K",
-						relativeSplit: 6000,
+						relativeSplitMs: 6000,
 					},
 				],
 			},
@@ -58,8 +58,8 @@ describe("POST /api/v1/workouts/parse-description", () => {
 			elapsedTime: 3_600_000,
 			intervalCount: 2,
 			fragments: [
-				{ elapsedTime: 1_800_000, relativeTo: "6K", relativeSplit: 20_000 },
-				{ elapsedTime: 1_800_000, relativeTo: "6K", relativeSplit: 20_000 },
+				{ elapsedTime: 1_800_000, relativeTo: "6K", relativeSplitMs: 20_000 },
+				{ elapsedTime: 1_800_000, relativeTo: "6K", relativeSplitMs: 20_000 },
 			],
 		});
 		expect(workout.elapsedTime).toBe(5_400_000);
@@ -81,7 +81,7 @@ describe("POST /api/v1/workouts/parse-description", () => {
 			fragments: pieceMinutes.map((minutes) => ({
 				elapsedTime: minutes * 60_000,
 				relativeTo: "2K",
-				relativeSplit: 0,
+				relativeSplitMs: 0,
 			})),
 		});
 		expect(workout.elapsedTime).toBe(total);
@@ -98,7 +98,7 @@ describe("POST /api/v1/workouts/parse-description", () => {
 			workoutType: "time",
 			elapsedTime: 2_700_000,
 			intervalCount: 1,
-			fragments: [{ rate: 30, relativeTo: "2K", relativeSplit: 0 }],
+			fragments: [{ rate: 30, relativeTo: "2K", relativeSplitMs: 0 }],
 		});
 		expect(untimed.elapsedTime).toBe(2_700_000);
 	});

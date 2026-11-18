@@ -2,7 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { ZoneMinutes } from "@/schemas";
 
 export const workoutInclude = {
-	fragments: true,
+	fragments: { orderBy: { position: "asc" } },
 	zoneMinutes: true,
 	event: { select: { id: true, title: true } },
 } as const;
@@ -31,7 +31,7 @@ export const mapToWorkoutDto = (workout: WorkoutRow) => ({
 		elapsedTime: f.elapsedTime,
 		distance: f.distance,
 		relativeTo: f.relativeTo,
-		relativeSplit: f.relativeSplit,
+		relativeSplitMs: f.relativeSplitMs,
 	})),
 });
 

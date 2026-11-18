@@ -74,6 +74,50 @@ describe("saveTrainingWeekCommand", () => {
 		});
 	});
 
+	it("saves each piece with its place in the workout", async () => {
+		const { context, calls } = createContext([
+			{ id: "evt_1", type: "training", workoutId: "work_1" },
+		]);
+		const fragments = [
+			{
+				rate: 22,
+				distance: 2000,
+				relativeTo: "6K" as const,
+				relativeSplitMs: 6000,
+			},
+			{
+				rate: 24,
+				distance: 2000,
+				relativeTo: "6K" as const,
+				relativeSplitMs: 3000,
+			},
+		];
+
+		await saveTrainingWeekCommand(
+			{
+				creates: [training({ fragments })],
+				updates: [{ ...training({ fragments }), id: "evt_1" }],
+				deleteIds: [],
+				notify: true,
+			},
+			context,
+		);
+
+		expect(calls.args["workout.create"].data.fragments).toEqual({
+			create: [
+				{ ...fragments[0], position: 0 },
+				{ ...fragments[1], position: 1 },
+			],
+		});
+		expect(calls.args["workout.update"].data.fragments).toEqual({
+			deleteMany: {},
+			create: [
+				{ ...fragments[0], position: 0 },
+				{ ...fragments[1], position: 1 },
+			],
+		});
+	});
+
 	it("replaces composition wholesale on update", async () => {
 		const { context, calls } = createContext([
 			{ id: "evt_1", type: "training", workoutId: "work_1" },

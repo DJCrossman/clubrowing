@@ -18,7 +18,11 @@ export async function createEventRow(
 			? await tx.workout.create({
 					data: {
 						...toWorkoutData(input.workout, input.startAt),
-						fragments: { create: input.workout.fragments ?? [] },
+						fragments: {
+							create: (input.workout.fragments ?? []).map(
+								(fragment, position) => ({ ...fragment, position }),
+							),
+						},
 						zoneMinutes: { create: toZoneRows(input.workout.zoneMinutes) },
 					},
 				})
@@ -43,7 +47,9 @@ export async function updateEventRow(
 	let workoutId = existingWorkoutId;
 	if (input.type === "training" && input.workout) {
 		const data = toWorkoutData(input.workout, input.startAt);
-		const fragments = input.workout.fragments ?? [];
+		const fragments = (input.workout.fragments ?? []).map(
+			(fragment, position) => ({ ...fragment, position }),
+		);
 		const zoneRows = toZoneRows(input.workout.zoneMinutes);
 		workoutId = workoutId
 			? (

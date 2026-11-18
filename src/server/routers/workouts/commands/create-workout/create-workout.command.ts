@@ -20,7 +20,12 @@ export async function createWorkoutCommand(
 			intervalCount: input.intervalCount ?? 1,
 			intensityCategory: input.intensityCategory,
 			fragments: input.fragments?.length
-				? { create: input.fragments }
+				? {
+						create: input.fragments.map((fragment, position) => ({
+							...fragment,
+							position,
+						})),
+					}
 				: undefined,
 		},
 		include: workoutInclude,

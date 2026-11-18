@@ -42,7 +42,7 @@ export const createWorkoutFragmentSchema = z.object({
 	elapsedTime: z.number().optional(),
 	distance: z.number().optional(),
 	relativeTo: z.enum(["2K", "6K"]),
-	relativeSplit: z.number(),
+	relativeSplitMs: z.number(),
 });
 
 export type CreateWorkoutFragment = z.infer<typeof createWorkoutFragmentSchema>;

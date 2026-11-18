@@ -256,7 +256,7 @@ const WORKOUTS: {
 		elapsedTime?: number;
 		distance?: number;
 		relativeTo: "2K" | "6K";
-		relativeSplit: number;
+		relativeSplitMs: number;
 	}[];
 }[] = [
 	{
@@ -295,7 +295,7 @@ const WORKOUTS: {
 				rate: 20,
 				elapsedTime: 10 * 60 * 1000,
 				relativeTo: "2K",
-				relativeSplit: 14,
+				relativeSplitMs: 14 * 1000,
 			},
 		],
 	},
@@ -312,7 +312,35 @@ const WORKOUTS: {
 				rate: 18,
 				elapsedTime: 60 * 60 * 1000,
 				relativeTo: "2K",
-				relativeSplit: 22,
+				relativeSplitMs: 22 * 1000,
+			},
+		],
+	},
+	{
+		description: "6000m\n2000m @ R22, 2000m @ R24, 2000m open rate",
+		daysFromToday: 6,
+		workoutType: "distance",
+		distance: 6000,
+		intervalCount: 3,
+		intensityCategory: "C3",
+		zoneMinutes: [{ intensityCategory: "C3", minutes: 24 }],
+		fragments: [
+			{
+				rate: 22,
+				distance: 2000,
+				relativeTo: "6K",
+				relativeSplitMs: 6 * 1000,
+			},
+			{
+				rate: 24,
+				distance: 2000,
+				relativeTo: "6K",
+				relativeSplitMs: 3 * 1000,
+			},
+			{
+				distance: 2000,
+				relativeTo: "6K",
+				relativeSplitMs: -2 * 1000,
 			},
 		],
 	},
@@ -359,6 +387,20 @@ const EVENTS: {
 			[7, "yes"],
 			[8, "maybe"],
 			[11, "yes"],
+		],
+	},
+	{
+		type: "training",
+		title: "Rate ladder",
+		description: "Three 2Ks, each one quicker than the last.",
+		daysFromToday: 6,
+		hours: 1.5,
+		location: "Dummy Lake boathouse erg room",
+		workout: "6000m\n2000m @ R22, 2000m @ R24, 2000m open rate",
+		rsvps: [
+			[1, "yes"],
+			[4, "yes"],
+			[5, "maybe"],
 		],
 	},
 	{
@@ -533,7 +575,12 @@ export async function replaceWithDummyData(unpooledUrl: string) {
 						...workout,
 						startDate: new Date(today.getTime() + daysFromToday * DAY),
 						zoneMinutes: { create: zoneMinutes },
-						fragments: { create: fragments },
+						fragments: {
+							create: fragments.map((fragment, position) => ({
+								...fragment,
+								position,
+							})),
+						},
 					},
 				}),
 			),

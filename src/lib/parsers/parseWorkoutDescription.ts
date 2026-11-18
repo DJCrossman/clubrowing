@@ -157,7 +157,7 @@ function getRateBreakdown(
 				? { elapsedTime: piece.amount }
 				: { distance: piece.amount }),
 			relativeTo: "2K",
-			relativeSplit: 0,
+			relativeSplitMs: 0,
 		});
 	}
 	if (piecesAmount !== total.amount) {

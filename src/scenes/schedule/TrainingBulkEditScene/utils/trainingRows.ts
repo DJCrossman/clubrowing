@@ -146,7 +146,7 @@ export function toTrainingRow(
 			elapsedTime: fragment.elapsedTime ?? undefined,
 			distance: fragment.distance ?? undefined,
 			relativeTo: fragment.relativeTo as "2K" | "6K",
-			relativeSplit: fragment.relativeSplit,
+			relativeSplitMs: fragment.relativeSplitMs,
 		})),
 		eventDetails: {
 			description: event.description,
@@ -290,7 +290,7 @@ export function rowToScheduleEvent(
 							elapsedTime: fragment.elapsedTime ?? null,
 							distance: fragment.distance ?? null,
 							relativeTo: fragment.relativeTo,
-							relativeSplit: fragment.relativeSplit,
+							relativeSplitMs: fragment.relativeSplitMs,
 						})),
 					}
 				: original.workout,
@@ -475,14 +475,14 @@ function hasFragmentsChanged(
 		elapsedTime?: number | null;
 		distance?: number | null;
 		relativeTo: string;
-		relativeSplit: number;
+		relativeSplitMs: number;
 	}) =>
 		[
 			fragment.rate ?? null,
 			fragment.elapsedTime ?? null,
 			fragment.distance ?? null,
 			fragment.relativeTo,
-			fragment.relativeSplit,
+			fragment.relativeSplitMs,
 		].join("|");
 	return (
 		original.length !== next.length ||

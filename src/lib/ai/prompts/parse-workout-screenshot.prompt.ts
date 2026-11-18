@@ -27,7 +27,7 @@ Return a JSON object with a "workouts" array. Each workout has:
   - elapsedTime (number, optional): Duration of this fragment in milliseconds. Use for time-based workouts. Should sum to workout elapsedTime
   - distance (number, optional): Distance of this fragment in meters. Use for distance-based workouts. Should sum to workout distance
   - relativeTo (string): "2K" or "6K" - reference pace
-  - relativeSplit (number): Split offset in milliseconds (e.g., "2k+20\\"" = 20000ms, "2k+15\\"" = 15000ms, "6k+20\\"" = 20000ms)
+  - relativeSplitMs (number): Split offset in milliseconds (e.g., "2k+20\\"" = 20000ms, "2k+15\\"" = 15000ms, "6k+20\\"" = 20000ms)
 
 EXAMPLE OUTPUT:
 \`\`\`json
@@ -61,19 +61,19 @@ EXAMPLE OUTPUT:
           "rate": 20,
           "elapsedTime": 180000,
           "relativeTo": "2K",
-          "relativeSplit": 20000
+          "relativeSplitMs": 20000
         },
         {
           "rate": 24,
           "elapsedTime": 180000,
           "relativeTo": "2K",
-          "relativeSplit": 15000
+          "relativeSplitMs": 15000
         },
         {
           "rate": 28,
           "elapsedTime": 240000,
           "relativeTo": "2K",
-          "relativeSplit": 10000
+          "relativeSplitMs": 10000
         }
       ]
     },
@@ -97,19 +97,19 @@ EXAMPLE OUTPUT:
           "rate": 20,
           "distance": 1000,
           "relativeTo": "2K",
-          "relativeSplit": 25000
+          "relativeSplitMs": 25000
         },
         {
           "rate": 22,
           "distance": 2000,
           "relativeTo": "2K",
-          "relativeSplit": 20000
+          "relativeSplitMs": 20000
         },
         {
           "rate": 24,
           "distance": 2000,
           "relativeTo": "2K",
-          "relativeSplit": 15000
+          "relativeSplitMs": 15000
         }
       ]
     },
@@ -140,7 +140,7 @@ INSTRUCTIONS:
    - Extract intensity category from patterns like "C6", "C1", "(C3)" - look for C followed by 1-6
    - If no intensity category found, default to "C6"
    - Look for fragment details: rate patterns ("@ R20", "R24"), split offsets ("2k+20\\"", "6k+15\\"")
-   - If fragments found, create fragments array with rate, relativeTo, and relativeSplit
+   - If fragments found, create fragments array with rate, relativeTo, and relativeSplitMs
    - For time-based workouts, fragments use elapsedTime (milliseconds) which should sum to workout elapsedTime
    - For distance-based workouts, fragments use distance (meters) which should sum to workout distance
    - Omit fragments field if workout has no specific rate/split details

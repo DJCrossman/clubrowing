@@ -66,7 +66,7 @@ export function getEventFormValues(event: ScheduleEvent): EventFormInput {
 						elapsedTime: fragment.elapsedTime ?? undefined,
 						distance: fragment.distance ?? undefined,
 						relativeTo: fragment.relativeTo as "2K" | "6K",
-						relativeSplit: fragment.relativeSplit,
+						relativeSplitMs: fragment.relativeSplitMs,
 					})),
 				}
 			: defaults.workout,

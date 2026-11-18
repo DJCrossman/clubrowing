@@ -25,7 +25,7 @@ FIELD RULES:
   - elapsedTime (number, optional): duration in ms. Use for time-based workouts. Should sum to workout elapsedTime.
   - distance (number, optional): meters. Use for distance-based workouts. Should sum to workout distance.
   - relativeTo: "2K" or "6K" — reference pace (default "2K" if just "+20\\"").
-  - relativeSplit: split offset in milliseconds. "2k+20\\"" = 20000, "6k+15\\"" = 15000.
+  - relativeSplitMs: split offset in milliseconds. "2k+20\\"" = 20000, "6k+15\\"" = 15000.
 - DO NOT output description, startDate, or intensityCategory — the caller supplies those.
 
 EXAMPLES:
@@ -78,9 +78,9 @@ Output:
   "distance": 5000,
   "intervalCount": 3,
   "fragments": [
-    { "rate": 20, "distance": 1000, "relativeTo": "2K", "relativeSplit": 0 },
-    { "rate": 22, "distance": 2000, "relativeTo": "2K", "relativeSplit": 0 },
-    { "rate": 24, "distance": 2000, "relativeTo": "2K", "relativeSplit": 0 }
+    { "rate": 20, "distance": 1000, "relativeTo": "2K", "relativeSplitMs": 0 },
+    { "rate": 22, "distance": 2000, "relativeTo": "2K", "relativeSplitMs": 0 },
+    { "rate": 24, "distance": 2000, "relativeTo": "2K", "relativeSplitMs": 0 }
   ]
 }
 \`\`\`

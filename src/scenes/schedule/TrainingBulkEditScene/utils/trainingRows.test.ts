@@ -142,7 +142,7 @@ describe("toTrainingRow", () => {
 							elapsedTime: 120_000,
 							distance: null,
 							relativeTo: "2K",
-							relativeSplit: 1.05,
+							relativeSplitMs: 1.05,
 						},
 					],
 				} as ScheduleEvent["workout"],
@@ -154,7 +154,7 @@ describe("toTrainingRow", () => {
 			elapsedTime: 120_000,
 			distance: undefined,
 			relativeTo: "2K",
-			relativeSplit: 1.05,
+			relativeSplitMs: 1.05,
 		});
 	});
 });
@@ -267,7 +267,7 @@ describe("computeTrainingDiff", () => {
 			{
 				...toTrainingRow(event(), weekStart),
 				fragments: [
-					{ rate: 22, relativeTo: "2K" as const, relativeSplit: 1.1 },
+					{ rate: 22, relativeTo: "2K" as const, relativeSplitMs: 1.1 },
 				],
 			},
 		];

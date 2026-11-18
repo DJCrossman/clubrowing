@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { IconLoader2 } from "@tabler/icons-react";
+import { useMutation } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import {
 	FormControl,
@@ -25,6 +27,7 @@ import {
 	intensityColorMap,
 } from "../../utils/intensityColorMap";
 import { parseWorkoutDescription } from "../../utils/parseWorkoutDescription";
+import { FragmentFields } from "../FragmentFields/FragmentFields";
 
 const INTENSITY_VALUES: IntensityCategory[] = [
 	"C1",
@@ -36,17 +39,34 @@ const INTENSITY_VALUES: IntensityCategory[] = [
 ];
 
 interface WorkoutFieldsProps {
-	isParsing: boolean;
 	onParsingChange: (isParsing: boolean) => void;
 }
 
-export const WorkoutFields = ({
-	isParsing,
-	onParsingChange,
-}: WorkoutFieldsProps) => {
-	const [parseError, setParseError] = useState<string | null>(null);
-	const { control, watch, setValue } = useFormContext<EventFormInput>();
+export const WorkoutFields = ({ onParsingChange }: WorkoutFieldsProps) => {
+	const [status, setStatus] = useState<
+		"untouched" | "read" | "edited" | "failed"
+	>("untouched");
+	const { control, watch, setValue, getValues } =
+		useFormContext<EventFormInput>();
+	const lastReadDescription = useRef(getValues("workout.description").trim());
 	const workoutType = watch("workout.workoutType");
+	const { mutate: readDescription, isPending } = useMutation({
+		mutationFn: parseWorkoutDescription,
+		onMutate: () => onParsingChange(true),
+		onSuccess: (parsed, description) => {
+			setValue("workout.workoutType", parsed.workoutType, {
+				shouldValidate: true,
+			});
+			setValue("workout.elapsedTime", parsed.elapsedTime ?? null);
+			setValue("workout.distance", parsed.distance ?? null);
+			setValue("workout.intervalCount", parsed.intervalCount ?? 1);
+			setValue("workout.fragments", parsed.fragments ?? []);
+			lastReadDescription.current = description;
+			setStatus("read");
+		},
+		onError: () => setStatus("failed"),
+		onSettled: () => onParsingChange(false),
+	});
 
 	return (
 		<>
@@ -83,11 +103,12 @@ export const WorkoutFields = ({
 				name="workout.description"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel className="flex items-center gap-2">
+						<FormLabel>
 							Workout
-							{isParsing && (
-								<span className="text-xs font-normal text-muted-foreground">
-									Parsing…
+							{isPending && (
+								<span className="flex items-center gap-1 text-xs leading-none font-normal text-muted-foreground">
+									<IconLoader2 aria-hidden className="size-3 animate-spin" />
+									Reading…
 								</span>
 							)}
 						</FormLabel>
@@ -95,40 +116,29 @@ export const WorkoutFields = ({
 							<Textarea
 								placeholder="3 × 20′ / 3′ rest @ R20"
 								{...field}
-								onBlur={async (event) => {
+								onBlur={(event) => {
 									field.onBlur();
 									const description = event.target.value.trim();
-									if (!description) return;
-									setParseError(null);
-									onParsingChange(true);
-									try {
-										const parsed = await parseWorkoutDescription(description);
-										setValue("workout.workoutType", parsed.workoutType, {
-											shouldValidate: true,
-										});
-										setValue("workout.elapsedTime", parsed.elapsedTime ?? null);
-										setValue("workout.distance", parsed.distance ?? null);
-										setValue(
-											"workout.intervalCount",
-											parsed.intervalCount ?? 1,
-										);
-										setValue("workout.fragments", parsed.fragments ?? []);
-									} catch (error) {
-										setParseError(
-											`Failed to parse description: ${error instanceof Error ? error.message : String(error)}`,
-										);
-									} finally {
-										onParsingChange(false);
-									}
+									if (
+										description &&
+										description !== lastReadDescription.current &&
+										status !== "edited"
+									)
+										readDescription(description);
 								}}
 							/>
 						</FormControl>
 						<FormMessage />
-						{parseError && (
-							<p className="text-sm text-destructive">{parseError}</p>
-						)}
 					</FormItem>
 				)}
+			/>
+			<FragmentFields
+				status={status}
+				isReading={isPending}
+				onEdit={() => setStatus("edited")}
+				onReread={() =>
+					readDescription(getValues("workout.description").trim())
+				}
 			/>
 			<FormField
 				control={control}

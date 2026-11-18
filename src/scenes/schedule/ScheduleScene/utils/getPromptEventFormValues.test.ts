@@ -43,7 +43,7 @@ describe("getPromptEventFormValues", () => {
 					rate: null,
 					elapsedTime: 60_000,
 					relativeTo: "2K",
-					relativeSplit: 6000,
+					relativeSplitMs: 6000,
 				},
 			],
 		});

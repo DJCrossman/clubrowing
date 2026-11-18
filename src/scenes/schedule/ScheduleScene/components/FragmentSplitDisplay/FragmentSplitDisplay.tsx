@@ -4,10 +4,16 @@ import {
 	formatMeters,
 } from "@/lib/formatters";
 import { calculateTargetSplit } from "@/lib/formatters/calculateTargetSplit";
-import type { AnalyticMetrics, WorkoutFragment } from "@/lib/trpc/types";
+import type { AnalyticMetrics } from "@/lib/trpc/types";
 
 interface FragmentSplitDisplayProps {
-	fragment: WorkoutFragment;
+	fragment: {
+		rate?: number | null;
+		elapsedTime?: number | null;
+		distance?: number | null;
+		relativeTo: string;
+		relativeSplitMs: number;
+	};
 	lastTwoKm?: AnalyticMetrics["lastTwoKm"];
 	lastSixKm?: AnalyticMetrics["lastSixKm"];
 }
@@ -20,16 +26,16 @@ export const FragmentSplitDisplay = ({
 	const baseline = fragment.relativeTo === "2K" ? lastTwoKm : lastSixKm;
 	const baselineDistance = fragment.relativeTo === "2K" ? 2000 : 6000;
 
-	const relativeSplitSeconds = fragment.relativeSplit / 1000;
+	const relativeSplitSeconds = fragment.relativeSplitMs / 1000;
 	const sign =
 		relativeSplitSeconds >= 0 ? "+" : relativeSplitSeconds < 0 ? "−" : "";
-	const relativeNotation = `${fragment.relativeTo}${sign}${relativeSplitSeconds}"`;
+	const relativeNotation = `${fragment.relativeTo}${sign}${Math.abs(relativeSplitSeconds)}"`;
 
 	const targetSplitMs = baseline?.duration
 		? calculateTargetSplit(
 				baseline.duration,
 				baselineDistance,
-				fragment.relativeSplit,
+				fragment.relativeSplitMs,
 			)
 		: NaN;
 	const absoluteSplit = Number.isNaN(targetSplitMs)
@@ -55,11 +61,11 @@ export const FragmentSplitDisplay = ({
 };
 
 interface FragmentDetailsProps {
-	fragment: WorkoutFragment;
+	fragment: FragmentSplitDisplayProps["fragment"];
 }
 
 const FragmentDetails = ({ fragment }: FragmentDetailsProps) => {
-	const rate = fragment.rate === null ? "Open" : `R${fragment.rate}`;
+	const rate = fragment.rate == null ? "Open" : `R${fragment.rate}`;
 
 	if (fragment.distance) {
 		return (

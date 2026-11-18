@@ -39,7 +39,7 @@ export function EventWorkoutForm({
 				)}
 				className="space-y-6"
 			>
-				<WorkoutFields isParsing={isParsing} onParsingChange={setIsParsing} />
+				<WorkoutFields onParsingChange={setIsParsing} />
 				<div className="flex items-center justify-between gap-4">
 					<Button type="button" variant="outline" onClick={onCancel}>
 						Cancel

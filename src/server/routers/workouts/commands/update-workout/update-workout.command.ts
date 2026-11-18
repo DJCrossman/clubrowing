@@ -25,7 +25,10 @@ export async function updateWorkoutCommand(
 				...(input.fragments?.length
 					? {
 							create: input.fragments.map(
-								({ id: _id, workoutId: _wid, ...f }) => f,
+								({ id: _id, workoutId: _wid, ...f }, position) => ({
+									...f,
+									position,
+								}),
 							),
 						}
 					: {}),
