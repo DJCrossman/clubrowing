@@ -51,7 +51,14 @@ export async function POST(request: Request) {
 
 	let parsedJson: unknown;
 	try {
-		parsedJson = JSON.parse(rawBody);
+		// Read the ids' exact digits: a JSON number rounds above 2^53.
+		parsedJson = JSON.parse(
+			rawBody,
+			(key, value, context?: { source: string }) =>
+				(key === "object_id" || key === "owner_id") && context
+					? BigInt(context.source)
+					: value,
+		);
 	} catch {
 		logger.warn("rejecting event — body is not valid JSON");
 		return NextResponse.json({ error: "bad_json" }, { status: 400 });
@@ -69,8 +76,8 @@ export async function POST(request: Request) {
 	logger.info("event received", {
 		objectType: event.object_type,
 		aspectType: event.aspect_type,
-		objectId: event.object_id,
-		ownerId: event.owner_id,
+		objectId: event.object_id.toString(),
+		ownerId: event.owner_id.toString(),
 		subscriptionId: event.subscription_id,
 	});
 
@@ -110,8 +117,8 @@ export async function POST(request: Request) {
 			logger.error("event processing failed", {
 				objectType: event.object_type,
 				aspectType: event.aspect_type,
-				objectId: event.object_id,
-				ownerId: event.owner_id,
+				objectId: event.object_id.toString(),
+				ownerId: event.owner_id.toString(),
 				error: message,
 			});
 		}

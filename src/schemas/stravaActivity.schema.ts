@@ -1,7 +1,9 @@
 import { z } from "zod";
 
-export const stravaActivitySchema = z.object({
+const stravaActivityFieldsSchema = z.object({
 	id: z.number(),
+	// Strava's exact id; `id` can be a 64-bit integer that a JSON number rounds.
+	id_str: z.string().regex(/^\d+$/).optional(),
 	resource_state: z.number(),
 	external_id: z.string().nullish(),
 	upload_id: z.number().nullish(),
@@ -67,6 +69,21 @@ export const stravaActivitySchema = z.object({
 	suffer_score: z.number().optional(),
 	device_name: z.string().optional(),
 });
+
+export const stravaActivitySchema = stravaActivityFieldsSchema.transform(
+	(activity, ctx) => {
+		// Payloads stored before `id_str` was kept lack it; those ids all fit a double.
+		if (activity.id_str === undefined && !Number.isSafeInteger(activity.id)) {
+			ctx.addIssue({
+				code: "custom",
+				message: "id_str is required when id is not a safe integer",
+				path: ["id_str"],
+			});
+			return z.NEVER;
+		}
+		return { ...activity, id_str: activity.id_str ?? String(activity.id) };
+	},
+);
 
 export type StravaActivity = z.infer<typeof stravaActivitySchema>;
 

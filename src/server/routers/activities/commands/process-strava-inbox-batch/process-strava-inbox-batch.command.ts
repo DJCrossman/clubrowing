@@ -162,7 +162,7 @@ function parseBatchActivities(rawItems: unknown[]): {
 		}
 		items.push({
 			activity: parsed.data,
-			stravaId: BigInt(parsed.data.id),
+			stravaId: BigInt(parsed.data.id_str),
 			conceptTwoId: getConceptTwoIdFromStrava(parsed.data),
 		});
 	}
@@ -299,7 +299,7 @@ function takeCrossSourceMatch({
 export function mapStravaActivity(activity: StravaActivity) {
 	return mergeActivity({
 		activity,
-		stravaId: BigInt(activity.id),
+		stravaId: BigInt(activity.id_str),
 		conceptTwoId: null,
 	});
 }

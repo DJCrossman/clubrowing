@@ -1,7 +1,9 @@
 import { z } from "zod";
 
-export const stravaUserSchema = z.object({
+const stravaUserFieldsSchema = z.object({
 	id: z.number(),
+	// Strava's exact id; `id` can be a 64-bit integer that a JSON number rounds.
+	id_str: z.string().regex(/^\d+$/).optional(),
 	username: z.string().nullable().optional(),
 	resource_state: z.number(),
 	firstname: z.string(),
@@ -22,6 +24,21 @@ export const stravaUserSchema = z.object({
 	friend: z.null().optional(),
 	follower: z.null().optional(),
 });
+
+export const stravaUserSchema = stravaUserFieldsSchema.transform(
+	(athlete, ctx) => {
+		// Athletes cached before `id_str` was kept lack it; those ids all fit a double.
+		if (athlete.id_str === undefined && !Number.isSafeInteger(athlete.id)) {
+			ctx.addIssue({
+				code: "custom",
+				message: "id_str is required when id is not a safe integer",
+				path: ["id_str"],
+			});
+			return z.NEVER;
+		}
+		return { ...athlete, id_str: athlete.id_str ?? String(athlete.id) };
+	},
+);
 
 export type StravaUser = z.infer<typeof stravaUserSchema>;
 

@@ -278,7 +278,7 @@ function parseRowingActivities(raws: unknown[]): {
 		if (!sampleInvalidLogged) {
 			const record = raw as Record<string, unknown> | null;
 			logger.warn("rowing activity failed schema parse", {
-				stravaId: record?.id ?? null,
+				stravaId: record?.id_str ?? null,
 				issues: parsed.error.issues.slice(0, 10),
 				sampleKeys:
 					record && typeof record === "object" ? Object.keys(record) : [],

@@ -12,9 +12,9 @@ const ROWING_SPORT_TYPES = new Set(["Rowing", "VirtualRow"]);
 
 export const stravaWebhookEventSchema = z.object({
 	object_type: z.enum(["activity", "athlete"]),
-	object_id: z.number().int(),
+	object_id: z.bigint(),
 	aspect_type: z.enum(["create", "update", "delete"]),
-	owner_id: z.number().int(),
+	owner_id: z.bigint(),
 	subscription_id: z.number().int(),
 	event_time: z.number().int(),
 	updates: z.record(z.string(), z.union([z.string(), z.boolean()])).default({}),
@@ -32,7 +32,7 @@ export async function processStravaWebhookEventCommand(
 	});
 	if (!athlete) {
 		logger.info("ignoring event — no local athlete for owner", {
-			ownerId: event.owner_id,
+			ownerId: event.owner_id.toString(),
 			objectType: event.object_type,
 			aspectType: event.aspect_type,
 		});
@@ -81,7 +81,7 @@ export async function processStravaWebhookEventCommand(
 		});
 		logger.info("activity deleted", {
 			athleteId: athlete.id,
-			stravaId: event.object_id,
+			stravaId: event.object_id.toString(),
 			...result,
 		});
 		return { handled: true, kind: "deleted" as const, ...result };
@@ -98,7 +98,7 @@ export async function processStravaWebhookEventCommand(
 	if (!accessToken) {
 		logger.warn("no access token — cannot fetch activity", {
 			athleteId: athlete.id,
-			stravaId: event.object_id,
+			stravaId: event.object_id.toString(),
 		});
 		return { handled: false, reason: "no_access_token" as const };
 	}
@@ -120,7 +120,7 @@ export async function processStravaWebhookEventCommand(
 		});
 		logger.info("activity unavailable — removed local copy", {
 			athleteId: athlete.id,
-			stravaId: event.object_id,
+			stravaId: event.object_id.toString(),
 			...result,
 		});
 		return { handled: true, kind: "removed_unavailable" as const };
@@ -137,7 +137,7 @@ export async function processStravaWebhookEventCommand(
 		});
 		logger.info("non-rowing activity — skipped persistence", {
 			athleteId: athlete.id,
-			stravaId: activity.id,
+			stravaId: activity.id_str,
 			sportType: activity.sport_type,
 			staleLocal: result,
 		});
@@ -158,7 +158,7 @@ export async function processStravaWebhookEventCommand(
 	);
 	logger.info("activity persisted", {
 		athleteId: athlete.id,
-		stravaId: activity.id,
+		stravaId: activity.id_str,
 		aspectType: event.aspect_type,
 		batchId: batch.id,
 		activitiesCreated: processed.activitiesCreated,

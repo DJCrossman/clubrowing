@@ -192,7 +192,7 @@ async function getExistingActivities({
 		byConceptTwoId,
 		stravaOnly: stravaOnly.flatMap((row) => {
 			const activity = parseStoredJson({
-				schema: stravaActivitySchema.pick({
+				schema: stravaActivitySchema.in.pick({
 					elapsed_time: true,
 					distance: true,
 					name: true,
