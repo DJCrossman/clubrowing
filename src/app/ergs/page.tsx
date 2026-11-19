@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ErgListScene } from "@/scenes/ergs";
 import { createServerCaller } from "@/server/caller";
+import { createTRPCContext } from "@/server/context";
 
 const querySchema = z.object({
 	ergId: z.string().optional(),
@@ -14,19 +15,25 @@ export default async function ErgsPage({
 }) {
 	const { ergId, action } = querySchema.parse(await searchParams);
 	const caller = await createServerCaller();
-	const [ergsResponse, { data: activities }, selectedErg] = await Promise.all([
-		caller.ergs.getErgs(),
-		ergId
-			? caller.activities.getActivities({ ergId })
-			: Promise.resolve({ data: [] }),
-		ergId ? caller.ergs.getErgById({ id: ergId }) : null,
-	]);
+	const { user } = await createTRPCContext();
+	const [ergsResponse, { data: activities }, selectedErg, { data: athletes }] =
+		await Promise.all([
+			caller.ergs.getErgs(),
+			ergId
+				? caller.activities.getActivities({ ergId })
+				: Promise.resolve({ data: [] }),
+			ergId ? caller.ergs.getErgById({ id: ergId }) : null,
+			user?.isAdmin
+				? caller.athletes.getAthletes({ pageSize: 200 })
+				: Promise.resolve({ data: undefined }),
+		]);
 
 	return (
 		<ErgListScene
 			initialData={ergsResponse}
 			selectedErg={selectedErg}
 			activities={activities}
+			athletes={athletes}
 			isCreateDrawerOpen={action === "create"}
 		/>
 	);

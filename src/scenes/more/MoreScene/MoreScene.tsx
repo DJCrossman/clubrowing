@@ -8,6 +8,7 @@ import {
 	IconMessage,
 	type IconProps,
 	IconSailboat2,
+	IconTreadmill,
 	IconUserCircle,
 	IconUsers,
 	IconUsersGroup,
@@ -85,6 +86,9 @@ export const MoreScene = () => {
 							tint="blue"
 						>
 							Boats
+						</MoreRow>
+						<MoreRow href={routes.ergs.list()} icon={IconTreadmill} tint="blue">
+							ERGs
 						</MoreRow>
 						{isAdmin && (
 							<MoreRow

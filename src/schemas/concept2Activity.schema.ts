@@ -90,6 +90,17 @@ export const concept2ActivitySchema = z.looseObject({
 				.optional(),
 		})
 		.nullish(),
+	// A plain object, unlike the rest: it strips the member's phone details
+	// before the result is stored, and any other shape reads as no metadata.
+	metadata: z
+		.object({
+			data: z.object({
+				serial_number: z.string().optional(),
+				firmware_version: z.string().optional(),
+			}),
+		})
+		.optional()
+		.catch(undefined),
 });
 
 export type Concept2Activity = z.infer<typeof concept2ActivitySchema>;

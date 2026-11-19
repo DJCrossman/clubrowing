@@ -2,19 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import type { default as React } from "react";
+import { toast } from "sonner";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { Heading } from "@/components/ui/heading";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { routes } from "@/lib/routes";
+import { toastError } from "@/lib/toast";
 import { trpcClient } from "@/lib/trpc/client";
-import type { Activities, Erg, ErgsResult } from "@/lib/trpc/types";
+import type { Activities, Athletes, Erg, ErgsResult } from "@/lib/trpc/types";
 import { ErgCreateDrawer, ErgDetailsDrawer, ErgTable } from "./components";
 
 interface IProps {
 	initialData: ErgsResult;
 	selectedErg: Erg | null;
 	activities?: Activities;
+	athletes?: Athletes;
 	isCreateDrawerOpen: boolean;
 }
 
@@ -22,6 +25,7 @@ export const ErgListScene = ({
 	initialData,
 	selectedErg,
 	activities = [],
+	athletes,
 	isCreateDrawerOpen,
 }: IProps) => {
 	const router = useRouter();
@@ -40,6 +44,24 @@ export const ErgListScene = ({
 			router.refresh();
 		},
 	});
+	const { mutate: markErg, isPending: isMarking } =
+		trpcClient.ergs.markErg.useMutation({
+			onSuccess: async () => {
+				await utils.ergs.getErgs.invalidate();
+				await utils.ergs.getErgById.invalidate();
+				router.refresh();
+			},
+			onError: async (error) => {
+				if (error.data?.code !== "NOT_FOUND") {
+					toastError(error);
+					return;
+				}
+				toast.error("This erg has already been marked");
+				await utils.ergs.getErgs.invalidate();
+				await utils.ergs.getErgById.invalidate();
+				router.refresh();
+			},
+		});
 
 	return (
 		<SidebarProvider
@@ -66,6 +88,7 @@ export const ErgListScene = ({
 			</SidebarInset>
 			<ErgCreateDrawer
 				isOpen={isCreateDrawerOpen}
+				athletes={athletes}
 				onSubmit={async (data) => {
 					await createErg.mutateAsync(data);
 				}}
@@ -75,9 +98,15 @@ export const ErgListScene = ({
 				isOpen={!!selectedErg}
 				erg={selectedErg}
 				activities={activities}
+				athletes={athletes}
 				onSubmit={async (data) => {
 					await updateErg.mutateAsync(data);
 				}}
+				onMark={() => {
+					if (!selectedErg) return;
+					markErg({ id: selectedErg.id });
+				}}
+				isMarking={isMarking}
 				onClose={() => router.push(routes.ergs.list())}
 			/>
 		</SidebarProvider>

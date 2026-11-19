@@ -19,17 +19,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import type { Athletes } from "@/lib/trpc/types";
 import { type CreateErg, createErgSchema } from "@/schemas";
 
 const manufacturerItems = { concept2: "Concept2" };
+const ownershipItems = {
+	club: "Club",
+	personal: "Personal",
+};
 
 interface ErgFormProps {
+	athletes?: Athletes;
 	onSubmit: SubmitHandler<CreateErg>;
 	onCancel?: (() => void) | string;
 	defaultValues?: Partial<CreateErg>;
 }
 
 export function ErgForm({
+	athletes = [],
 	onSubmit,
 	onCancel: cancelLinkOrAction,
 	defaultValues,
@@ -43,8 +50,11 @@ export function ErgForm({
 			hardwareVersion: "",
 			serialNumber: "",
 			dataCode: "",
+			ownership: "club",
+			ownerId: null,
 		},
 	});
+	const ownership = form.watch("ownership");
 
 	return (
 		<Form {...form}>
@@ -87,6 +97,68 @@ export function ErgForm({
 						</FormItem>
 					)}
 				/>
+
+				<FormField
+					control={form.control}
+					name="ownership"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Ownership</FormLabel>
+							<Select
+								items={ownershipItems}
+								onValueChange={field.onChange}
+								value={field.value}
+							>
+								<FormControl>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+								</FormControl>
+								<SelectContent>
+									<SelectItem value="club">Club</SelectItem>
+									<SelectItem value="personal">Personal</SelectItem>
+								</SelectContent>
+							</Select>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				{ownership === "personal" && (
+					<FormField
+						control={form.control}
+						name="ownerId"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Owner</FormLabel>
+								<Select
+									items={Object.fromEntries(
+										athletes.map((athlete) => [
+											athlete.id,
+											`${athlete.firstName} ${athlete.lastName}`,
+										]),
+									)}
+									onValueChange={field.onChange}
+									value={field.value}
+								>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="Select owner" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{athletes.map((athlete) => (
+											<SelectItem key={athlete.id} value={athlete.id}>
+												{athlete.firstName} {athlete.lastName}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				)}
 
 				<FormField
 					control={form.control}

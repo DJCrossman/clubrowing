@@ -1,15 +1,35 @@
 import type { GetErgByIdInput } from "@/schemas";
-import type { Context } from "@/server/context";
-import { mapToErgDto } from "@/server/routers/ergs/common/map-to-erg-dto";
+import type { ViewerContext } from "@/server/context";
+import { ergsVisibleTo } from "@/server/routers/ergs/common/ergs-visible-to";
+import {
+	ergInclude,
+	mapToErgDto,
+} from "@/server/routers/ergs/common/map-to-erg-dto";
 
-export async function getErgByIdQuery(input: GetErgByIdInput, { db }: Context) {
-	const erg = await db.erg.findUnique({ where: { id: input.id } });
+export async function getErgByIdQuery(
+	input: GetErgByIdInput,
+	{ db, user, athlete }: ViewerContext,
+) {
+	const erg = await db.erg.findFirst({
+		where: { id: input.id, ...ergsVisibleTo({ user, athlete }) },
+		include: ergInclude,
+	});
 	if (!erg) return null;
 
-	const agg = await db.activity.aggregate({
-		where: { ergId: input.id, type: "erg" },
-		_sum: { distance: true },
-	});
+	const [agg, rowedByViewer] = await Promise.all([
+		db.activity.aggregate({
+			where: { ergId: input.id, type: "erg" },
+			_sum: { distance: true },
+		}),
+		athlete &&
+			db.activity.findFirst({
+				where: { ergId: input.id, athleteId: athlete.id },
+				select: { id: true },
+			}),
+	]);
 
-	return mapToErgDto({ erg, meters: agg._sum.distance ?? 0 });
+	return {
+		...mapToErgDto({ erg, meters: agg._sum.distance ?? 0 }),
+		canMark: erg.ownership === "club" && !!rowedByViewer,
+	};
 }

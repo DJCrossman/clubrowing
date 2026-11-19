@@ -1,5 +1,6 @@
 import { PrismaNeon } from "@prisma/adapter-neon";
 import {
+	type ErgOwnership,
 	type EventType,
 	type Gender,
 	type IntensityCategory,
@@ -240,7 +241,14 @@ const BOATS = [
 	},
 ] as const;
 
-const ERGS = ["Erg 1", "Erg 2", "Erg 3", "Erg 4"];
+// Athlete i rows on erg i % 4: Avery (0) on Erg 1, Morgan (1) on Erg 2, and
+// Jordan (2) on Erg 3, the erg Jordan owns.
+const ERGS: { name: string; ownership?: ErgOwnership; owner?: number }[] = [
+	{ name: "Erg 1", ownership: "club" },
+	{ name: "Erg 2" },
+	{ name: "Erg 3", ownership: "personal", owner: 2 },
+	{ name: "Erg 4" },
+];
 
 const WORKOUTS: {
 	description: string;
@@ -555,7 +563,7 @@ export async function replaceWithDummyData(unpooledUrl: string) {
 			BOATS.map((boat) => db.boat.create({ data: boat })),
 		);
 		const ergs = await Promise.all(
-			ERGS.map((name, index) =>
+			ERGS.map(({ name, ownership, owner }, index) =>
 				db.erg.create({
 					data: {
 						name,
@@ -563,6 +571,8 @@ export async function replaceWithDummyData(unpooledUrl: string) {
 						firmwareVersion: "1.0.0",
 						hardwareVersion: "PM5",
 						serialNumber: `DUMMY-${String(index + 1).padStart(4, "0")}`,
+						ownership,
+						ownerId: owner === undefined ? undefined : athletes[owner].id,
 					},
 				}),
 			),

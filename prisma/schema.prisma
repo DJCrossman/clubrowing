@@ -55,6 +55,7 @@ model athlete {
   inboxBatches    activity_inbox[]
   pushSubscriptions       push_subscription[]
   notificationPreferences notification_preference[]
+  ergs            erg[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -106,6 +107,11 @@ model boat {
 
 // ── Erg ───────────────────────────────────────────────────────────────────────
 
+enum ErgOwnership {
+  club
+  personal
+}
+
 model erg {
   id              String     @id @default(dbgenerated("generate_id('erg_'::text)"))
   name            String
@@ -114,6 +120,9 @@ model erg {
   hardwareVersion String?
   serialNumber    String?
   dataCode        String?
+  ownership       ErgOwnership  @default(club)
+  ownerId         String?
+  owner           athlete?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   activities      activity[]
 }
 

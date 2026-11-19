@@ -1,24 +1,33 @@
 import type { z } from "zod";
 import { paginate } from "@/lib/pagination";
 import { withPagination } from "@/schemas";
-import type { Context } from "@/server/context";
-import { mapToErgDto } from "@/server/routers/ergs/common/map-to-erg-dto";
+import type { ViewerContext } from "@/server/context";
+import { ergsVisibleTo } from "@/server/routers/ergs/common/ergs-visible-to";
+import {
+	ergInclude,
+	mapToErgDto,
+} from "@/server/routers/ergs/common/map-to-erg-dto";
 
 export const getErgsInputSchema = withPagination({
 	columns: ["name", "manufacturer", "serialNumber", "firmwareVersion"] as const,
 });
 export type GetErgsInput = z.infer<typeof getErgsInputSchema>;
 
-export async function getErgsQuery(input: GetErgsInput, { db }: Context) {
+export async function getErgsQuery(
+	input: GetErgsInput,
+	{ db, user, athlete }: ViewerContext,
+) {
 	const { page, pageSize = 20, sortBy, order } = input;
 
 	const [ergs, totalCount] = await Promise.all([
 		db.erg.findMany({
+			where: ergsVisibleTo({ user, athlete }),
+			include: ergInclude,
 			orderBy: { [sortBy ?? "id"]: order ?? "asc" },
 			take: pageSize,
 			skip: ((page ?? 1) - 1) * pageSize,
 		}),
-		db.erg.count(),
+		db.erg.count({ where: ergsVisibleTo({ user, athlete }) }),
 	]);
 
 	const metersAgg = await db.activity.groupBy({

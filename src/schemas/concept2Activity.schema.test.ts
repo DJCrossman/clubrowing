@@ -49,4 +49,32 @@ describe("concept2ActivitySchema", () => {
 		const parsed = concept2ActivitySchema.safeParse(result);
 		expect(parsed.success).toBe(true);
 	});
+
+	it("keeps only the monitor's serial and firmware from the metadata", () => {
+		const parsed = concept2ActivitySchema.parse({
+			...result,
+			metadata: {
+				data: {
+					serial_number: "430123456",
+					firmware_version: "7.10",
+					pm_version: "PM5v3",
+					device: "iPhone",
+					device_os: "iOS",
+					device_os_version: "18.1",
+				},
+			},
+		});
+		expect(parsed.metadata).toEqual({
+			data: { serial_number: "430123456", firmware_version: "7.10" },
+		});
+	});
+
+	it("reads an unexpected metadata shape as no metadata", () => {
+		const parsed = concept2ActivitySchema.safeParse({
+			...result,
+			metadata: [{ serial_number: 430123456 }],
+		});
+		expect(parsed.success).toBe(true);
+		expect(parsed.data?.metadata).toBeUndefined();
+	});
 });

@@ -173,6 +173,7 @@ async function fetchResult(
 	const url = new URL(
 		`${config.baseUrl}/api/users/me/results/${resultId.toString()}`,
 	);
+	url.searchParams.set("include", "metadata");
 	const response = await fetch(url.toString(), {
 		headers: {
 			Authorization: `Bearer ${accessToken}`,

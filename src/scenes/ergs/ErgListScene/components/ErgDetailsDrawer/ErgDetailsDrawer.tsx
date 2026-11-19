@@ -12,8 +12,9 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
-import { formatMeters } from "@/lib/formatters";
-import type { Activities, Erg } from "@/lib/trpc/types";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { formatDistance } from "@/lib/formatters";
+import type { Activities, Athletes, Erg } from "@/lib/trpc/types";
 import type { CreateErg, UpdateErg } from "@/schemas";
 import { ErgForm } from "../ErgForm/ErgForm";
 
@@ -21,18 +22,25 @@ interface ErgDetailsDrawerProps {
 	isOpen: boolean;
 	erg: Erg | null;
 	activities: Activities;
+	athletes?: Athletes;
 	onClose: () => void;
 	onSubmit: (data: UpdateErg) => Promise<void> | void;
+	onMark: () => void;
+	isMarking: boolean;
 }
 
 export const ErgDetailsDrawer = ({
 	isOpen,
 	erg,
 	activities,
+	athletes,
 	onClose,
 	onSubmit,
+	onMark,
+	isMarking,
 }: ErgDetailsDrawerProps) => {
 	const [isEditing, setIsEditing] = useState(false);
+	const { isAdmin } = useCurrentUser();
 
 	const handleClose = () => {
 		setIsEditing(false);
@@ -74,6 +82,7 @@ export const ErgDetailsDrawer = ({
 				<div className="flex-1 overflow-y-auto p-6 space-y-6">
 					{isEditing ? (
 						<ErgForm
+							athletes={athletes}
 							defaultValues={{
 								name: erg.name,
 								manufacturer: erg.manufacturer,
@@ -81,6 +90,8 @@ export const ErgDetailsDrawer = ({
 								firmwareVersion: erg.firmwareVersion ?? undefined,
 								hardwareVersion: erg.hardwareVersion ?? undefined,
 								dataCode: erg.dataCode ?? undefined,
+								ownership: erg.ownership,
+								ownerId: erg.owner?.id ?? null,
 							}}
 							onCancel={() => setIsEditing(false)}
 							onSubmit={handleSubmit}
@@ -89,16 +100,40 @@ export const ErgDetailsDrawer = ({
 						<>
 							<div className="flex items-center justify-between mb-4">
 								<h2 className="text-xl font-semibold">Details</h2>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => setIsEditing(true)}
-								>
-									<IconPencil className="h-4 w-4 mr-2" />
-									Edit
-								</Button>
+								{isAdmin && (
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setIsEditing(true)}
+									>
+										<IconPencil className="h-4 w-4 mr-2" />
+										Edit
+									</Button>
+								)}
 							</div>
 							<div className="space-y-4">
+								<div>
+									<strong className="text-sm text-muted-foreground">
+										Ownership
+									</strong>
+									<div className="flex items-center justify-between gap-2">
+										<p className="text-base">
+											{erg.ownership === "club" && "Club"}
+											{erg.ownership === "personal" &&
+												`Personal · ${erg.owner?.name}`}
+										</p>
+										{erg.canMark && (
+											<Button
+												variant="outline"
+												size="sm"
+												disabled={isMarking}
+												onClick={onMark}
+											>
+												My erg
+											</Button>
+										)}
+									</div>
+								</div>
 								<div>
 									<strong className="text-sm text-muted-foreground">
 										Manufacturer
@@ -137,9 +172,9 @@ export const ErgDetailsDrawer = ({
 								</div>
 								<div>
 									<strong className="text-sm text-muted-foreground">
-										Total Meters
+										Total distance
 									</strong>
-									<p className="text-base">{formatMeters(erg.meters)}</p>
+									<p className="text-base">{formatDistance(erg.meters)}</p>
 								</div>
 							</div>
 

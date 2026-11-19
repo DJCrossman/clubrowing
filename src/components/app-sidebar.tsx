@@ -5,8 +5,7 @@ import {
 	IconCalendarEvent,
 	IconDashboard,
 	IconSailboat2,
-	// TODO: Re-enable ERGs navigation
-	// IconTreadmill,
+	IconTreadmill,
 } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -78,12 +77,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								url: routes.boats.list(),
 								icon: IconSailboat2,
 							},
-							// TODO: Re-enable ERGs navigation
-							// {
-							// 	title: "ERGs",
-							// 	url: routes.ergs.list(),
-							// 	icon: IconTreadmill,
-							// },
+							{
+								title: "ERGs",
+								url: routes.ergs.list(),
+								icon: IconTreadmill,
+							},
 							{
 								title: "Activities",
 								url: routes.activities.list(),

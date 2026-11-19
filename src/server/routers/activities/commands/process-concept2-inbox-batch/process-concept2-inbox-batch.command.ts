@@ -78,12 +78,26 @@ export async function processConcept2InboxBatchCommand(
 						}),
 						pool: stravaOnly,
 					});
+				const monitor = item.activity.metadata?.data;
+				const ergLink =
+					data.type === "erg" && monitor?.serial_number
+						? {
+								erg: {
+									connect: await getErgForMonitor({
+										tx,
+										serialNumber: monitor.serial_number,
+										firmwareVersion: monitor.firmware_version,
+									}),
+								},
+							}
+						: {};
 
 				if (existing) {
 					await tx.activity.update({
 						where: { id: existing.id },
 						data: {
 							...data,
+							...ergLink,
 							// Keep the athlete-authored Strava title on merged rows.
 							...(existing.stravaId !== null ? { name: undefined } : {}),
 						},
@@ -92,7 +106,11 @@ export async function processConcept2InboxBatchCommand(
 				}
 
 				await tx.activity.create({
-					data: { ...data, athlete: { connect: { id: athleteId } } },
+					data: {
+						...data,
+						...ergLink,
+						athlete: { connect: { id: athleteId } },
+					},
 				});
 				activitiesCreated += 1;
 			}
@@ -271,4 +289,30 @@ function mapWorkoutType(raw: string): "distance" | "time" | "other" {
 	if (lower.includes("distance")) return "distance";
 	if (lower.includes("time")) return "time";
 	return "other";
+}
+
+async function getErgForMonitor({
+	tx,
+	serialNumber,
+	firmwareVersion,
+}: {
+	tx: Prisma.TransactionClient;
+	serialNumber: string;
+	firmwareVersion: string | undefined;
+}): Promise<{ id: string }> {
+	return (
+		(await tx.erg.findFirst({
+			where: { serialNumber },
+			select: { id: true },
+		})) ??
+		tx.erg.create({
+			data: {
+				name: `Erg ${serialNumber}`,
+				manufacturer: "concept2",
+				serialNumber,
+				firmwareVersion,
+			},
+			select: { id: true },
+		})
+	);
 }

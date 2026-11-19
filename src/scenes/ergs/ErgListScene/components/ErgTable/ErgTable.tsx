@@ -24,10 +24,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { formatMeters } from "@/lib/formatters";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { formatDistance } from "@/lib/formatters";
 import { routes } from "@/lib/routes";
 import { trpcClient } from "@/lib/trpc/client";
-import type { Erg, ErgsResult } from "@/lib/trpc/types";
+import type { Ergs, ErgsResult } from "@/lib/trpc/types";
 
 const DEFAULT_PAGE_SIZE = 20;
 const sortColumns = [
@@ -37,7 +38,7 @@ const sortColumns = [
 	"firmwareVersion",
 ] as const;
 
-const columns: ColumnDef<Erg>[] = [
+const columns: ColumnDef<Ergs[number]>[] = [
 	{
 		accessorKey: "name",
 		header: () => <div className="lg:w-100">Name</div>,
@@ -52,6 +53,24 @@ const columns: ColumnDef<Erg>[] = [
 			</div>
 		),
 		enableSorting: true,
+	},
+	{
+		accessorKey: "ownership",
+		header: () => <div>Ownership</div>,
+		cell: ({ row }) => (
+			<>
+				{row.original.ownership === "club" && "Club"}
+				{row.original.ownership === "personal" &&
+					`Personal · ${row.original.owner?.name}`}
+			</>
+		),
+		enableSorting: false,
+	},
+	{
+		accessorKey: "meters",
+		header: () => <div className="w-full">Total distance</div>,
+		cell: ({ row }) => formatDistance(row.original.meters),
+		enableSorting: false,
 	},
 	{
 		accessorKey: "manufacturer",
@@ -73,12 +92,6 @@ const columns: ColumnDef<Erg>[] = [
 		cell: ({ row }) => row.original.firmwareVersion || "N/A",
 		enableSorting: true,
 	},
-	{
-		accessorKey: "meters",
-		header: () => <div className="w-full">Total Meters</div>,
-		cell: ({ row }) => formatMeters(row.original.meters),
-		enableSorting: false,
-	},
 ];
 
 interface IErgTableProps {
@@ -91,6 +104,7 @@ export function ErgTable({ initialData }: IErgTableProps) {
 		pageSize: DEFAULT_PAGE_SIZE,
 	});
 	const [sorting, setSorting] = useState<SortingState>([]);
+	const { isAdmin } = useCurrentUser();
 
 	const sort = sorting[0];
 	const { data } = trpcClient.ergs.getErgs.useQuery(
@@ -125,10 +139,12 @@ export function ErgTable({ initialData }: IErgTableProps) {
 						Total ERGs: {data.totalCount}
 					</Label>
 				</div>
-				<Button size="sm" render={<Link href={routes.ergs.create()} />}>
-					<IconPlus className="h-4 w-4 mr-2" />
-					Add ERG
-				</Button>
+				{isAdmin && (
+					<Button size="sm" render={<Link href={routes.ergs.create()} />}>
+						<IconPlus className="h-4 w-4 mr-2" />
+						Add ERG
+					</Button>
+				)}
 			</div>
 			<div className="rounded-md border mx-4 lg:mx-6">
 				<Table>
