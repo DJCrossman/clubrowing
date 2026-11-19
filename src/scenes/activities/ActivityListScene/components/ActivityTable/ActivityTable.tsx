@@ -10,12 +10,10 @@ import {
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { MultiSelect, type Option } from "@/components/ui/multi-select";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { formatDurationAsTime } from "@/lib/formatters/formatDuration";
 import { formatMeters } from "@/lib/formatters/formatMeters";
@@ -27,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { FilterChip } from "@/scenes/schedule/ScheduleScene/components";
 import { ActivityType } from "@/schemas";
 import { ActivityDayHeading } from "./ActivityDayHeading";
+import { MemberFilter } from "./MemberFilter";
 import { SyncMenu } from "./SyncMenu";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -67,21 +66,6 @@ export function ActivityTable({
 			athleteIds,
 		},
 		{ initialData, placeholderData: keepPreviousData },
-	);
-
-	const memberOptions: Option[] = useMemo(
-		() =>
-			(athletes ?? [])
-				.map((athlete) => ({
-					value: athlete.id,
-					label: `${athlete.firstName} ${athlete.lastName}`,
-				}))
-				.sort((a, b) => a.label.localeCompare(b.label)),
-		[athletes],
-	);
-	const selectedMemberOptions = useMemo(
-		() => memberOptions.filter((option) => athleteIds?.includes(option.value)),
-		[memberOptions, athleteIds],
 	);
 
 	const table = useReactTable({
@@ -142,26 +126,18 @@ export function ActivityTable({
 						))}
 					</div>
 					{isAdmin && (
-						<>
-							<Label htmlFor="member-selector" className="sr-only">
-								Members
-							</Label>
-							<MultiSelect
-								className="min-w-[240px]"
-								placeholder="All members"
-								inputProps={{ id: "member-selector" }}
-								options={memberOptions}
-								value={selectedMemberOptions}
-								onChange={(options) => {
-									router.replace(
-										options.length
-											? `${routes.activities.list()}?athleteIds=${options.map((option) => option.value).join(",")}`
-											: routes.activities.list(),
-									);
-									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-								}}
-							/>
-						</>
+						<MemberFilter
+							athletes={athletes ?? []}
+							athleteIds={athleteIds ?? []}
+							onChange={(nextIds) => {
+								router.replace(
+									nextIds.length
+										? `${routes.activities.list()}?athleteIds=${nextIds.join(",")}`
+										: routes.activities.list(),
+								);
+								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+							}}
+						/>
 					)}
 				</div>
 				<div className="flex items-center max-md:hidden">

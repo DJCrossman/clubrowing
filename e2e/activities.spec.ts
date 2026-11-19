@@ -130,3 +130,59 @@ test("day headers show the year only for activities from an earlier year", async
 	await expect(dayHeaders.first()).toBeVisible();
 	await expect(dayHeaders.filter({ hasNotText: /\d{4}$/ })).toHaveCount(0);
 });
+
+test("admin filters activities by checking off members", async ({ page }) => {
+	await signInAs(page, "admin");
+	await page.goto("/activities");
+
+	const activities = page
+		.getByRole("listitem")
+		.filter({ has: page.getByRole("heading", { level: 2 }) })
+		.getByRole("link");
+	await expect(activities.first()).toBeVisible();
+
+	await page.getByRole("button", { name: "All members" }).click();
+	await page.getByRole("option", { name: "Morgan Oarsby" }).click();
+	await expect(
+		page.getByRole("option", { name: "Morgan Oarsby" }).getByRole("checkbox"),
+	).toBeChecked();
+	await expect(
+		page.getByRole("button", { name: "Morgan Oarsby", pressed: true }),
+	).toBeVisible();
+	await expect(page).toHaveURL(/athleteIds=/);
+	await expect(activities.filter({ hasNotText: "Morgan Oarsby" })).toHaveCount(
+		0,
+	);
+	await expect(activities.first()).toBeVisible();
+
+	await page.getByRole("option", { name: "Jordan Sculler" }).click();
+	await expect(
+		page.getByRole("button", { name: "2 members", pressed: true }),
+	).toBeVisible();
+	await expect(
+		activities.filter({ hasText: "Jordan Sculler" }).first(),
+	).toBeVisible();
+
+	await page.reload();
+	await page.getByRole("button", { name: "2 members", pressed: true }).click();
+	await page.getByRole("button", { name: "Clear", exact: true }).click();
+	await expect(
+		page.getByRole("button", { name: "All members", pressed: false }),
+	).toBeVisible();
+	await expect(page).not.toHaveURL(/athleteIds=/);
+	await expect(
+		activities.filter({ hasNotText: "Morgan Oarsby" }).first(),
+	).toBeVisible();
+});
+
+test("member gets no member filter", async ({ page }) => {
+	await signInAs(page, "member");
+	await page.goto("/activities");
+
+	await expect(
+		page.getByRole("button", { name: "2K", exact: true }),
+	).toBeVisible();
+	await expect(page.getByRole("button", { name: "All members" })).toHaveCount(
+		0,
+	);
+});
