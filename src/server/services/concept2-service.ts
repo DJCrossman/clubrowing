@@ -3,8 +3,10 @@ import { Concept2Error } from "@/app/api/v1/concept2/types";
 import { createLogger } from "@/lib/logger";
 import {
 	type Concept2Activity,
+	type Concept2Strokes,
 	type Concept2User,
 	concept2ActivitySchema,
+	concept2StrokesSchema,
 	concept2UserSchema,
 } from "@/schemas";
 
@@ -33,6 +35,7 @@ const resultsResponseSchema = z.object({
 
 const userResponseSchema = z.object({ data: concept2UserSchema });
 const resultResponseSchema = z.object({ data: concept2ActivitySchema });
+const strokesResponseSchema = z.object({ data: concept2StrokesSchema });
 
 export type Concept2Service = {
 	refreshTokens: (refreshToken: string) => Promise<Concept2TokenData | null>;
@@ -44,13 +47,23 @@ export type Concept2Service = {
 		accessToken: string,
 		resultId: number | bigint,
 	) => Promise<Concept2Activity | null>;
+	fetchStrokes: (
+		accessToken: string,
+		resultId: number | bigint,
+	) => Promise<Concept2Strokes | null>;
 	fetchUser: (
 		accessToken: string,
 	) => Promise<PromiseSettledResult<Concept2User>>;
 };
 
 export function createConcept2Service(): Concept2Service {
-	return { refreshTokens, fetchAllResults, fetchResult, fetchUser };
+	return {
+		refreshTokens,
+		fetchAllResults,
+		fetchResult,
+		fetchStrokes,
+		fetchUser,
+	};
 }
 
 export function getConcept2Config() {
@@ -200,6 +213,48 @@ async function fetchResult(
 	const parsed = resultResponseSchema.safeParse(await response.json());
 	if (!parsed.success) {
 		logger.warn("result response validation failed", {
+			resultId: String(resultId),
+			issue: parsed.error.message,
+		});
+		return null;
+	}
+	return parsed.data.data;
+}
+
+async function fetchStrokes(
+	accessToken: string,
+	resultId: number | bigint,
+): Promise<Concept2Strokes | null> {
+	const config = getConcept2Config();
+	const url = new URL(
+		`${config.baseUrl}/api/users/me/results/${resultId.toString()}/strokes`,
+	);
+	const response = await fetch(url.toString(), {
+		headers: {
+			Authorization: `Bearer ${accessToken}`,
+			Accept: "application/json",
+		},
+	});
+
+	if (response.status === 404) {
+		logger.info("strokes not found", { resultId: String(resultId) });
+		return null;
+	}
+	if (!response.ok) {
+		const errorText = await response.text().catch(() => "<unreadable>");
+		logger.error("strokes fetch failed", {
+			resultId: String(resultId),
+			status: response.status,
+			body: errorText.slice(0, 500),
+		});
+		throw new Error(
+			`Concept2 strokes fetch failed (${response.status}): ${errorText}`,
+		);
+	}
+
+	const parsed = strokesResponseSchema.safeParse(await response.json());
+	if (!parsed.success) {
+		logger.warn("strokes response validation failed", {
 			resultId: String(resultId),
 			issue: parsed.error.message,
 		});

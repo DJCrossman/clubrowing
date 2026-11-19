@@ -100,5 +100,10 @@ export const getActivityByIdInputSchema = z.object({
 });
 export type GetActivityByIdInput = z.infer<typeof getActivityByIdInputSchema>;
 
+export const getActivityStrokesInputSchema = z.object({ id: z.string() });
+export type GetActivityStrokesInput = z.infer<
+	typeof getActivityStrokesInputSchema
+>;
+
 export const deleteActivityInputSchema = z.object({ id: z.string() });
 export type DeleteActivityInput = z.infer<typeof deleteActivityInputSchema>;

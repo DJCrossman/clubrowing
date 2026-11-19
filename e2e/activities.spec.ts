@@ -91,6 +91,21 @@ test("an activity's details open from its row before the server responds", async
 			.filter({ has: page.getByRole("cell", { name: /^500\s?m$/ }) }),
 	).toHaveCount(4);
 	await expect(details.getByText("Synced from Concept2")).toBeVisible();
+	await expect(
+		details.getByRole("heading", { name: "Stroke data" }),
+	).toBeVisible();
+	await expect(
+		details.getByRole("button", { name: "Pace", exact: true }),
+	).toBeVisible();
+	await expect(
+		details.getByRole("button", { name: "Rate", exact: true }),
+	).toBeVisible();
+	const heartRate = details.getByRole("button", {
+		name: "Heart rate",
+		exact: true,
+	});
+	await heartRate.click();
+	await expect(heartRate).toHaveAttribute("aria-pressed", "true");
 
 	await details.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(details).toBeHidden();

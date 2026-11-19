@@ -15,6 +15,7 @@ import { syncStravaActivitiesProcedure } from "./commands/sync-strava-activities
 import { updateActivityProcedure } from "./commands/update-activity/update-activity.procedure";
 import { getActivitiesProcedure } from "./queries/get-activities/get-activities.procedure";
 import { getActivityByIdProcedure } from "./queries/get-activity-by-id/get-activity-by-id.procedure";
+import { getActivityStrokesProcedure } from "./queries/get-activity-strokes/get-activity-strokes.procedure";
 import { getConcept2ResultsProcedure } from "./queries/get-concept2-results/get-concept2-results.procedure";
 import { getConcept2UserProcedure } from "./queries/get-concept2-user/get-concept2-user.procedure";
 import { getPendingInboxBatchesProcedure } from "./queries/get-pending-inbox-batches/get-pending-inbox-batches.procedure";
@@ -24,6 +25,7 @@ import { getStravaAthleteProcedure } from "./queries/get-strava-athlete/get-stra
 export const activitiesRouter = router({
 	getActivities: getActivitiesProcedure,
 	getActivityById: getActivityByIdProcedure,
+	getActivityStrokes: getActivityStrokesProcedure,
 	createActivity: createActivityProcedure,
 	updateActivity: updateActivityProcedure,
 	deleteActivity: deleteActivityProcedure,

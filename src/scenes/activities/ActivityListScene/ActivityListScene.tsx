@@ -94,6 +94,14 @@ export const ActivityListScene = ({
 	const listHref = athleteIds?.length
 		? `${routes.activities.list()}?athleteIds=${athleteIds.join(",")}`
 		: routes.activities.list();
+	const strokesQuery = trpcClient.activities.getActivityStrokes.useQuery(
+		{ id: openActivity?.id ?? "" },
+		{
+			enabled:
+				openActivity?.type === "erg" &&
+				!!openActivity.conceptTwoData?.stroke_data,
+		},
+	);
 	const utils = trpcClient.useUtils();
 	const createActivity = trpcClient.activities.createActivity.useMutation({
 		onSuccess: async () => {
@@ -194,6 +202,8 @@ export const ActivityListScene = ({
 			<ActivityDetailsDrawer
 				isOpen={!!openActivity}
 				activity={openActivity}
+				strokes={strokesQuery.data}
+				isStrokesLoading={strokesQuery.isLoading}
 				boats={boats}
 				ergs={ergs}
 				workouts={workouts}

@@ -31,6 +31,7 @@ import { routes } from "@/lib/routes";
 import type { Activity, Boats, Ergs, Workouts } from "@/lib/trpc/types";
 import type {
 	Concept2Activity,
+	Concept2Strokes,
 	CreateActivity,
 	UpdateActivity,
 } from "@/schemas";
@@ -39,10 +40,14 @@ import {
 	type UploadErgActivityScreenshot,
 } from "../ActivityForm/ActivityForm";
 import { ActivitySplitsTable } from "./ActivitySplitsTable";
+import { ActivityStrokesChart } from "./ActivityStrokesChart";
+import { ActivityStrokesChartSkeleton } from "./ActivityStrokesChartSkeleton";
 
 interface ActivityDetailsDrawerProps {
 	isOpen: boolean;
 	activity?: Activity;
+	strokes?: Concept2Strokes | null;
+	isStrokesLoading: boolean;
 	boats: Boats;
 	ergs: Ergs;
 	workouts: Workouts;
@@ -54,6 +59,8 @@ interface ActivityDetailsDrawerProps {
 export const ActivityDetailsDrawer = ({
 	isOpen,
 	activity,
+	strokes,
+	isStrokesLoading,
 	boats,
 	ergs,
 	workouts,
@@ -240,6 +247,13 @@ export const ActivityDetailsDrawer = ({
 							</DetailTiles>
 							{conceptTwoData?.workout && (
 								<ActivitySplitsTable workout={conceptTwoData.workout} />
+							)}
+							{isStrokesLoading && <ActivityStrokesChartSkeleton />}
+							{!!strokes?.length && (
+								<ActivityStrokesChart
+									strokes={strokes}
+									workout={conceptTwoData?.workout}
+								/>
 							)}
 							<DetailList>
 								{!!averageWatts && (

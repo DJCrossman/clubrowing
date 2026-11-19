@@ -10,6 +10,11 @@ import {
 	type WorkoutType,
 } from "../../src/generated/prisma/client";
 import { EVERYONE_CHANNEL_ID } from "../../src/schemas/chat.schema";
+import {
+	type Concept2Activity,
+	concept2ActivitySchema,
+} from "../../src/schemas/concept2Activity.schema";
+import type { Concept2Strokes } from "../../src/schemas/concept2Strokes.schema";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -641,6 +646,19 @@ export async function replaceWithDummyData(unpooledUrl: string) {
 			),
 		});
 
+		const strokedPieces = await db.activity.findMany({
+			where: { conceptTwoData: { path: ["stroke_data"], equals: true } },
+			select: { id: true, conceptTwoData: true },
+		});
+		await db.activity_strokes.createMany({
+			data: strokedPieces.map((piece) => ({
+				activityId: piece.id,
+				strokes: strokesForPiece(
+					concept2ActivitySchema.parse(piece.conceptTwoData),
+				),
+			})),
+		});
+
 		for (const chat of CHATS) {
 			await db.channel.create({
 				data: {
@@ -735,6 +753,7 @@ function trainingHistory(
 				ranked: false,
 				stroke_rate: strokeRate,
 				drag_factor: 120,
+				...(partCount > 0 && athlete < 2 && { stroke_data: true }),
 				...(partCount > 0 && {
 					calories_total: Math.round(distance * 0.07),
 					stroke_count: Math.round((strokeRate * elapsedSeconds) / 60),
@@ -838,4 +857,65 @@ function trainingHistory(
 				]
 			: []),
 	]);
+}
+
+/**
+ * The strokes ErgData would upload for a piece: splits count time and distance
+ * on through the piece, intervals restart them and add the strokes rowed while
+ * resting.
+ */
+function strokesForPiece({ workout }: Concept2Activity): Concept2Strokes {
+	const restarts = workout?.intervals !== undefined;
+	let elapsed = 0;
+	let rowed = 0;
+	return (workout?.intervals ?? workout?.splits ?? []).flatMap(
+		(part, partIndex) => {
+			if (restarts) {
+				elapsed = 0;
+				rowed = 0;
+			}
+			const time = part.time ?? 0;
+			const distance = (part.distance ?? 0) * 10;
+			const strokeRate = part.stroke_rate ?? 0;
+			const pace = Math.round((time * 5000) / distance);
+			const minHeartRate = Number(part.heart_rate?.min ?? 0);
+			const maxHeartRate = Number(part.heart_rate?.max ?? 0);
+			const count = Math.round((strokeRate * time) / 600);
+			const work = Array.from({ length: count }, (_, stroke) => ({
+				t: Math.round(elapsed + (time * (stroke + 1)) / count),
+				d: Math.round(rowed + (distance * (stroke + 1)) / count),
+				// The first strokes from a standing flywheel read slow.
+				p:
+					Math.round(
+						pace *
+							(((restarts || partIndex === 0) && [1.5, 1.15, 1.05][stroke]) ||
+								1),
+					) + Math.round(4 * Math.sin(stroke / 8)),
+				spm: partIndex === 0 && stroke === 0 ? 0 : strokeRate,
+				hr:
+					maxHeartRate === 0
+						? 0
+						: Math.round(
+								minHeartRate +
+									((maxHeartRate - minHeartRate) * stroke) / (count - 1),
+							),
+			}));
+			elapsed += time;
+			rowed += distance;
+			if (!restarts) return work;
+			const restPace = Math.round(pace * 1.5);
+			return [
+				...work,
+				...Array.from({ length: 6 }, (_, stroke) => ({
+					t: time + Math.round((600 / 18) * (stroke + 1)),
+					d:
+						distance +
+						Math.round(((600 / 18) * (stroke + 1) * 5000) / restPace),
+					p: restPace,
+					spm: 18,
+					hr: maxHeartRate,
+				})),
+			];
+		},
+	);
 }

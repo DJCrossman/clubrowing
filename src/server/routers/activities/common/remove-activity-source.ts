@@ -72,6 +72,7 @@ export async function removeActivitySource({
 						conceptTwoData: Prisma.DbNull,
 					},
 				});
+				await tx.activity_strokes.deleteMany({ where: { activityId: row.id } });
 				unlinked += 1;
 			} else {
 				await tx.activity.delete({ where: { id: row.id } });

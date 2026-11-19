@@ -214,11 +214,20 @@ model activity {
   boat           boat?        @relation(fields: [boatId], references: [id])
   erg            erg?         @relation(fields: [ergId], references: [id])
   workout        workout?     @relation(fields: [workoutId], references: [id])
+  strokes        activity_strokes?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@unique([athleteId, stravaId])
   @@unique([athleteId, conceptTwoId])
+}
+
+model activity_strokes {
+  id         String   @id @default(dbgenerated("generate_id('act_strk_'::text)"))
+  activityId String   @unique
+  strokes    Json
+  createdAt  DateTime @default(now())
+  activity   activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 }
 
 // ── Activity Inbox ────────────────────────────────────────────────────────────

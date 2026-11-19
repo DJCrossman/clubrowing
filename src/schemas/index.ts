@@ -3,6 +3,7 @@ export * from "./analytics.schema";
 export * from "./athlete.schema";
 export * from "./boat.schema";
 export * from "./concept2Activity.schema";
+export * from "./concept2Strokes.schema";
 export * from "./concept2User.schema";
 export * from "./concept2Webhook.schema";
 export * from "./erg.schema.";
