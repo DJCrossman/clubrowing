@@ -5,11 +5,12 @@ import {
 	findAccessibleMessage,
 } from "@/server/routers/chat/common/chat-access";
 import { resolveForwardSourceId } from "@/server/routers/chat/common/map-to-message-dto";
+import { notifyChannelAfterResponse } from "@/server/routers/chat/common/message-notifications";
 import { TRPCError } from "@/server/trpc";
 
 export async function forwardMessageCommand(
 	input: ForwardMessage,
-	{ db, user }: ViewerContext,
+	{ db, user, services }: ViewerContext,
 ) {
 	const [source, target] = await Promise.all([
 		findAccessibleMessage(db, input.messageId, user),
@@ -28,7 +29,7 @@ export async function forwardMessageCommand(
 			text: input.note || null,
 			forwardedFromId: resolveForwardSourceId(source),
 		},
-		select: { id: true, channelId: true },
 	});
+	notifyChannelAfterResponse({ db, services }, message);
 	return { messageId: message.id, channelId: message.channelId };
 }

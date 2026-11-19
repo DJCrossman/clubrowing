@@ -3,6 +3,7 @@ import type { ViewerContext } from "@/server/context";
 import { findAccessibleChannel } from "@/server/routers/chat/common/chat-access";
 import { loadMessageDtos } from "@/server/routers/chat/common/load-message-dtos";
 import { messageInclude } from "@/server/routers/chat/common/map-to-message-dto";
+import { notifyChannelAfterResponse } from "@/server/routers/chat/common/message-notifications";
 import { TRPCError } from "@/server/trpc";
 
 export async function sendMessageCommand(
@@ -25,6 +26,7 @@ export async function sendMessageCommand(
 		include: messageInclude,
 	});
 	const [dto] = await loadMessageDtos(ctx, [message]);
+	notifyChannelAfterResponse(ctx, message);
 	return dto;
 }
 
