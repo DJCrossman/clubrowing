@@ -1,10 +1,4 @@
-import {
-	formatCompactDuration,
-	formatCompactSplit,
-	formatMeters,
-} from "@/lib/formatters";
-import { calculateTargetSplit } from "@/lib/formatters/calculateTargetSplit";
-import type { AnalyticMetrics } from "@/lib/trpc/types";
+import { formatCompactDuration, formatMeters } from "@/lib/formatters";
 
 interface FragmentSplitDisplayProps {
 	fragment: {
@@ -14,47 +8,21 @@ interface FragmentSplitDisplayProps {
 		relativeTo: string;
 		relativeSplitMs: number;
 	};
-	lastTwoKm?: AnalyticMetrics["lastTwoKm"];
-	lastSixKm?: AnalyticMetrics["lastSixKm"];
 }
 
 export const FragmentSplitDisplay = ({
 	fragment,
-	lastTwoKm,
-	lastSixKm,
 }: FragmentSplitDisplayProps) => {
-	const baseline = fragment.relativeTo === "2K" ? lastTwoKm : lastSixKm;
-	const baselineDistance = fragment.relativeTo === "2K" ? 2000 : 6000;
-
 	const relativeSplitSeconds = fragment.relativeSplitMs / 1000;
 	const sign =
 		relativeSplitSeconds >= 0 ? "+" : relativeSplitSeconds < 0 ? "−" : "";
 	const relativeNotation = `${fragment.relativeTo}${sign}${Math.abs(relativeSplitSeconds)}"`;
-
-	const targetSplitMs = baseline?.duration
-		? calculateTargetSplit(
-				baseline.duration,
-				baselineDistance,
-				fragment.relativeSplitMs,
-			)
-		: NaN;
-	const absoluteSplit = Number.isNaN(targetSplitMs)
-		? null
-		: `${formatCompactSplit(targetSplitMs, 500)}/500m`;
 
 	return (
 		<div className="space-y-1">
 			<FragmentDetails fragment={fragment} />
 			<div className="flex items-center justify-between gap-2 font-mono text-sm">
 				<span className="whitespace-nowrap">{relativeNotation}</span>
-				{absoluteSplit && (
-					<>
-						<div className="flex-1 border-b border-dotted border-muted-foreground/30" />
-						<span className="whitespace-nowrap text-muted-foreground">
-							{absoluteSplit}
-						</span>
-					</>
-				)}
 			</div>
 		</div>
 	);

@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/drawer";
 import {
 	formatActivityType,
-	formatCompactSplit,
 	formatDuration,
 	formatMeters,
 } from "@/lib/formatters";
@@ -42,7 +41,7 @@ import { EventDetailsForm } from "../EventDetailsForm/EventDetailsForm";
 import { EventResponsesList } from "../EventResponsesList/EventResponsesList";
 import { EventTypeBadge } from "../EventTypeBadge/EventTypeBadge";
 import { EventWorkoutForm } from "../EventWorkoutForm/EventWorkoutForm";
-import { FragmentSplitDisplay } from "../FragmentSplitDisplay";
+import { FragmentList } from "../FragmentList/FragmentList";
 import {
 	NotifyToggle,
 	notifyAthletesLabel,
@@ -286,42 +285,10 @@ export const EventDetailsDrawer = ({
 										</p>
 									)}
 									{workout.fragments.length > 0 && (
-										<div className="space-y-3">
-											<div className="flex gap-4 text-xs text-muted-foreground">
-												{analytics?.lastTwoKm && (
-													<span>
-														2K baseline{" "}
-														<span className="font-mono">
-															{formatCompactSplit(
-																analytics.lastTwoKm.duration,
-																2000,
-															)}
-															/500m
-														</span>
-													</span>
-												)}
-												{analytics?.lastSixKm && (
-													<span>
-														6K baseline{" "}
-														<span className="font-mono">
-															{formatCompactSplit(
-																analytics.lastSixKm.duration,
-																6000,
-															)}
-															/500m
-														</span>
-													</span>
-												)}
-											</div>
-											{workout.fragments.map((fragment) => (
-												<FragmentSplitDisplay
-													key={fragment.id}
-													fragment={fragment}
-													lastTwoKm={analytics?.lastTwoKm}
-													lastSixKm={analytics?.lastSixKm}
-												/>
-											))}
-										</div>
+										<FragmentList
+											fragments={workout.fragments}
+											analytics={analytics}
+										/>
 									)}
 								</>
 							) : (

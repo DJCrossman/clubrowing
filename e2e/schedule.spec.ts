@@ -30,6 +30,11 @@ test("a training event's details list its workout's pieces in order", async ({
 		'6K−2"',
 	]);
 	await expect(details.getByText(/^Open • /)).toBeVisible();
+	await expect(details.getByText("Your split /500m")).toBeVisible();
+	await expect(
+		details.getByRole("list", { name: "Pieces" }).getByText(/^\d+:\d\d/),
+	).toHaveCount(3);
+	await expect(details.getByText(/^From your 6K test/)).toBeVisible();
 });
 
 test("a coach sets a piece's goal by hand and it survives a later change to the description", async ({
@@ -142,4 +147,40 @@ test("a coach adds a piece, removes one, and re-reads the description to start o
 	await expect(pieces.getByRole("listitem")).toHaveCount(3);
 	await expect(pieces.getByText(/^R20 • /)).toBeVisible();
 	await expect(pieces.getByText(/^R30 • /)).toHaveCount(0);
+});
+
+test("an event with more than five pieces lists the first four until asked for the rest", async ({
+	page,
+}) => {
+	await signInAs(page, "admin");
+	await page.goto("/schedule?action=create");
+	const drawer = page.getByRole("dialog");
+	const title = `Six by one ${Date.now()}`;
+	await drawer.getByRole("button", { name: "Training" }).click();
+	await drawer.getByRole("textbox", { name: "Title" }).fill(title);
+	await drawer.getByRole("button", { name: "Next" }).click();
+
+	const workout = drawer.getByRole("textbox", { name: "Workout" });
+	await workout.fill(
+		"6000m\n1000m @ R18, 1000m @ R20, 1000m @ R22, 1000m @ R24, 1000m @ R26, 1000m @ R28",
+	);
+	await workout.blur();
+	await expect(
+		drawer.getByRole("list", { name: "Pieces" }).getByRole("listitem"),
+	).toHaveCount(6);
+	await drawer.getByRole("button", { name: "Intensity C3" }).click();
+	await drawer.getByRole("button", { name: "Save" }).click();
+	await expect(drawer).toBeHidden();
+
+	await page.goto(
+		(await page
+			.getByRole("link", { name: title, exact: true, includeHidden: true })
+			.getAttribute("href")) ?? "",
+	);
+	const details = page.getByRole("dialog");
+	const pieces = details.getByRole("list", { name: "Pieces" });
+	await expect(pieces.getByRole("listitem")).toHaveCount(4);
+	await details.getByRole("button", { name: "Show all 6 pieces" }).click();
+	await expect(pieces.getByRole("listitem")).toHaveCount(6);
+	await expect(pieces.getByText(/^R28 • /)).toBeVisible();
 });
