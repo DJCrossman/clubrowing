@@ -14,6 +14,7 @@ import { trpcClient } from "@/lib/trpc/client";
 import type { ScheduleWeek } from "@/lib/trpc/types";
 import { type TrainingRow, trainingRowSchema } from "@/schemas";
 import { SaveWeekDialog } from "./components/SaveWeekDialog";
+import { TrainingFragmentsDrawer } from "./components/TrainingFragmentsDrawer";
 import { TrainingRowDrawers } from "./components/TrainingRowDrawers";
 import { TrainingWeekGrid } from "./components/TrainingWeekGrid";
 import { TrainingWeekToolbar } from "./components/TrainingWeekToolbar";
@@ -70,6 +71,7 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 	const [pendingImpact, setPendingImpact] = useState<SaveImpact | null>(null);
 	const [notify, setNotify] = useState(true);
 	const [editingRowId, setEditingRowId] = useState<string | null>(null);
+	const [fragmentsRowId, setFragmentsRowId] = useState<string | null>(null);
 	const isDirtyRef = useRef(false);
 	const seededWeekRef = useRef(currentWeekIsoDate);
 	const awaitingSavedDataRef = useRef(false);
@@ -174,6 +176,7 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 	};
 
 	const editingRow = rows.find((row) => row.__id === editingRowId) ?? null;
+	const fragmentsRow = rows.find((row) => row.__id === fragmentsRowId);
 
 	return (
 		<SidebarProvider
@@ -272,6 +275,7 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 							onSelectedRowsChange={setSelectedRows}
 							onAddRow={addRow}
 							onOpenDetails={setEditingRowId}
+							onOpenFragments={setFragmentsRowId}
 							onRemoveRow={removeRow}
 						/>
 						<WeekTotalsPanel totals={totals} weekStart={weekStart} />
@@ -294,6 +298,20 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 				}}
 				onClose={() => setEditingRowId(null)}
 			/>
+			{fragmentsRow && (
+				<TrainingFragmentsDrawer
+					row={fragmentsRow}
+					onSave={(fragments) => {
+						setRows((prev) =>
+							prev.map((row) =>
+								row.__id === fragmentsRow.__id ? { ...row, fragments } : row,
+							),
+						);
+						setFragmentsRowId(null);
+					}}
+					onClose={() => setFragmentsRowId(null)}
+				/>
+			)}
 			<SaveWeekDialog
 				impact={pendingImpact}
 				notify={notify}

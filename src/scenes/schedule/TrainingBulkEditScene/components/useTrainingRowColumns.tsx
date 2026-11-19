@@ -24,12 +24,14 @@ import { type BulkRow, zoneMinutesTotal } from "../utils/trainingRows";
 interface UseTrainingRowColumnsOptions {
 	weekStart: DateTime;
 	onOpenDetails: (rowId: string) => void;
+	onOpenFragments: (rowId: string) => void;
 	onRemoveRow: (rowId: string) => void;
 }
 
 export function useTrainingRowColumns({
 	weekStart,
 	onOpenDetails,
+	onOpenFragments,
 	onRemoveRow,
 }: UseTrainingRowColumnsOptions): readonly Column<BulkRow>[] {
 	return useMemo(() => {
@@ -92,6 +94,26 @@ export function useTrainingRowColumns({
 				renderEditCell: textEditor,
 				editable: true,
 				renderCell: ({ row }) => row.description ?? "",
+			},
+			{
+				key: "fragments",
+				name: "Targets",
+				width: 128,
+				renderCell: ({ row }) => {
+					const count = row.fragments?.length ?? 0;
+					return (
+						<Button
+							variant="outline"
+							size="sm"
+							className={cn("h-7 px-2", !count && "text-muted-foreground")}
+							onClick={() => onOpenFragments(row.__id)}
+						>
+							{count
+								? `${count} ${count === 1 ? "interval" : "intervals"}`
+								: "Add intervals"}
+						</Button>
+					);
+				},
 			},
 			{
 				key: "intensityCategory",
@@ -204,7 +226,7 @@ export function useTrainingRowColumns({
 				),
 			},
 		];
-	}, [weekStart, onOpenDetails, onRemoveRow]);
+	}, [weekStart, onOpenDetails, onOpenFragments, onRemoveRow]);
 }
 
 // Columns whose editor is a dropdown: clicking one opens the editor straight

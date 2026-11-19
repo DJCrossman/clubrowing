@@ -35,7 +35,7 @@ export const FragmentFields = ({
 		<div className="space-y-2">
 			<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 				<h3 id={labelId} className="text-sm font-medium">
-					Pieces
+					Intervals
 				</h3>
 				{isReading && (
 					<output className="text-xs text-muted-foreground">
@@ -71,7 +71,7 @@ export const FragmentFields = ({
 				{!isReading && status === "failed" && (
 					<>
 						<span className="text-xs text-destructive">
-							Couldn't read the description, so these pieces weren't changed.
+							Couldn't read the description, so these intervals weren't changed.
 						</span>
 						<Button
 							type="button"
@@ -90,7 +90,7 @@ export const FragmentFields = ({
 			</div>
 			{fields.length === 0 && (
 				<p className="text-sm text-muted-foreground">
-					No pieces yet. Add them if this session has set pieces.
+					No intervals yet. Add them if this session has set intervals.
 				</p>
 			)}
 			{fields.length > 0 && (
@@ -149,7 +149,7 @@ export const FragmentFields = ({
 				}}
 			>
 				<IconPlus />
-				Add piece
+				Add interval
 			</Button>
 		</div>
 	);

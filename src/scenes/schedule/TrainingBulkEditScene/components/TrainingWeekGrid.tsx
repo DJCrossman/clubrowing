@@ -30,6 +30,7 @@ interface TrainingWeekGridProps {
 	onSelectedRowsChange: (selectedRows: Set<string>) => void;
 	onAddRow: () => void;
 	onOpenDetails: (rowId: string) => void;
+	onOpenFragments: (rowId: string) => void;
 	onRemoveRow: (rowId: string) => void;
 }
 
@@ -43,6 +44,7 @@ export const TrainingWeekGrid = ({
 	onSelectedRowsChange,
 	onAddRow,
 	onOpenDetails,
+	onOpenFragments,
 	onRemoveRow,
 }: TrainingWeekGridProps) => {
 	const gridRef = useRef<DataGridHandle>(null);
@@ -78,6 +80,7 @@ export const TrainingWeekGrid = ({
 	const columns = useTrainingRowColumns({
 		weekStart,
 		onOpenDetails,
+		onOpenFragments,
 		onRemoveRow,
 	});
 

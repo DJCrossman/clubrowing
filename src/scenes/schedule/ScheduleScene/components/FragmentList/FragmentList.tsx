@@ -34,7 +34,7 @@ export const FragmentList = ({ fragments, analytics }: FragmentListProps) => {
 		<div className="space-y-2">
 			<div className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
 				<h4 id={headingId} className="font-medium">
-					Pieces · {fragments.length}
+					Intervals · {fragments.length}
 				</h4>
 				<span>{hasSplits ? "Your split /500m" : "Target"}</span>
 			</div>
@@ -105,7 +105,9 @@ export const FragmentList = ({ fragments, analytics }: FragmentListProps) => {
 					aria-expanded={isShowingAll}
 					onClick={() => setIsShowingAll(!isShowingAll)}
 				>
-					{isShowingAll ? "Show fewer" : `Show all ${fragments.length} pieces`}
+					{isShowingAll
+						? "Show fewer"
+						: `Show all ${fragments.length} intervals`}
 				</Button>
 			)}
 			{hasSplits && (

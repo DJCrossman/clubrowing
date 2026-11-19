@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { signInAs } from "./sign-in";
 
-test("a training event's details list its workout's pieces in order", async ({
+test("a training event's details list its workout's intervals in order", async ({
 	page,
 }) => {
 	await signInAs(page, "member");
@@ -32,12 +32,12 @@ test("a training event's details list its workout's pieces in order", async ({
 	await expect(details.getByText(/^Open • /)).toBeVisible();
 	await expect(details.getByText("Your split /500m")).toBeVisible();
 	await expect(
-		details.getByRole("list", { name: "Pieces" }).getByText(/^\d+:\d\d/),
+		details.getByRole("list", { name: "Intervals" }).getByText(/^\d+:\d\d/),
 	).toHaveCount(3);
 	await expect(details.getByText(/^From your 6K test/)).toBeVisible();
 });
 
-test("a coach sets a piece's goal by hand and it survives a later change to the description", async ({
+test("a coach sets an interval's goal by hand and it survives a later change to the description", async ({
 	page,
 }) => {
 	await signInAs(page, "admin");
@@ -52,10 +52,15 @@ test("a coach sets a piece's goal by hand and it survives a later change to the 
 	await workout.fill("5000m\n1000m @ R20, 2000m @ R22, 2000m @ R24");
 	await workout.blur();
 	await expect(drawer.getByText("Read from the description")).toBeVisible();
-	const pieces = drawer.getByRole("list", { name: "Pieces" });
-	await expect(pieces.getByRole("listitem")).toHaveCount(3);
+	const intervals = drawer.getByRole("list", { name: "Intervals" });
+	await expect(intervals.getByRole("listitem")).toHaveCount(3);
 
-	await pieces.getByRole("listitem").nth(1).getByRole("button").first().click();
+	await intervals
+		.getByRole("listitem")
+		.nth(1)
+		.getByRole("button")
+		.first()
+		.click();
 	await drawer
 		.getByRole("group", { name: "Split against" })
 		.getByRole("button", { name: "6K" })
@@ -70,13 +75,13 @@ test("a coach sets a piece's goal by hand and it survives a later change to the 
 	await workout.fill("5000m\n1000m @ R20, 2000m @ R22, 2000m @ R26");
 	await workout.blur();
 	await expect(drawer.getByText("Edited by hand")).toBeVisible();
-	await expect(pieces.getByRole("listitem")).toHaveCount(3);
-	await expect(pieces.getByText(/^[26]K[+−]\d+"$/)).toHaveText([
+	await expect(intervals.getByRole("listitem")).toHaveCount(3);
+	await expect(intervals.getByText(/^[26]K[+−]\d+"$/)).toHaveText([
 		'2K+0"',
 		'6K+3"',
 		'2K+0"',
 	]);
-	await expect(pieces.getByText(/^R24 • /)).toBeVisible();
+	await expect(intervals.getByText(/^R24 • /)).toBeVisible();
 
 	await drawer.getByRole("button", { name: "Intensity C3" }).click();
 	await drawer.getByRole("button", { name: "Save" }).click();
@@ -97,7 +102,7 @@ test("a coach sets a piece's goal by hand and it survives a later change to the 
 	await expect(details.getByText(/^R24 • /)).toBeVisible();
 });
 
-test("a coach adds a piece, removes one, and re-reads the description to start over", async ({
+test("a coach adds an interval, removes one, and re-reads the description to start over", async ({
 	page,
 }) => {
 	await signInAs(page, "admin");
@@ -110,17 +115,19 @@ test("a coach adds a piece, removes one, and re-reads the description to start o
 	await drawer.getByRole("button", { name: "Next" }).click();
 
 	await expect(
-		drawer.getByText("No pieces yet. Add them if this session has set pieces."),
+		drawer.getByText(
+			"No intervals yet. Add them if this session has set intervals.",
+		),
 	).toBeVisible();
 	const workout = drawer.getByRole("textbox", { name: "Workout" });
 	await workout.fill("5000m\n1000m @ R20, 2000m @ R22, 2000m @ R24");
 	await workout.blur();
 	await expect(drawer.getByText("Read from the description")).toBeVisible();
-	const pieces = drawer.getByRole("list", { name: "Pieces" });
-	await expect(pieces.getByRole("listitem")).toHaveCount(3);
+	const intervals = drawer.getByRole("list", { name: "Intervals" });
+	await expect(intervals.getByRole("listitem")).toHaveCount(3);
 
-	await drawer.getByRole("button", { name: "Add piece" }).click();
-	await expect(pieces.getByRole("listitem")).toHaveCount(4);
+	await drawer.getByRole("button", { name: "Add interval" }).click();
+	await expect(intervals.getByRole("listitem")).toHaveCount(4);
 	await expect(drawer.getByText("Edited by hand")).toBeVisible();
 	await drawer
 		.getByRole("group", { name: "Measured by" })
@@ -130,26 +137,26 @@ test("a coach adds a piece, removes one, and re-reads the description to start o
 	await drawer.getByRole("spinbutton", { name: "Seconds" }).fill("30");
 	await drawer.getByRole("spinbutton", { name: "Rate (spm)" }).fill("30");
 	await drawer.getByRole("button", { name: "Done" }).click();
-	await expect(pieces.getByText(/^R30 • 0?1:30/)).toBeVisible();
+	await expect(intervals.getByText(/^R30 • 0?1:30/)).toBeVisible();
 
-	await pieces
+	await intervals
 		.getByRole("listitem")
 		.first()
 		.getByRole("button")
 		.first()
 		.click();
 	await drawer.getByRole("button", { name: "Remove" }).click();
-	await expect(pieces.getByRole("listitem")).toHaveCount(3);
-	await expect(pieces.getByText(/^R20 • /)).toHaveCount(0);
+	await expect(intervals.getByRole("listitem")).toHaveCount(3);
+	await expect(intervals.getByText(/^R20 • /)).toHaveCount(0);
 
 	await drawer.getByRole("button", { name: "Re-read" }).click();
 	await expect(drawer.getByText("Read from the description")).toBeVisible();
-	await expect(pieces.getByRole("listitem")).toHaveCount(3);
-	await expect(pieces.getByText(/^R20 • /)).toBeVisible();
-	await expect(pieces.getByText(/^R30 • /)).toHaveCount(0);
+	await expect(intervals.getByRole("listitem")).toHaveCount(3);
+	await expect(intervals.getByText(/^R20 • /)).toBeVisible();
+	await expect(intervals.getByText(/^R30 • /)).toHaveCount(0);
 });
 
-test("an event with more than five pieces lists the first four until asked for the rest", async ({
+test("an event with more than five intervals lists the first four until asked for the rest", async ({
 	page,
 }) => {
 	await signInAs(page, "admin");
@@ -166,7 +173,7 @@ test("an event with more than five pieces lists the first four until asked for t
 	);
 	await workout.blur();
 	await expect(
-		drawer.getByRole("list", { name: "Pieces" }).getByRole("listitem"),
+		drawer.getByRole("list", { name: "Intervals" }).getByRole("listitem"),
 	).toHaveCount(6);
 	await drawer.getByRole("button", { name: "Intensity C3" }).click();
 	await drawer.getByRole("button", { name: "Save" }).click();
@@ -178,9 +185,58 @@ test("an event with more than five pieces lists the first four until asked for t
 			.getAttribute("href")) ?? "",
 	);
 	const details = page.getByRole("dialog");
-	const pieces = details.getByRole("list", { name: "Pieces" });
-	await expect(pieces.getByRole("listitem")).toHaveCount(4);
-	await details.getByRole("button", { name: "Show all 6 pieces" }).click();
-	await expect(pieces.getByRole("listitem")).toHaveCount(6);
-	await expect(pieces.getByText(/^R28 • /)).toBeVisible();
+	const intervals = details.getByRole("list", { name: "Intervals" });
+	await expect(intervals.getByRole("listitem")).toHaveCount(4);
+	await details.getByRole("button", { name: "Show all 6 intervals" }).click();
+	await expect(intervals.getByRole("listitem")).toHaveCount(6);
+	await expect(intervals.getByText(/^R28 • /)).toBeVisible();
+});
+
+test("a coach edits a session's intervals from bulk edit", async ({ page }) => {
+	await signInAs(page, "admin");
+	await page.goto("/schedule?action=create");
+	const drawer = page.getByRole("dialog");
+	const title = `Three by one ${Date.now()}`;
+	await drawer.getByRole("button", { name: "Training" }).click();
+	await drawer.getByRole("textbox", { name: "Title" }).fill(title);
+	await drawer.getByRole("button", { name: "Next" }).click();
+
+	const workout = drawer.getByRole("textbox", { name: "Workout" });
+	await workout.fill("3000m\n1000m @ R20, 1000m @ R22, 1000m @ R24");
+	await workout.blur();
+	await expect(
+		drawer.getByRole("list", { name: "Intervals" }).getByRole("listitem"),
+	).toHaveCount(3);
+	await drawer.getByRole("button", { name: "Intensity C3" }).click();
+	await drawer.getByRole("button", { name: "Save" }).click();
+	await expect(drawer).toBeHidden();
+
+	// The grid only renders the columns in view, so give it room for all of them.
+	await page.setViewportSize({ width: 2800, height: 900 });
+	await page.goto("/schedule/bulk-edit-training");
+	const row = page.getByRole("row").filter({ hasText: title });
+	await row.getByRole("button", { name: "3 intervals" }).click();
+	const editor = page.getByRole("dialog");
+	await expect(
+		editor.getByRole("heading", { name: "Edit intervals" }),
+	).toBeVisible();
+	const intervals = editor.getByRole("list", { name: "Intervals" });
+	await intervals
+		.getByRole("listitem")
+		.first()
+		.getByRole("button")
+		.first()
+		.click();
+	await editor.getByRole("button", { name: "Remove" }).click();
+	await expect(intervals.getByRole("listitem")).toHaveCount(2);
+	await editor.getByRole("button", { name: "Save" }).click();
+	await expect(editor).toBeHidden();
+
+	await row.getByRole("button", { name: "2 intervals" }).click();
+	await editor
+		.getByRole("button", { name: "Read intervals from the description" })
+		.click();
+	await expect(intervals.getByRole("listitem")).toHaveCount(3);
+	await editor.getByRole("button", { name: "Save" }).click();
+	await expect(row.getByRole("button", { name: "3 intervals" })).toBeVisible();
 });
