@@ -32,7 +32,6 @@ import {
 	EventCreateDrawer,
 	EventDetailsDrawer,
 	FilterChip,
-	MobileDayStrip,
 	NudgeDialog,
 	SubscribeDialog,
 	WeekNavigation,
@@ -80,10 +79,6 @@ export const ScheduleView = ({
 	const [nudgeEvent, setNudgeEvent] = useState<ScheduleEvent | null>(null);
 	const defaultDay =
 		schedule.days.find((day) => day.isToday)?.date ?? schedule.weekStart;
-	const [selectedDay, setSelectedDay] = useState({
-		weekStart: schedule.weekStart,
-		date: defaultDay,
-	});
 
 	const rsvp = trpcClient.schedule.rsvp.useMutation();
 	const nudge = trpcClient.schedule.nudge.useMutation();
@@ -108,10 +103,6 @@ export const ScheduleView = ({
 		type: filters.type,
 		group: filters.group,
 	};
-	const activeDay =
-		selectedDay.weekStart === schedule.weekStart
-			? selectedDay.date
-			: defaultDay;
 
 	const navigate = (url: string) =>
 		startNavigation(() => router.push(url, { scroll: false }));
@@ -251,20 +242,9 @@ export const ScheduleView = ({
 							isNavigating && "opacity-60",
 						)}
 					>
-						<MobileDayStrip
-							days={schedule.days}
-							selectedDate={activeDay}
-							onSelect={(date) =>
-								setSelectedDay({ weekStart: schedule.weekStart, date })
-							}
-						/>
 						<div className="flex flex-col">
 							{schedule.days.map((day) => (
-								<DayRow
-									key={day.date}
-									day={day}
-									isSelected={day.date === activeDay}
-								>
+								<DayRow key={day.date} day={day}>
 									{day.events.map((event) => (
 										<EventCard
 											key={event.id}

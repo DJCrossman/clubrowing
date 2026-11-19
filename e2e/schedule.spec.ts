@@ -37,6 +37,24 @@ test("a training event's details list its workout's intervals in order", async (
 	await expect(details.getByText(/^From your 6K test/)).toBeVisible();
 });
 
+test("a week lists all seven days and their events without picking a day", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	// The seed dates the event six days out: next week, unless it ran on a Sunday.
+	await page.goto(
+		`/schedule?week=${new Intl.DateTimeFormat("en-CA", { timeZone: "America/Regina" }).format(Date.now() + 7 * 24 * 60 * 60 * 1000)}`,
+	);
+	const event = page.getByRole("link", { name: "Rate ladder", exact: true });
+	await expect(page.getByRole("button", { name: "Next week" })).toBeVisible();
+	if ((await event.count()) === 0) {
+		await page.goto("/schedule");
+	}
+
+	await expect(event).toBeVisible();
+	await expect(page.getByRole("region", { name: /day, / })).toHaveCount(7);
+});
+
 test("a coach sets an interval's goal by hand and it survives a later change to the description", async ({
 	page,
 }) => {

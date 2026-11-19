@@ -3,7 +3,6 @@ export * from "./EventCard/EventCard";
 export * from "./EventCreateDrawer/EventCreateDrawer";
 export * from "./EventDetailsDrawer/EventDetailsDrawer";
 export * from "./FilterChip/FilterChip";
-export * from "./MobileDayStrip/MobileDayStrip";
 export * from "./NotifyToggle/NotifyToggle";
 export * from "./NudgeDialog/NudgeDialog";
 export * from "./SubscribeDialog/SubscribeDialog";

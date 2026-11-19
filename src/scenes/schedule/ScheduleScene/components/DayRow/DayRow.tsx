@@ -1,26 +1,42 @@
 import { DateTime } from "luxon";
 import type React from "react";
+import { useEffect, useRef } from "react";
+import { MOBILE_BREAKPOINT } from "@/hooks/useIsMobile";
 import type { ScheduleDay } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 
 interface DayRowProps {
 	day: ScheduleDay;
-	isSelected: boolean;
 	children: React.ReactNode;
 }
 
-export const DayRow = ({ day, isSelected, children }: DayRowProps) => {
+export const DayRow = ({ day, children }: DayRowProps) => {
 	const date = DateTime.fromISO(day.date);
+	const sectionRef = useRef<HTMLElement>(null);
+
+	useEffect(() => {
+		const section = sectionRef.current;
+		if (
+			day.isToday &&
+			section &&
+			window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches &&
+			section.getBoundingClientRect().bottom > window.innerHeight
+		) {
+			section.scrollIntoView();
+		}
+	}, [day.isToday]);
+
 	return (
 		<section
+			ref={sectionRef}
 			aria-label={date.toFormat("cccc, LLLL d", { locale: "en-US" })}
 			className={cn(
 				"flex gap-4 border-b py-4 last:border-b-0",
-				!isSelected && "max-md:hidden",
+				day.events.length > 0 && "max-md:flex-col max-md:gap-2",
 			)}
 		>
-			<div className="hidden w-14 shrink-0 flex-col items-center gap-1 md:flex">
-				<span className="text-xs font-medium text-muted-foreground uppercase">
+			<div className="flex w-20 shrink-0 items-center gap-2 md:w-14 md:flex-col md:gap-1">
+				<span className="w-8 text-xs font-medium text-muted-foreground uppercase md:w-auto">
 					{date.toFormat("ccc", { locale: "en-US" })}
 				</span>
 				<span
