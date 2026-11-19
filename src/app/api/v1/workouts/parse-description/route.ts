@@ -75,12 +75,15 @@ export async function POST(request: Request) {
 
 	const result: ParseDescriptionResult = {
 		workoutType: ai.workoutType,
+		// Only a timed workout's text can stand in for a missing total: in any
+		// other description the minute figures are rests and marks ("2x1k w/
+		// 9'55'' active rest" came back as 64 minutes).
 		elapsedTime:
-			(ai.workoutType === "time"
-				? getTimeWorkoutTotal(description, ai.fragments)
-				: undefined) ??
-			ai.elapsedTime ??
-			parseDuration(description),
+			ai.workoutType === "time"
+				? (getTimeWorkoutTotal(description, ai.fragments) ??
+					ai.elapsedTime ??
+					parseDuration(description))
+				: ai.elapsedTime,
 		distance: ai.distance,
 		intervalCount: ai.intervalCount ?? parseIntervals(description),
 		fragments: ai.fragments,
@@ -104,7 +107,7 @@ function getTimeWorkoutTotal(
 	}
 	if (
 		fragments.length === 0 ||
-		fragments.some((fragment) => fragment.elapsedTime === undefined)
+		fragments.some((fragment) => fragment.elapsedTime == null)
 	) {
 		return undefined;
 	}

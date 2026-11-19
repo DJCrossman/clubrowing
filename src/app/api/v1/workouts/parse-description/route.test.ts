@@ -102,13 +102,88 @@ describe("POST /api/v1/workouts/parse-description", () => {
 		});
 		expect(untimed.elapsedTime).toBe(2_700_000);
 	});
+
+	it("keeps the pieces when the model writes null for the measure they don't have", async () => {
+		const workout = await parseDescription("4x10' @ 2k+15'' w/5' rest", {
+			workoutType: "time",
+			intervalCount: 4,
+			fragments: Array.from({ length: 4 }, () => ({
+				elapsedTime: 600_000,
+				distance: null,
+				relativeTo: "2K",
+				relativeSplitMs: 15_000,
+			})),
+		});
+		expect(workout.fragments).toHaveLength(4);
+		expect(workout.elapsedTime).toBe(2_400_000);
+	});
+
+	it("doesn't add up pieces whose time the model writes as null", async () => {
+		const workout = await parseDescription("easy 45 min, bursts @ R30", {
+			workoutType: "time",
+			elapsedTime: 2_700_000,
+			intervalCount: 1,
+			fragments: [
+				{
+					rate: 30,
+					elapsedTime: null,
+					distance: null,
+					relativeTo: "2K",
+					relativeSplitMs: 0,
+				},
+			],
+		});
+		expect(workout.elapsedTime).toBe(2_700_000);
+	});
+
+	it.each([
+		[
+			"2x1k @2k target w/ 9'55'' active rest",
+			{
+				workoutType: "distance",
+				distance: 2000,
+				intervalCount: 2,
+				fragments: [
+					{
+						elapsedTime: 595_000,
+						distance: 1000,
+						relativeTo: "2K",
+						relativeSplitMs: 0,
+					},
+					{
+						elapsedTime: 595_000,
+						distance: 1000,
+						relativeTo: "2K",
+						relativeSplitMs: 0,
+					},
+				],
+			},
+		],
+		[
+			"3x20 w/10 stroke burst at the 15', 10' and 5' marks",
+			{ workoutType: "other", intervalCount: 3 },
+		],
+	])("doesn't total the rests and marks of a workout that isn't timed: %s", async (description, modelReply) => {
+		const workout = await parseDescription(description, modelReply);
+		expect(workout.elapsedTime).toBeUndefined();
+	});
+
+	it("still reads a timed workout's total from the text when the model gives none", async () => {
+		const workout = await parseDescription("70' steady", {
+			workoutType: "time",
+			intervalCount: 1,
+		});
+		expect(workout.elapsedTime).toBe(4_200_000);
+	});
 });
 
 async function parseDescription(
 	description: string,
 	modelReply: object,
 ): Promise<ParseDescriptionResult> {
-	generateObjectFromPrompt.mockResolvedValue(modelReply);
+	generateObjectFromPrompt.mockImplementation(async ({ schema }) =>
+		schema.parse(modelReply),
+	);
 	const response = await POST(
 		new Request("http://localhost/api/v1/workouts/parse-description", {
 			method: "POST",
