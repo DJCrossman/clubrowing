@@ -10,6 +10,10 @@ if (!baseURL) {
 export default defineConfig({
 	testDir: "e2e",
 	outputDir: "e2e/.output",
+	// The instance is a dev server that compiles each route on first hit: more
+	// workers or the default 5 s only produce timeouts.
+	workers: 2,
+	expect: { timeout: 15_000 },
 	use: {
 		baseURL,
 		headless: true,

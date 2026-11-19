@@ -110,7 +110,42 @@ bun run instance:e2e              # desktop + 390px phone, a video per test in e
   sign in with `signInAs(page, "admin" | "member")` from `e2e/sign-in.ts`, using a session
   that `instance:e2e` mints. Sessions last one hour.
 - `failed_to_load_clerk_js` in the browser console is expected there; pages do not need it.
-- Throwaway recording specs go in `e2e/recordings/` (gitignored).
+- Both commands look after themselves: `create --dummy` installs dependencies and generates
+  the Prisma client when the worktree needs it, and `instance:e2e` waits until the app
+  answers. Don't poll the logs or sleep first.
+- While iterating, run one file (`bun run instance:e2e e2e/members.spec.ts`); run the whole
+  suite once at the end (about 2.5 minutes). When a test fails, read the page snapshot in
+  `e2e/.output/<test>/error-context.md` rather than a screenshot.
+- The admin is Avery Coxwell and the member is Morgan Oarsby. To stage a scenario the seed
+  lacks, edit `scripts/lib/dummy-data.ts` and run `bun run instance:reset`.
+
+**Recording a flow.** Put a throwaway spec in `e2e/recordings/` (gitignored), run it before
+and after the change, and convert each run with the trim it prints:
+
+```ts
+import { expect, test } from "@playwright/test";
+import { signInAs } from "../sign-in";
+
+test("issue 12", async ({ page }) => {
+	const started = Date.now();
+	await signInAs(page, "member");
+	await page.goto("/activities");
+	await expect(page.getByRole("button", { name: "2K", exact: true })).toBeVisible();
+	await page.addStyleTag({ content: "nextjs-portal { display: none }" }); // Next.js dev badge
+	console.log(`trim ${test.info().project.name} ${((Date.now() - started) / 1000).toFixed(1)}`);
+	await page.waitForTimeout(1500);
+	// one step, then waitForTimeout(1500), for each thing the viewer should see
+});
+```
+
+```bash
+bun run instance:e2e e2e/recordings/issue-12.spec.ts   # prints "trim desktop 8.9" and "trim phone 8.8"
+ffmpeg -v error -y -ss 8.9 -i e2e/.output/*-desktop/video.webm -c:v libx264 -pix_fmt yuv420p e2e/recordings/issue-12-before.mp4
+ffmpeg -v error -y -ss 8.8 -i e2e/.output/*-phone/video.webm -c:v libx264 -pix_fmt yuv420p e2e/recordings/issue-12-before-phone.mp4
+```
+
+The trim cuts the blank lead-in exactly, so there is nothing to tune. One small frame is
+enough to check a video: `ffmpeg -v error -y -ss 2 -i x.mp4 -frames:v 1 -vf scale=480:-1 x.png`.
 
 ### Verifying an instance is up (important operational detail)
 

@@ -20,12 +20,6 @@
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { spawn } from "bun";
 import {
-	DUMMY_ORGANIZATION_ID,
-	E2E_ADMIN_USER_ID,
-	E2E_MEMBER_USER_ID,
-	replaceWithDummyData,
-} from "./lib/dummy-data";
-import {
 	branchExists,
 	connectionStrings,
 	createBranch,
@@ -262,7 +256,10 @@ async function generateEnvFile(
 			"NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
 			`pk_test_${btoa("127.0.0.1:4011$")}`,
 		);
-		base.set("NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID", DUMMY_ORGANIZATION_ID);
+		base.set(
+			"NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID",
+			(await import("./lib/dummy-data")).DUMMY_ORGANIZATION_ID,
+		);
 	}
 	base.set(
 		"STRAVA_CALLBACK_URL",
@@ -416,6 +413,17 @@ async function replaceBranchWithDummyData(
 		process.exit(1);
 	}
 
+	// The migrate and the seed below need the dependencies and a Prisma client
+	// generated from this checkout's schema. A fresh worktree has neither, and
+	// a rebased one has a stale client.
+	if (!(await Bun.file("node_modules/.bin/prisma").exists())) {
+		console.log("📦 Installing dependencies...");
+		const installCode = await inherit(["bun", "install"]);
+		if (installCode !== 0) process.exit(installCode);
+	}
+	const generateCode = await inherit(["bunx", "prisma", "generate"]);
+	if (generateCode !== 0) process.exit(generateCode);
+
 	console.log(`▶ Applying migrations to '${branch}'...`);
 	const migrateCode = await inherit(
 		["bunx", "--bun", "prisma", "migrate", "deploy"],
@@ -425,7 +433,7 @@ async function replaceBranchWithDummyData(
 
 	console.log(`🧹 Replacing every row on '${branch}' with dummy data...`);
 	try {
-		await replaceWithDummyData(unpooled);
+		await (await import("./lib/dummy-data")).replaceWithDummyData(unpooled);
 	} catch (error) {
 		console.error(
 			`❌ Failed to fill '${branch}' with dummy data: ${error instanceof Error ? error.message : error}`,
@@ -580,6 +588,27 @@ async function cmdE2e(playwrightArgs: string[]) {
 		);
 		process.exit(1);
 	}
+	// `create` returns minutes before the app answers, so wait here instead of
+	// leaving every caller to poll the logs.
+	const deadline = Date.now() + 5 * 60_000;
+	while (
+		!(await fetch(`http://localhost:${rec.port}/login`).then(
+			(response) => response.ok,
+			() => false,
+		))
+	) {
+		if (Date.now() > deadline) {
+			console.error(
+				`❌ '${project(rec.name)}' did not answer on port ${rec.port} within 5 minutes. Check: bun run instance:logs`,
+			);
+			process.exit(1);
+		}
+		await Bun.sleep(2000);
+	}
+
+	const { E2E_ADMIN_USER_ID, E2E_MEMBER_USER_ID } = await import(
+		"./lib/dummy-data"
+	);
 	// The emulator's signing key only lives in the container, so mint there.
 	const mint = spawn(
 		[
