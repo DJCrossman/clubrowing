@@ -19,7 +19,7 @@ self.addEventListener("push", (event) => {
 		self.registration.showNotification(notification.title, {
 			body: notification.body,
 			icon: notification.icon,
-			badge: "/logo.png",
+			badge: "/badge.png",
 			tag: notification.tag,
 			renotify: Boolean(notification.tag),
 			data: { url: notification.url },

@@ -21,6 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	title: "Regina Rowing Club",
 	description: "Application for the Regina Rowing Club",
+	icons: { icon: "/api/v1/organization/icon" },
 };
 
 export const viewport: Viewport = {

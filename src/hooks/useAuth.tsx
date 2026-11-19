@@ -5,12 +5,15 @@ import { createContext, useContext } from "react";
 import { generateQueryKey } from "@/lib/keygen";
 import type { CurrentAthlete } from "@/lib/trpc/types";
 
+type CurrentOrganization = { name: string; logoUrl: string | null };
+
 type AuthBase = {
 	error: Error | null;
 	isPending: boolean;
 	isAdmin: boolean;
 	hasAthlete: boolean;
 	authenticated: boolean;
+	organization: CurrentOrganization | null;
 };
 
 type UseAuthResult = AuthBase & { user: CurrentAthlete | null };
@@ -19,6 +22,7 @@ type AuthMeResponse = {
 	user: CurrentAthlete | null;
 	isAdmin: boolean;
 	hasAthlete: boolean;
+	organization: CurrentOrganization | null;
 };
 
 type AuthState = AuthMeResponse & { authenticated: boolean };
@@ -27,6 +31,7 @@ const SIGNED_OUT_STATE: AuthState = {
 	user: null,
 	isAdmin: false,
 	hasAthlete: false,
+	organization: null,
 	authenticated: false,
 };
 
@@ -54,6 +59,7 @@ export function useAuth(opts?: { ensureSignedIn?: boolean }): UseAuthResult {
 		isAdmin: data?.isAdmin ?? false,
 		hasAthlete: data?.hasAthlete ?? false,
 		authenticated: data?.authenticated ?? false,
+		organization: data?.organization ?? null,
 		error,
 		isPending: isPending && fetchStatus !== "idle",
 	};
@@ -63,6 +69,7 @@ type CurrentUserContextValue = {
 	user: CurrentAthlete;
 	isAdmin: boolean;
 	hasAthlete: boolean;
+	organization: CurrentOrganization | null;
 };
 
 const CurrentUserContext = createContext<CurrentUserContextValue | null>(null);
@@ -72,8 +79,11 @@ export const CurrentUserProvider = ({
 	user,
 	isAdmin,
 	hasAthlete,
+	organization,
 }: React.PropsWithChildren<CurrentUserContextValue>) => (
-	<CurrentUserContext.Provider value={{ user, isAdmin, hasAthlete }}>
+	<CurrentUserContext.Provider
+		value={{ user, isAdmin, hasAthlete, organization }}
+	>
 		{children}
 	</CurrentUserContext.Provider>
 );

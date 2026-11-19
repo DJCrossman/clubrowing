@@ -15,11 +15,11 @@ export const LoginScene = () => {
 					>
 						<Image
 							src="/logo.png"
-							alt="Regina Rowing Club Logo"
+							alt="Club Rowing Logo"
 							width={24}
 							height={24}
 						/>
-						<span className="text-base font-semibold">Regina Rowing Club</span>
+						<span className="text-base font-semibold">Club Rowing</span>
 					</a>
 				</div>
 				<div className="flex flex-1 items-center justify-center">

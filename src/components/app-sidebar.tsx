@@ -30,7 +30,7 @@ import { envVars } from "@/lib/env";
 import { routes } from "@/lib/routes";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-	const { user } = useCurrentUser();
+	const { user, organization } = useCurrentUser();
 	return (
 		<>
 			<MobileTabBar />
@@ -48,13 +48,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								}
 							>
 								<Image
-									src="/logo.png"
-									alt="Regina Rowing Club Logo"
+									src={organization?.logoUrl ?? "/logo.png"}
+									alt={`${organization?.name ?? "Club Rowing"} Logo`}
 									width={24}
 									height={24}
 								/>
 								<span className="text-base font-semibold">
-									Regina Rowing Club
+									{organization?.name ?? "Club Rowing"}
 								</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>

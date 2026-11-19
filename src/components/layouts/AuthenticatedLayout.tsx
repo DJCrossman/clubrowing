@@ -15,10 +15,17 @@ export const AuthenticatedLayout = ({
 	const pathname = usePathname();
 	const router = useRouter();
 	const isPublicRoute = PUBLIC_ROUTES.has(pathname);
-	const { user, isAdmin, hasAthlete, authenticated, isPending, error } =
-		useAuth({
-			ensureSignedIn: !isPublicRoute,
-		});
+	const {
+		user,
+		isAdmin,
+		hasAthlete,
+		organization,
+		authenticated,
+		isPending,
+		error,
+	} = useAuth({
+		ensureSignedIn: !isPublicRoute,
+	});
 
 	useEffect(() => {
 		if (isPending || isPublicRoute) {
@@ -48,7 +55,12 @@ export const AuthenticatedLayout = ({
 		return null;
 	}
 	return (
-		<CurrentUserProvider user={user} isAdmin={isAdmin} hasAthlete={hasAthlete}>
+		<CurrentUserProvider
+			user={user}
+			isAdmin={isAdmin}
+			hasAthlete={hasAthlete}
+			organization={organization}
+		>
 			<SyncStatusProvider>
 				{children}
 				<PersonalBestConfetti />

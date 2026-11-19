@@ -7,7 +7,7 @@ import { trpcClient } from "@/lib/trpc/client";
 import { AthleteDetailsDrawer } from "@/scenes/athletes/AthleteListScene/components";
 
 export const MobileHeader = () => {
-	const { user, hasAthlete } = useCurrentUser();
+	const { user, hasAthlete, organization } = useCurrentUser();
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const athleteQuery = trpcClient.athletes.getCurrentAthlete.useQuery(
 		undefined,
@@ -28,14 +28,16 @@ export const MobileHeader = () => {
 	return (
 		<header className="flex items-center gap-3 px-4 pt-1 md:hidden">
 			<Image
-				src="/logo.png"
+				src={organization?.logoUrl ?? "/logo.png"}
 				alt=""
 				width={36}
 				height={36}
 				className="size-9 rounded-[10px]"
 			/>
 			<div className="min-w-0 flex-1">
-				<p className="text-[13px] text-muted-foreground">Regina Rowing Club</p>
+				<p className="text-[13px] text-muted-foreground">
+					{organization?.name ?? "Club Rowing"}
+				</p>
 				<h1 className="truncate text-[22px] font-bold tracking-tight">
 					Hi, {user.nickname || user.firstName || "there"}
 				</h1>
