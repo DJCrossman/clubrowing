@@ -160,8 +160,8 @@ describe("POST /api/v1/workouts/parse-description", () => {
 			},
 		],
 		[
-			"3x20 w/10 stroke burst at the 15', 10' and 5' marks",
-			{ workoutType: "other", intervalCount: 3 },
+			"6k warm-up w/20' SS and 10 stroke bursts a 15' and 5'",
+			{ workoutType: "other", intervalCount: 1 },
 		],
 	])("doesn't total the rests and marks of a workout that isn't timed: %s", async (description, modelReply) => {
 		const workout = await parseDescription(description, modelReply);

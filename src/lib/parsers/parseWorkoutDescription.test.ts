@@ -107,6 +107,121 @@ describe("parseWorkoutDescription", () => {
 				],
 			},
 		],
+		[
+			"90', 4x15' w/3' rest, 10'@R20, 3'@R22, 2'@R24 (R20@2k+25, R22@2k+20, R24@2k+15)",
+			{
+				workoutType: "time",
+				elapsedTime: 5_400_000,
+				intervalCount: 4,
+				fragments: [
+					{
+						rate: 20,
+						elapsedTime: 600_000,
+						relativeTo: "2K",
+						relativeSplitMs: 25_000,
+					},
+					{
+						rate: 22,
+						elapsedTime: 180_000,
+						relativeTo: "2K",
+						relativeSplitMs: 20_000,
+					},
+					{
+						rate: 24,
+						elapsedTime: 120_000,
+						relativeTo: "2K",
+						relativeSplitMs: 15_000,
+					},
+				],
+			},
+		],
+		[
+			"90', 4x8' w/5' active recovery, 4'@R24, 3'@R28, 1' open (R24@2k+10, R28@2k+8, open@2k+6)",
+			{
+				workoutType: "time",
+				elapsedTime: 5_400_000,
+				intervalCount: 4,
+				fragments: [
+					{
+						rate: 24,
+						elapsedTime: 240_000,
+						relativeTo: "2K",
+						relativeSplitMs: 10_000,
+					},
+					{
+						rate: 28,
+						elapsedTime: 180_000,
+						relativeTo: "2K",
+						relativeSplitMs: 8_000,
+					},
+					{ elapsedTime: 60_000, relativeTo: "2K", relativeSplitMs: 6_000 },
+				],
+			},
+		],
+		[
+			"90', 4x15' w/4' rest, 10'@R20, 3'@R22, 2'@R24 (R20@2k+25'', R22@2k+20'', R24@2k+15'')",
+			{
+				workoutType: "time",
+				elapsedTime: 5_400_000,
+				intervalCount: 4,
+				fragments: [
+					{
+						rate: 20,
+						elapsedTime: 600_000,
+						relativeTo: "2K",
+						relativeSplitMs: 25_000,
+					},
+					{
+						rate: 22,
+						elapsedTime: 180_000,
+						relativeTo: "2K",
+						relativeSplitMs: 20_000,
+					},
+					{
+						rate: 24,
+						elapsedTime: 120_000,
+						relativeTo: "2K",
+						relativeSplitMs: 15_000,
+					},
+				],
+			},
+		],
+		[
+			"80', 4x9' w/5' active recovery, 3'@R20, 3'@R22, 3'@R24 (R20 2k+20'', R22 2k+17'', R24 2k+14'')",
+			{
+				workoutType: "time",
+				elapsedTime: 4_800_000,
+				intervalCount: 4,
+				fragments: [
+					{
+						rate: 20,
+						elapsedTime: 180_000,
+						relativeTo: "2K",
+						relativeSplitMs: 20_000,
+					},
+					{
+						rate: 22,
+						elapsedTime: 180_000,
+						relativeTo: "2K",
+						relativeSplitMs: 17_000,
+					},
+					{
+						rate: 24,
+						elapsedTime: 180_000,
+						relativeTo: "2K",
+						relativeSplitMs: 14_000,
+					},
+				],
+			},
+		],
+		[
+			"3x20 w/10 stroke burst at the 15', 10' and 5' marks (come off the burst taking time at the finish/release)",
+			{ workoutType: "time", elapsedTime: 3_600_000, intervalCount: 3 },
+		],
+		[
+			"3x20' w/10 stroke burst at the 15' and 5' marks",
+			{ workoutType: "time", elapsedTime: 3_600_000, intervalCount: 3 },
+		],
 	])("parses %j without the AI", (description, expected) => {
 		expect(parseWorkoutDescription(description)).toStrictEqual(expected);
 	});
@@ -133,6 +248,11 @@ describe("parseWorkoutDescription", () => {
 		"60m",
 		"2,000m",
 		"1 hour",
+		"90', 4x15' w/3' rest, 10'@R20, 3'@R22, 2'@R24 (R20@2k+25, R22@2k+20)",
+		"90', 4x15' w/3' rest, 10'@R20, 3'@R22, 3'@R24 (R20@2k+25, R22@2k+20, R24@2k+15)",
+		"3x20 w/10 stroke burst",
+		"3x20 w/10 stroke burst at the 25' mark",
+		"80', 3x12'@R24 w/5' active recovery (Target 6k/20' split)",
 	])("leaves %j to the AI", (description) => {
 		expect(parseWorkoutDescription(description)).toBeUndefined();
 	});
