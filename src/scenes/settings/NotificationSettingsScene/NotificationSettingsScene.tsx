@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import {
+	NOTIFICATION_SCOPE_ACTIVITIES,
 	NOTIFICATION_SCOPE_ALL,
 	NOTIFICATION_SCOPE_SCHEDULE,
 } from "@/lib/notifications";
@@ -115,6 +116,18 @@ export const NotificationSettingsScene = () => {
 					disabled={!isOn || isBusy}
 					onCheckedChange={(checked) =>
 						notifications.setPreference(NOTIFICATION_SCOPE_SCHEDULE, checked)
+					}
+				/>
+				<PreferenceRow
+					id="notifications-activities"
+					title="New activities"
+					description="Rows that arrive from a connected app or that a coach logs for you."
+					checked={
+						isOn && notifications.isEnabled(NOTIFICATION_SCOPE_ACTIVITIES)
+					}
+					disabled={!isOn || isBusy}
+					onCheckedChange={(checked) =>
+						notifications.setPreference(NOTIFICATION_SCOPE_ACTIVITIES, checked)
 					}
 				/>
 			</CardContent>

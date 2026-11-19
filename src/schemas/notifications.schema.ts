@@ -4,7 +4,7 @@ import { isPushServiceEndpoint } from "@/lib/notifications";
 export const notificationScopeSchema = z
 	.string()
 	.regex(
-		/^(all|schedule|channel:[A-Za-z0-9_-]{1,64})$/,
+		/^(all|schedule|activities|channel:[A-Za-z0-9_-]{1,64})$/,
 		"Unknown notification scope",
 	);
 

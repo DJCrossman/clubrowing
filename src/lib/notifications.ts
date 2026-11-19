@@ -1,5 +1,6 @@
 export const NOTIFICATION_SCOPE_ALL = "all";
 export const NOTIFICATION_SCOPE_SCHEDULE = "schedule";
+export const NOTIFICATION_SCOPE_ACTIVITIES = "activities";
 
 export const channelNotificationScope = (channelId: string) =>
 	`channel:${channelId}`;

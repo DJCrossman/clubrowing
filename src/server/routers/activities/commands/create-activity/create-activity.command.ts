@@ -1,5 +1,7 @@
+import { after } from "next/server";
 import type { CreateActivity } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { ViewerContext } from "@/server/context";
+import { notifyActivityAdded } from "@/server/routers/activities/common/activity-notifications";
 import {
 	activityInclude,
 	mapToActivityDto,
@@ -7,7 +9,7 @@ import {
 
 export async function createActivityCommand(
 	input: CreateActivity,
-	{ db }: Context,
+	{ db, services, athlete }: Pick<ViewerContext, "db" | "services" | "athlete">,
 ) {
 	const row = await db.activity.create({
 		data: {
@@ -26,5 +28,8 @@ export async function createActivityCommand(
 		},
 		include: activityInclude,
 	});
+	if (row.athleteId !== athlete?.id) {
+		after(() => notifyActivityAdded(services.push, row));
+	}
 	return mapToActivityDto(row);
 }

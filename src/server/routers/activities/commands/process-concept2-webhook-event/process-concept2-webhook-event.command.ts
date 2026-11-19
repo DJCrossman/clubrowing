@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
 import { type Concept2WebhookEvent, getConcept2WebhookUserId } from "@/schemas";
 import type { Context } from "@/server/context";
+import { notifyActivityAdded } from "../../common/activity-notifications";
 import { getConcept2AccessTokenForAthlete } from "../../common/get-concept2-access-token-for-athlete";
 import { removeActivitySource } from "../../common/remove-activity-source";
 import { processConcept2InboxBatchCommand } from "../process-concept2-inbox-batch/process-concept2-inbox-batch.command";
@@ -128,5 +129,23 @@ export async function processConcept2WebhookEventCommand(
 		fetched,
 		activitiesCreated: processed.activitiesCreated,
 	});
+	if (processed.activitiesCreated > 0) {
+		const row = await db.activity.findUnique({
+			where: {
+				athleteId_conceptTwoId: {
+					athleteId: athlete.id,
+					conceptTwoId: BigInt(resultId),
+				},
+			},
+			select: {
+				id: true,
+				athleteId: true,
+				name: true,
+				distance: true,
+				elapsedTime: true,
+			},
+		});
+		if (row) await notifyActivityAdded(services.push, row);
+	}
 	return { handled: true, kind: "persisted" as const, batchId: batch.id };
 }

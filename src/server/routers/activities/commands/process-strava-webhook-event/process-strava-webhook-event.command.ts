@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
 import type { Context } from "@/server/context";
+import { notifyActivityAdded } from "../../common/activity-notifications";
 import { getStravaAccessTokenForAthlete } from "../../common/get-strava-access-token-for-athlete";
 import { removeActivitySource } from "../../common/remove-activity-source";
 import { processStravaInboxBatchCommand } from "../process-strava-inbox-batch/process-strava-inbox-batch.command";
@@ -163,5 +164,23 @@ export async function processStravaWebhookEventCommand(
 		batchId: batch.id,
 		activitiesCreated: processed.activitiesCreated,
 	});
+	if (processed.activitiesCreated > 0) {
+		const row = await db.activity.findUnique({
+			where: {
+				athleteId_stravaId: {
+					athleteId: athlete.id,
+					stravaId: BigInt(activity.id),
+				},
+			},
+			select: {
+				id: true,
+				athleteId: true,
+				name: true,
+				distance: true,
+				elapsedTime: true,
+			},
+		});
+		if (row) await notifyActivityAdded(services.push, row);
+	}
 	return { handled: true, kind: "persisted" as const, batchId: batch.id };
 }
