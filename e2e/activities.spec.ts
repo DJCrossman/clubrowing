@@ -82,6 +82,15 @@ test("an activity's details open from its row before the server responds", async
 	await expect(
 		details.getByRole("heading", { name: "4 x 500m" }),
 	).toBeVisible();
+	await expect(
+		details.getByRole("heading", { name: "Intervals" }),
+	).toBeVisible();
+	await expect(
+		details
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: /^500\s?m$/ }) }),
+	).toHaveCount(4);
+	await expect(details.getByText("Synced from Concept2")).toBeVisible();
 
 	await details.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(details).toBeHidden();

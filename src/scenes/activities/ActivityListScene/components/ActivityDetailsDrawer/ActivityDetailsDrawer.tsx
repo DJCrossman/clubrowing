@@ -29,11 +29,16 @@ import {
 } from "@/lib/formatters";
 import { routes } from "@/lib/routes";
 import type { Activity, Boats, Ergs, Workouts } from "@/lib/trpc/types";
-import type { CreateActivity, UpdateActivity } from "@/schemas";
+import type {
+	Concept2Activity,
+	CreateActivity,
+	UpdateActivity,
+} from "@/schemas";
 import {
 	ActivityForm,
 	type UploadErgActivityScreenshot,
 } from "../ActivityForm/ActivityForm";
+import { ActivitySplitsTable } from "./ActivitySplitsTable";
 
 interface ActivityDetailsDrawerProps {
 	isOpen: boolean;
@@ -65,6 +70,33 @@ export const ActivityDetailsDrawer = ({
 		return null;
 	}
 
+	// tRPC infers every field of the loose Concept2 schema as unknown.
+	const conceptTwoData =
+		activity.type === "erg"
+			? (activity.conceptTwoData as Concept2Activity | undefined)
+			: undefined;
+	const strokeRate =
+		conceptTwoData?.stroke_rate || activity.stravaData?.average_cadence;
+	const heartRate =
+		conceptTwoData?.heart_rate?.average ||
+		activity.stravaData?.average_heartrate;
+	// Concept2's watts formula, with pace in seconds per metre.
+	const averageWatts =
+		conceptTwoData && activity.distance > 0 && activity.elapsedTime > 0
+			? 2.8 / (activity.elapsedTime / 1000 / activity.distance) ** 3
+			: activity.stravaData?.average_watts;
+	const maxHeartRate =
+		conceptTwoData?.heart_rate?.max ||
+		Math.max(
+			0,
+			...(
+				conceptTwoData?.workout?.intervals ??
+				conceptTwoData?.workout?.splits ??
+				[]
+			).map((part) => part.heart_rate?.max ?? 0),
+		) ||
+		activity.stravaData?.max_heartrate;
+
 	const handleClose = () => {
 		setIsEditing(false);
 		onClose();
@@ -91,6 +123,7 @@ export const ActivityDetailsDrawer = ({
 							>
 								{activity.type === "water" ? "Water" : "Erg"}
 							</Badge>
+							{conceptTwoData && <Badge variant="outline">Concept2</Badge>}
 							{activity.isStrava && <Badge variant="outline">Strava</Badge>}
 						</div>
 						<DrawerTitle className="truncate text-lg">
@@ -183,8 +216,62 @@ export const ActivityDetailsDrawer = ({
 									{activity.workoutType.charAt(0).toUpperCase() +
 										activity.workoutType.slice(1)}
 								</DetailTile>
+								{!!strokeRate && (
+									<DetailTile label="Avg rate" className="last:odd:col-span-2">
+										{Math.round(strokeRate)}
+										<span className="text-xs font-normal text-muted-foreground">
+											{" "}
+											spm
+										</span>
+									</DetailTile>
+								)}
+								{!!heartRate && (
+									<DetailTile
+										label="Heart rate"
+										className="last:odd:col-span-2"
+									>
+										{Math.round(heartRate)}
+										<span className="text-xs font-normal text-muted-foreground">
+											{" "}
+											bpm
+										</span>
+									</DetailTile>
+								)}
 							</DetailTiles>
+							{conceptTwoData?.workout && (
+								<ActivitySplitsTable workout={conceptTwoData.workout} />
+							)}
 							<DetailList>
+								{!!averageWatts && (
+									<DetailRow label="Avg watts">
+										{Math.round(averageWatts)} W
+									</DetailRow>
+								)}
+								{!!conceptTwoData?.calories_total && (
+									<DetailRow label="Calories">
+										{conceptTwoData.calories_total}
+									</DetailRow>
+								)}
+								{!!maxHeartRate && (
+									<DetailRow label="Max heart rate">
+										{Math.round(maxHeartRate)} bpm
+									</DetailRow>
+								)}
+								{!!conceptTwoData?.drag_factor && (
+									<DetailRow label="Drag factor">
+										{conceptTwoData.drag_factor}
+									</DetailRow>
+								)}
+								{!!conceptTwoData?.stroke_count && (
+									<DetailRow label="Strokes">
+										{conceptTwoData.stroke_count}
+									</DetailRow>
+								)}
+								{!!conceptTwoData?.rest_time && (
+									<DetailRow label="Rest">
+										{formatCompactDuration(conceptTwoData.rest_time * 100)}
+									</DetailRow>
+								)}
 								<DetailRow label="Athlete">{activity.athlete.name}</DetailRow>
 								{activity.type === "water" && activity.boat && (
 									<DetailRow label="Boat">{activity.boat.name}</DetailRow>
@@ -197,8 +284,18 @@ export const ActivityDetailsDrawer = ({
 										{activity.workout.description}
 									</DetailRow>
 								)}
-								{activity.isStrava && (
+								{conceptTwoData && (
+									<DetailRow label="Source">
+										Synced from Concept2{activity.isStrava && " and Strava"}
+									</DetailRow>
+								)}
+								{!conceptTwoData && activity.isStrava && (
 									<DetailRow label="Source">Synced from Strava</DetailRow>
+								)}
+								{conceptTwoData?.comments && (
+									<DetailRow label="Comments">
+										{conceptTwoData.comments}
+									</DetailRow>
 								)}
 							</DetailList>
 						</>

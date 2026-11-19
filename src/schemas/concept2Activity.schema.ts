@@ -73,6 +73,21 @@ export const concept2ActivitySchema = z.looseObject({
 					}),
 				)
 				.optional(),
+			splits: z
+				.array(
+					z.looseObject({
+						time: z.number().optional(),
+						distance: z.number().optional(),
+						stroke_rate: z.number().optional(),
+						heart_rate: z
+							.looseObject({
+								average: z.number().optional(),
+								max: z.number().optional(),
+							})
+							.optional(),
+					}),
+				)
+				.optional(),
 		})
 		.nullish(),
 });

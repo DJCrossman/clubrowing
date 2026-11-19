@@ -677,6 +677,25 @@ function trainingHistory(
 	): Prisma.activityCreateManyInput => {
 		const startDate = new Date(today.getTime() + daysFromToday * DAY);
 		concept2ResultId += 1;
+		const strokeRate = distance === 10_000 ? 20 : 30;
+		const wearsHeartRateBelt = athlete % 2 === 1;
+		// A 6K test has totals only, as a result typed into the Logbook website does.
+		const partCount = distance === 10_000 ? 5 : distance === 2000 ? 4 : 0;
+		const parts = Array.from({ length: partCount }, (_, part) => ({
+			type: "distance",
+			distance: distance / partCount,
+			time: (elapsedSeconds * 10) / partCount + [6, 2, -2, -6, 0][part],
+			calories_total: Math.round((distance / partCount) * 0.07),
+			stroke_rate: strokeRate + (part === partCount - 1 ? 2 : 0),
+			heart_rate: wearsHeartRateBelt
+				? {
+						average: 150 + 6 * part,
+						min: 144 + 6 * part,
+						max: 156 + 6 * part,
+						ending: 155 + 6 * part,
+					}
+				: { average: 0, min: 0, max: 0, ending: 0 },
+		}));
 		return {
 			name,
 			startDate,
@@ -704,8 +723,36 @@ function trainingHistory(
 				weight_class: "H",
 				verified: true,
 				ranked: false,
-				stroke_rate: distance === 10_000 ? 20 : 30,
+				stroke_rate: strokeRate,
 				drag_factor: 120,
+				...(partCount > 0 && {
+					calories_total: Math.round(distance * 0.07),
+					stroke_count: Math.round((strokeRate * elapsedSeconds) / 60),
+					workout:
+						workoutType === "FixedDistanceInterval"
+							? {
+									intervals: parts.map((part) => ({
+										...part,
+										rest_time: 600,
+									})),
+								}
+							: { splits: parts },
+				}),
+				// ErgData mostly uploads a result-level max of 0 and the real max per part.
+				...(partCount > 0 &&
+					wearsHeartRateBelt && {
+						heart_rate: {
+							average: 150 + 3 * (partCount - 1),
+							min: 144,
+							max: 0,
+							ending: 149 + 6 * partCount,
+							recovery: 120,
+						},
+					}),
+				...(workoutType === "FixedDistanceInterval" && {
+					rest_time: 2400,
+					comments: "Held the rate through the last two.",
+				}),
 			},
 		};
 	};
