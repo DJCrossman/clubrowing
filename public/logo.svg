@@ -3,10 +3,10 @@
 	<defs>
 		<g id="oar">
 			<path d="M-15 206a15 15 0 0 0 30 0V-58c0-40 41-46 41-86v-68c0-14-8-22-22-24q-34-6-68 0c-14 2-22 10-22 24v68c0 40 41 46 41 86z"/>
-			<path fill="#1D5FA8" stroke="none" d="M-62-186H62v36H-62z"/>
+			<path fill="#27272A" stroke="none" d="M-62-186H62v36H-62z"/>
 		</g>
 	</defs>
-	<rect width="512" height="512" rx="142" fill="#1D5FA8"/>
+	<rect width="512" height="512" rx="142" fill="#27272A"/>
 	<use href="#oar" fill="#fff" transform="translate(256 280) rotate(-37)"/>
-	<use href="#oar" fill="#fff" stroke="#1D5FA8" stroke-width="12" paint-order="stroke" transform="translate(256 280) rotate(37)"/>
+	<use href="#oar" fill="#fff" stroke="#27272A" stroke-width="12" paint-order="stroke" transform="translate(256 280) rotate(37)"/>
 </svg>
