@@ -18,7 +18,7 @@ const logger = createLogger("chat.notify");
 type NotifiableMessage = Pick<
 	message,
 	"channelId" | "authorUserId" | "parentId" | "text" | "gif" | "forwardedFromId"
->;
+> & { attachments?: { name: string | null }[] };
 
 type NotifiableChannel = {
 	kind: ChannelKind;
@@ -125,7 +125,15 @@ export function buildMessageNotification(
 ): PushMessage {
 	return {
 		title: channelName ? `${authorName} in ${channelName}` : authorName,
-		body: getMessagePreview(message),
+		body: getMessagePreview({
+			...message,
+			photoCount:
+				message.attachments?.filter(({ name }) => name === null).length ?? 0,
+			fileCount:
+				message.attachments?.filter(({ name }) => name !== null).length ?? 0,
+			fileName:
+				message.attachments?.find(({ name }) => name !== null)?.name ?? null,
+		}),
 		url: message.parentId
 			? routes.chat.thread(message.channelId, message.parentId)
 			: routes.chat.channel(message.channelId),

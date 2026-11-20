@@ -3,6 +3,8 @@ import { z } from "zod";
 export const EVERYONE_CHANNEL_ID = "everyone";
 export const MAX_MESSAGE_LENGTH = 4000;
 export const MAX_DM_MEMBERS = 9;
+export const MAX_MESSAGE_ATTACHMENTS = 4;
+const MAX_FILE_BYTES = 4 * 1024 * 1024;
 
 const messageTextSchema = z
 	.string()
@@ -13,8 +15,11 @@ const messageTextSchema = z
 	);
 const gifSchema = z.string().trim().min(1).max(100);
 
-const hasContent = (value: { text?: string; gif?: string }) =>
-	!!value.text || !!value.gif;
+const hasContent = (value: {
+	text?: string;
+	gif?: string;
+	attachmentIds?: string[];
+}) => !!value.text || !!value.gif || !!value.attachmentIds?.length;
 const missingContent = {
 	message: "A message needs text or a GIF",
 	path: ["text"],
@@ -36,8 +41,19 @@ export const sendMessageSchema = z
 		text: messageTextSchema.optional(),
 		gif: gifSchema.optional(),
 		quotedMessageId: z.string().optional(),
+		attachmentIds: z
+			.array(z.string())
+			.max(
+				MAX_MESSAGE_ATTACHMENTS,
+				`A message can carry up to ${MAX_MESSAGE_ATTACHMENTS} files`,
+			)
+			.transform((ids) => [...new Set(ids)])
+			.optional(),
 	})
-	.refine(hasContent, missingContent);
+	.refine(hasContent, {
+		message: "A message needs text, a GIF or a file",
+		path: ["text"],
+	});
 export type SendMessage = z.infer<typeof sendMessageSchema>;
 
 export const replyInThreadSchema = z
@@ -106,6 +122,18 @@ export type EditMessage = z.infer<typeof editMessageSchema>;
 export const messageComposerSchema = z.object({
 	text: messageTextSchema,
 	alsoSendToChannel: z.boolean(),
+	files: z
+		.array(z.instanceof(File))
+		.max(
+			MAX_MESSAGE_ATTACHMENTS,
+			`A message can carry up to ${MAX_MESSAGE_ATTACHMENTS} files`,
+		)
+		// Pictures are exempt: the browser shrinks them before they are uploaded.
+		.refine(
+			(files) =>
+				files.every((file) => isPicture(file) || file.size <= MAX_FILE_BYTES),
+			"Files can be up to 4 MB",
+		),
 });
 export type MessageComposerValues = z.infer<typeof messageComposerSchema>;
 
@@ -114,3 +142,10 @@ export const chatTargetFormSchema = z.object({
 	note: messageTextSchema,
 });
 export type ChatTargetFormValues = z.infer<typeof chatTargetFormSchema>;
+
+export function isPicture(file: File) {
+	return (
+		file.type.startsWith("image/") ||
+		/\.(jpg|jpeg|png|webp|gif|heic|heif|avif|tif|tiff|bmp)$/i.test(file.name)
+	);
+}

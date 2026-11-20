@@ -5,6 +5,8 @@ import type { ChatMessage } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { formatMessageTime } from "../../utils/messageFormatting";
 import { GifTile } from "../GifPicker/GifTile";
+import { MessageFiles } from "../MessageFiles/MessageFiles";
+import { MessagePhotos } from "../MessagePhotos/MessagePhotos";
 import { ForwardedBlock } from "./ForwardedBlock";
 import { LinkifiedText } from "./LinkifiedText";
 import { LinkPreviewCard } from "./LinkPreviewCard";
@@ -92,6 +94,14 @@ export function MessageRow({
 						variant={compact ? "compact" : "message"}
 					/>
 				)}
+				{message.photos.length > 0 && (
+					<MessagePhotos
+						photos={message.photos}
+						authorName={author.name}
+						compact={compact}
+					/>
+				)}
+				{message.files.length > 0 && <MessageFiles files={message.files} />}
 				{message.reactions.length > 0 && (
 					<ReactionChips
 						reactions={message.reactions}

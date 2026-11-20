@@ -122,6 +122,77 @@ describe("buildMessageNotification", () => {
 		).toContain("nailed it");
 	});
 
+	it("names the photos when there is no text, and shows the text when there is", () => {
+		expect(
+			buildMessageNotification(
+				{ ...message, text: null, attachments: [{ name: null }] },
+				"Avery Coxwell",
+				null,
+			).body,
+		).toBe("Photo");
+		expect(
+			buildMessageNotification(
+				{
+					...message,
+					text: null,
+					attachments: [{ name: null }, { name: null }, { name: null }],
+				},
+				"Avery Coxwell",
+				null,
+			).body,
+		).toBe("3 photos");
+		expect(
+			buildMessageNotification(
+				{ ...message, attachments: [{ name: null }, { name: null }] },
+				"Avery Coxwell",
+				null,
+			).body,
+		).toBe("Boats out at 6");
+	});
+
+	it("names a single file, and counts several files or a mix", () => {
+		expect(
+			buildMessageNotification(
+				{ ...message, text: null, attachments: [{ name: "Lineups.pdf" }] },
+				"Avery Coxwell",
+				null,
+			).body,
+		).toContain("Lineups.pdf");
+		expect(
+			buildMessageNotification(
+				{
+					...message,
+					text: null,
+					attachments: [{ name: "Lineups.pdf" }, { name: "Waivers.zip" }],
+				},
+				"Avery Coxwell",
+				null,
+			).body,
+		).toBe("2 files");
+		expect(
+			buildMessageNotification(
+				{
+					...message,
+					text: null,
+					attachments: [
+						{ name: null },
+						{ name: "Lineups.pdf" },
+						{ name: null },
+					],
+				},
+				"Avery Coxwell",
+				null,
+			).body,
+		).toBe("3 files");
+		expect(
+			buildMessageNotification(
+				{ ...message, attachments: [{ name: "Lineups.pdf" }] },
+				"Avery Coxwell",
+				null,
+			).body,
+		).toBe("Boats out at 6");
+	});
+
 	it("says a forward with no note is a forward", () => {
 		expect(
 			buildMessageNotification(

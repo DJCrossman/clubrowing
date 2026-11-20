@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import type { SendMessage } from "@/schemas/chat.schema";
 import type { ViewerContext } from "@/server/context";
 import { findAccessibleChannel } from "@/server/routers/chat/common/chat-access";
@@ -15,16 +16,39 @@ export async function sendMessageCommand(
 	if (input.quotedMessageId) {
 		await assertQuotable(ctx, input.quotedMessageId, input.channelId);
 	}
-	const message = await db.message.create({
-		data: {
-			channelId: input.channelId,
-			authorUserId: user.id,
-			text: input.text || null,
-			gif: input.gif || null,
-			quotedMessageId: input.quotedMessageId ?? null,
-		},
-		include: messageInclude,
-	});
+	const message = await db.message
+		.create({
+			data: {
+				channelId: input.channelId,
+				authorUserId: user.id,
+				text: input.text || null,
+				gif: input.gif || null,
+				quotedMessageId: input.quotedMessageId ?? null,
+				// Only the sender's own uploads that no message or activity holds yet, so a
+				// double send can't attach the same file twice.
+				attachments: {
+					connect: input.attachmentIds?.map((id) => ({
+						id,
+						userId: user.id,
+						messageId: null,
+						activity: null,
+					})),
+				},
+			},
+			include: messageInclude,
+		})
+		.catch((error) => {
+			if (
+				error instanceof Prisma.PrismaClientKnownRequestError &&
+				error.code === "P2018"
+			) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Those files can't be added. Try adding them again.",
+				});
+			}
+			throw error;
+		});
 	const [dto] = await loadMessageDtos(ctx, [message]);
 	notifyChannelAfterResponse(ctx, message);
 	return dto;

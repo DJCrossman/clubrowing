@@ -88,6 +88,9 @@ describe("history visibility for people added later", () => {
 		text: "Earlier plans",
 		gif: null,
 		forwardedFromId: null,
+		photoCount: 0,
+		fileCount: 0,
+		fileName: null,
 		createdAt: before,
 	};
 	const map = (userId: string) =>

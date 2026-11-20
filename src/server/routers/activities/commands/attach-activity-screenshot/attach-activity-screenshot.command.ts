@@ -8,9 +8,18 @@ export async function attachActivityScreenshotCommand(
 ) {
 	const upload = await db.upload.findUnique({
 		where: { id: input.uploadId },
-		select: { userId: true, activity: { select: { id: true } } },
+		select: {
+			userId: true,
+			messageId: true,
+			activity: { select: { id: true } },
+		},
 	});
-	if (!upload || upload.userId !== user.id || upload.activity) {
+	if (
+		!upload ||
+		upload.userId !== user.id ||
+		upload.activity ||
+		upload.messageId
+	) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
 			message: "That photo can't be used. Add it again.",

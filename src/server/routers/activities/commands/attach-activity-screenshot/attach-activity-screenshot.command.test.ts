@@ -50,6 +50,17 @@ describe("attachActivityScreenshotCommand", () => {
 		expect(db.activity.updateMany).not.toHaveBeenCalled();
 	});
 
+	it("refuses an upload a chat message already holds", async () => {
+		const { db, ctx } = createContext({
+			upload: { userId: "user_me", messageId: "msg_1", activity: null },
+		});
+
+		await expect(
+			attachActivityScreenshotCommand(input, ctx),
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		expect(db.activity.updateMany).not.toHaveBeenCalled();
+	});
+
 	it("refuses when the activity already has a screenshot", async () => {
 		const { ctx } = createContext({ updatedCount: 0 });
 
@@ -66,7 +77,11 @@ function createContext({
 	upload = { userId: "user_me", activity: null },
 	updatedCount = 1,
 }: {
-	upload?: { userId: string; activity: { id: string } | null } | null;
+	upload?: {
+		userId: string;
+		messageId?: string | null;
+		activity: { id: string } | null;
+	} | null;
 	updatedCount?: number;
 }) {
 	const db = {

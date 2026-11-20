@@ -17,6 +17,7 @@ export const messageInclude = {
 			gif: true,
 			deletedAt: true,
 			authorUserId: true,
+			attachments: { select: { name: true }, orderBy: { createdAt: "asc" } },
 		},
 	},
 	forwardedFrom: {
@@ -28,7 +29,12 @@ export const messageInclude = {
 			createdAt: true,
 			authorUserId: true,
 			channel: { select: { kind: true, groupId: true } },
+			attachments: { select: { name: true }, orderBy: { createdAt: "asc" } },
 		},
+	},
+	attachments: {
+		select: { id: true, name: true, size: true },
+		orderBy: { createdAt: "asc" },
 	},
 	replies: {
 		where: { deletedAt: null },
@@ -71,6 +77,26 @@ export function mapToMessageDto(
 		author: getChatUser(users, message.authorUserId),
 		text: deleted ? null : message.text,
 		gif: deleted ? null : message.gif,
+		photos: deleted
+			? []
+			: message.attachments.flatMap(({ id, name }) =>
+					name === null
+						? [
+								{
+									id,
+									url: `/api/v1/chat/attachments/${id}`,
+									thumbnailUrl: `/api/v1/chat/attachments/${id}?size=thumbnail`,
+								},
+							]
+						: [],
+				),
+		files: deleted
+			? []
+			: message.attachments.flatMap(({ id, name, size }) =>
+					name === null
+						? []
+						: [{ id, url: `/api/v1/chat/attachments/${id}`, name, size }],
+				),
 		deleted,
 		isMine,
 		canEdit: !deleted && isMine && message.text !== null,
@@ -125,6 +151,15 @@ export function mapQuotedMessage(
 		author: getChatUser(users, quoted.authorUserId),
 		text: deleted ? null : quoted.text,
 		gif: deleted ? null : quoted.gif,
+		photoCount: deleted
+			? 0
+			: quoted.attachments.filter(({ name }) => name === null).length,
+		fileCount: deleted
+			? 0
+			: quoted.attachments.filter(({ name }) => name !== null).length,
+		fileName: deleted
+			? null
+			: (quoted.attachments.find(({ name }) => name !== null)?.name ?? null),
 		deleted,
 	};
 }
@@ -141,6 +176,15 @@ export function mapForwardedMessage(
 		author: getChatUser(users, original.authorUserId),
 		text: deleted ? null : original.text,
 		gif: deleted ? null : original.gif,
+		photoCount: deleted
+			? 0
+			: original.attachments.filter(({ name }) => name === null).length,
+		fileCount: deleted
+			? 0
+			: original.attachments.filter(({ name }) => name !== null).length,
+		fileName: deleted
+			? null
+			: (original.attachments.find(({ name }) => name !== null)?.name ?? null),
 		createdAt: original.createdAt.toISOString(),
 		deleted,
 	};

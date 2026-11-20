@@ -6,6 +6,7 @@ import {
 	IconAt,
 	IconCheck,
 	IconGif,
+	IconLoader2,
 	IconMoodSmile,
 	IconPencil,
 	IconPlus,
@@ -27,10 +28,12 @@ import {
 import { getMessagePreviewText } from "../../utils/messageFormatting";
 import { EmojiPicker } from "../EmojiPicker/EmojiPicker";
 import { GifPicker } from "../GifPicker/GifPicker";
+import { ComposerFileStrip } from "./ComposerFileStrip";
 
 export type ComposerSubmission = {
 	text?: string;
 	gif?: string;
+	files: File[];
 	alsoSendToChannel: boolean;
 };
 
@@ -60,12 +63,16 @@ export function MessageComposer({
 	const alsoSendToId = useId();
 	const isThread = !!alsoSendToLabel;
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const draftBeforeEdit = useRef<MessageComposerValues | null>(null);
 	const form = useForm<MessageComposerValues>({
 		resolver: zodResolver(messageComposerSchema),
-		defaultValues: { text: "", alsoSendToChannel: false },
+		defaultValues: { text: "", alsoSendToChannel: false, files: [] },
 	});
 	const hasText = !!useWatch({ control: form.control, name: "text" })?.trim();
+	const files = useWatch({ control: form.control, name: "files" });
+	const canSend = hasText || files.length > 0;
+	const isSending = form.formState.isSubmitting && files.length > 0;
 	const { ref: registerTextRef, ...textField } = form.register("text");
 
 	useEffect(() => {
@@ -78,21 +85,25 @@ export function MessageComposer({
 		if (!editingMessage) return;
 		draftBeforeEdit.current ??= form.getValues();
 		const text = editingMessage.text ?? "";
-		form.reset({ text, alsoSendToChannel: false });
+		form.reset({ text, alsoSendToChannel: false, files: [] });
 		textareaRef.current?.focus();
 		textareaRef.current?.setSelectionRange(text.length, text.length);
 	}, [editingMessage, form]);
 
 	const finishEditing = () => {
 		form.reset(
-			draftBeforeEdit.current ?? { text: "", alsoSendToChannel: false },
+			draftBeforeEdit.current ?? {
+				text: "",
+				alsoSendToChannel: false,
+				files: [],
+			},
 		);
 		draftBeforeEdit.current = null;
 		onCancelEdit?.();
 	};
 
 	const submit = form.handleSubmit(async (values) => {
-		if (!values.text) return;
+		if (!values.text && !values.files.length) return;
 		if (editingMessage) {
 			await onSaveEdit?.(editingMessage, values.text).then(
 				finishEditing,
@@ -100,7 +111,14 @@ export function MessageComposer({
 			);
 			return;
 		}
-		form.reset({ text: "", alsoSendToChannel: false });
+		if (values.files.length) {
+			await onSubmit(values).then(
+				() => form.reset({ text: "", alsoSendToChannel: false, files: [] }),
+				() => undefined,
+			);
+			return;
+		}
+		form.reset({ text: "", alsoSendToChannel: false, files: [] });
 		try {
 			await onSubmit(values);
 		} catch {
@@ -159,6 +177,19 @@ export function MessageComposer({
 					editingMessage && "border-ring",
 				)}
 			>
+				{files.length > 0 && (
+					<ComposerFileStrip
+						files={files}
+						disabled={isSending}
+						onRemove={(index) =>
+							form.setValue(
+								"files",
+								files.filter((_, fileIndex) => fileIndex !== index),
+								{ shouldValidate: true },
+							)
+						}
+					/>
+				)}
 				<Textarea
 					{...textField}
 					ref={(element) => {
@@ -166,6 +197,7 @@ export function MessageComposer({
 						textareaRef.current = element;
 					}}
 					rows={1}
+					readOnly={isSending}
 					placeholder={placeholder}
 					aria-label={editingMessage ? "Edit message" : placeholder}
 					onKeyDown={(event) => {
@@ -193,7 +225,7 @@ export function MessageComposer({
 							!event.nativeEvent.isComposing
 						) {
 							event.preventDefault();
-							void submit();
+							if (!isSending) void submit();
 						}
 					}}
 					className={cn(
@@ -208,22 +240,48 @@ export function MessageComposer({
 					)}
 				>
 					{!isThread && !editingMessage && (
-						<ComposerButton label="Attach a file (coming soon)" disabled>
-							<IconPlus />
-						</ComposerButton>
+						<>
+							<ComposerButton
+								label="Add files"
+								disabled={isSending}
+								onClick={() => fileInputRef.current?.click()}
+							>
+								<IconPlus />
+							</ComposerButton>
+							<input
+								ref={fileInputRef}
+								type="file"
+								multiple
+								hidden
+								aria-label="Choose files"
+								onChange={(event) => {
+									const chosen = [...(event.target.files ?? [])];
+									event.target.value = "";
+									if (!chosen.length) return;
+									form.setValue("files", [...files, ...chosen], {
+										shouldValidate: true,
+									});
+								}}
+							/>
+						</>
 					)}
 					{!editingMessage && (
 						<GifPicker
 							onSelect={(gif) =>
 								onSubmit({
 									gif,
+									files: [],
 									alsoSendToChannel: form.getValues("alsoSendToChannel"),
 								})
 									.then(() => form.setValue("alsoSendToChannel", false))
 									.catch(() => undefined)
 							}
 						>
-							<ComposerButton label="Add a GIF" className="[&_svg]:size-5">
+							<ComposerButton
+								label="Add a GIF"
+								className="[&_svg]:size-5"
+								disabled={isSending}
+							>
 								<IconGif />
 							</ComposerButton>
 						</GifPicker>
@@ -250,7 +308,7 @@ export function MessageComposer({
 							});
 						}}
 					>
-						<ComposerButton label="Add emoji">
+						<ComposerButton label="Add emoji" disabled={isSending}>
 							<IconMoodSmile />
 						</ComposerButton>
 					</EmojiPicker>
@@ -287,21 +345,30 @@ export function MessageComposer({
 						size="icon"
 						className={cn(
 							"ml-auto h-[30px] w-8 rounded-md disabled:opacity-100",
-							hasText
+							canSend
 								? "bg-primary text-primary-foreground hover:bg-primary/90"
 								: "bg-muted text-muted-foreground",
 						)}
-						disabled={!hasText}
+						disabled={!canSend || isSending}
+						aria-busy={isSending}
 						aria-label={editingMessage ? "Save edit" : "Send message"}
 						title={editingMessage ? "Save" : "Send"}
 					>
 						{editingMessage && <IconCheck />}
-						{!editingMessage && <IconSend />}
+						{!editingMessage && isSending && (
+							<IconLoader2 aria-hidden className="animate-spin" />
+						)}
+						{!editingMessage && !isSending && <IconSend />}
 					</Button>
 				</div>
 				{form.formState.errors.text && (
 					<p className="px-3 pb-2 text-xs text-destructive">
 						{form.formState.errors.text.message}
+					</p>
+				)}
+				{form.formState.errors.files && (
+					<p className="px-3 pb-2 text-xs text-destructive">
+						{form.formState.errors.files.message}
 					</p>
 				)}
 			</form>

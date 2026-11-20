@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { getAttachmentsPreview } from "@/lib/chat/attachments";
 import type { ChatMessage } from "@/lib/trpc/types";
 
 export function groupMessagesByDay<T extends { createdAt: string }>(
@@ -44,10 +45,16 @@ export function formatReactors(names: string[]) {
 }
 
 export function getMessagePreviewText(
-	message: Pick<ChatMessage, "text" | "gif" | "forwarded">,
+	message: Pick<ChatMessage, "text" | "gif" | "photos" | "files" | "forwarded">,
 ) {
 	if (message.text) return message.text;
 	if (message.gif) return `GIF: ${message.gif}`;
+	const attachments = getAttachmentsPreview({
+		photoCount: message.photos.length,
+		fileCount: message.files.length,
+		fileName: message.files[0]?.name ?? null,
+	});
+	if (attachments) return attachments;
 	if (message.forwarded) {
 		return (
 			message.forwarded.text ??

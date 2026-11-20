@@ -15,9 +15,10 @@ import { Label } from "@/components/ui/label";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
 import { routes } from "@/lib/routes";
 import type { ChatChannel, ChatMessage } from "@/lib/trpc/types";
-import { MAX_DM_MEMBERS } from "@/schemas/chat.schema";
+import { isPicture, MAX_DM_MEMBERS } from "@/schemas/chat.schema";
 import {
 	ChatEmptyState,
 	DeleteMessageDialog,
@@ -186,12 +187,19 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 												messages.findLast((message) => message.canEdit) ?? null,
 											)
 										}
-										onSubmit={async ({ text, gif }) => {
+										onSubmit={async ({ text, gif, files }) => {
+											const attachmentIds = files.length
+												? await uploadFiles(files).catch((error: Error) => {
+														toast.error(error.message);
+														throw error;
+													})
+												: undefined;
 											await sendMessage.mutateAsync({
 												channelId,
 												text,
 												gif,
 												quotedMessageId: quotedMessage?.id,
+												attachmentIds,
 											});
 											setQuote(null);
 										}}
@@ -322,4 +330,38 @@ function getBreadcrumbs(channel: ChatChannel | undefined, isAdmin: boolean) {
 		{ label: "Groups", href: routes.groups.list() },
 		{ label: channel.name },
 	];
+}
+
+async function uploadFiles(files: File[]) {
+	const attachmentIds: string[] = [];
+	for (const file of files) {
+		const body = new FormData();
+		if (isPicture(file)) {
+			body.append(
+				"file",
+				await fitPhotoToUploadLimit({ file, longEdge: 2560 }),
+			);
+		} else {
+			body.append("file", file);
+			body.append("kind", "file");
+		}
+		const response = await fetch("/api/v1/uploads", {
+			method: "POST",
+			body,
+		}).catch(() => {
+			throw new Error(
+				"We couldn't upload your file. Check your connection and try again.",
+			);
+		});
+		const result: { id?: string; error?: string } = await response
+			.json()
+			.catch(() => ({}));
+		if (!response.ok || !result.id) {
+			throw new Error(
+				result.error ?? "We couldn't upload your file. Try again.",
+			);
+		}
+		attachmentIds.push(result.id);
+	}
+	return attachmentIds;
 }

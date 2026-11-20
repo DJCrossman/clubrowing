@@ -1,10 +1,14 @@
+import { createLogger } from "@/lib/logger";
 import type { DeleteMessage } from "@/schemas/chat.schema";
+import { removeUploads } from "@/server/common/remove-uploads";
 import type { ViewerContext } from "@/server/context";
 import {
 	findAccessibleMessage,
 	isChatAdmin,
 } from "@/server/routers/chat/common/chat-access";
 import { TRPCError } from "@/server/trpc";
+
+const logger = createLogger("chat.delete-message");
 
 export async function deleteMessageCommand(
 	input: DeleteMessage,
@@ -22,6 +26,21 @@ export async function deleteMessageCommand(
 		await db.message.update({
 			where: { id: message.id },
 			data: { deletedAt: new Date() },
+		});
+	}
+	// A later cleanup retries photos left behind, so this never fails the delete.
+	try {
+		await removeUploads({
+			db,
+			uploads: await db.upload.findMany({
+				where: { messageId: message.id },
+				select: { id: true, url: true },
+			}),
+		});
+	} catch (error) {
+		logger.error("chat message photo removal failed", {
+			messageId: message.id,
+			error: error instanceof Error ? error.message : String(error),
 		});
 	}
 	return {

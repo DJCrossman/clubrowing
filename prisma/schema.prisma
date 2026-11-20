@@ -450,6 +450,7 @@ model message {
   forwardedFrom   message?           @relation("forward", fields: [forwardedFromId], references: [id], onDelete: SetNull)
   forwards        message[]          @relation("forward")
   reactions       message_reaction[]
+  attachments     upload[]
 
   @@index([channelId, parentId, createdAt])
   @@index([parentId, createdAt])
@@ -471,8 +472,12 @@ model upload {
   userId    String
   url       String
   size      Int
+  name      String?
+  messageId String?
   createdAt DateTime @default(now())
   activity  activity?
+  message   message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
+  @@index([messageId])
 }

@@ -1,4 +1,5 @@
 import type { ChannelKind, Prisma } from "@/generated/prisma/client";
+import { getAttachmentsPreview } from "@/lib/chat/attachments";
 import { type ChatUser, getChatUser } from "./chat-user-names";
 
 const PREVIEW_LENGTH = 140;
@@ -26,6 +27,9 @@ export type LastMessageRow = {
 	text: string | null;
 	gif: string | null;
 	forwardedFromId: string | null;
+	photoCount: number;
+	fileCount: number;
+	fileName: string | null;
 	createdAt: Date;
 };
 
@@ -135,9 +139,14 @@ export function getMessagePreview(message: {
 	text: string | null;
 	gif: string | null;
 	forwardedFromId: string | null;
+	photoCount: number;
+	fileCount: number;
+	fileName: string | null;
 }) {
 	if (message.text) return message.text.slice(0, PREVIEW_LENGTH);
 	if (message.gif) return `GIF: ${message.gif}`;
+	const attachments = getAttachmentsPreview(message);
+	if (attachments) return attachments;
 	if (message.forwardedFromId) return "Forwarded a message";
 	return "";
 }

@@ -150,12 +150,25 @@ function getMyVisibleFrom(
 async function findLastMessages(db: Db, channelIds: string[]) {
 	if (channelIds.length === 0) return [];
 	return db.$queryRaw<LastMessageRow[]>`
-		SELECT DISTINCT ON (m."channelId")
-			m."channelId", m."authorUserId", m."text", m."gif", m."forwardedFromId", m."createdAt"
-		FROM "message" m
-		WHERE m."channelId" IN (${Prisma.join(channelIds)})
-			AND m."parentId" IS NULL
-			AND m."deletedAt" IS NULL
-		ORDER BY m."channelId", m."createdAt" DESC
+		SELECT
+			last."channelId", last."authorUserId", last."text", last."gif", last."forwardedFromId", last."createdAt",
+			attachments."photoCount", attachments."fileCount", attachments."fileName"
+		FROM (
+			SELECT DISTINCT ON (m."channelId")
+				m."id", m."channelId", m."authorUserId", m."text", m."gif", m."forwardedFromId", m."createdAt"
+			FROM "message" m
+			WHERE m."channelId" IN (${Prisma.join(channelIds)})
+				AND m."parentId" IS NULL
+				AND m."deletedAt" IS NULL
+			ORDER BY m."channelId", m."createdAt" DESC
+		) last
+		CROSS JOIN LATERAL (
+			SELECT
+				(COUNT(*) FILTER (WHERE u."name" IS NULL))::int AS "photoCount",
+				(COUNT(*) FILTER (WHERE u."name" IS NOT NULL))::int AS "fileCount",
+				(ARRAY_AGG(u."name" ORDER BY u."createdAt") FILTER (WHERE u."name" IS NOT NULL))[1] AS "fileName"
+			FROM "upload" u
+			WHERE u."messageId" = last."id"
+		) attachments
 	`;
 }

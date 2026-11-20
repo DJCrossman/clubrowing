@@ -1,5 +1,6 @@
 import { IconShare3 } from "@tabler/icons-react";
 import { InitialsAvatar } from "@/components/chat/initials-avatar";
+import { getAttachmentsPreview } from "@/lib/chat/attachments";
 import type { ChatMessage } from "@/lib/trpc/types";
 import { GifTile } from "../GifPicker/GifTile";
 
@@ -37,6 +38,11 @@ export function ForwardedBlock({ forwarded }: { forwarded: ForwardedMessage }) {
 						</p>
 					)}
 					{forwarded.gif && <GifTile label={forwarded.gif} variant="compact" />}
+					{getAttachmentsPreview(forwarded) && (
+						<p className="text-sm text-muted-foreground">
+							{getAttachmentsPreview(forwarded)}
+						</p>
+					)}
 				</>
 			)}
 		</div>

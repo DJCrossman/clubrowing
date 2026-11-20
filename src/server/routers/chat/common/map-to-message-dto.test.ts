@@ -44,6 +44,7 @@ const messageRow = (overrides: Partial<MessageRow> = {}): MessageRow => ({
 	quotedMessage: null,
 	forwardedFrom: null,
 	replies: [],
+	attachments: [],
 	...overrides,
 });
 
@@ -75,6 +76,7 @@ describe("mapForwardedMessage", () => {
 		createdAt: at(1),
 		authorUserId: mike.id,
 		channel,
+		attachments: [{ name: null }, { name: "Entry form.pdf" }, { name: null }],
 	});
 
 	it("labels the source channel and resolves the original author", () => {
@@ -86,6 +88,9 @@ describe("mapForwardedMessage", () => {
 			author: mike,
 			text: "Regatta entries close Friday",
 			gif: null,
+			photoCount: 2,
+			fileCount: 1,
+			fileName: "Entry form.pdf",
 			createdAt: at(1).toISOString(),
 			deleted: false,
 		});
@@ -106,7 +111,14 @@ describe("mapForwardedMessage", () => {
 				original({ kind: "everyone", groupId: null }, at(5)),
 				users,
 			),
-		).toMatchObject({ deleted: true, text: null, gif: null });
+		).toMatchObject({
+			deleted: true,
+			text: null,
+			gif: null,
+			photoCount: 0,
+			fileCount: 0,
+			fileName: null,
+		});
 	});
 });
 
@@ -118,10 +130,18 @@ describe("mapQuotedMessage", () => {
 			gif: null,
 			deletedAt: null,
 			authorUserId: priya.id,
+			attachments: [
+				{ name: null },
+				{ name: "Trailer checklist.docx" },
+				{ name: "Keys.txt" },
+			],
 		};
 		expect(mapQuotedMessage(quoted, users)).toMatchObject({
 			author: priya,
 			text: "Who has the trailer keys?",
+			photoCount: 1,
+			fileCount: 2,
+			fileName: "Trailer checklist.docx",
 			deleted: false,
 		});
 		expect(
@@ -129,6 +149,9 @@ describe("mapQuotedMessage", () => {
 		).toMatchObject({
 			deleted: true,
 			text: null,
+			photoCount: 0,
+			fileCount: 0,
+			fileName: null,
 		});
 	});
 
@@ -141,6 +164,7 @@ describe("mapQuotedMessage", () => {
 					gif: null,
 					deletedAt: null,
 					authorUserId: "user_gone",
+					attachments: [],
 				},
 				users,
 			)?.author,
@@ -215,6 +239,44 @@ describe("mapToMessageDto", () => {
 		});
 	});
 
+	it("splits attachments into photos and files in order, and none once deleted", () => {
+		const row = messageRow({
+			attachments: [
+				{ id: "upl_first", name: null, size: 2000 },
+				{ id: "upl_minutes", name: "Minutes.pdf", size: 5120 },
+				{ id: "upl_second", name: null, size: 3000 },
+			],
+		});
+		const dto = mapToMessageDto(row, viewer, users);
+		expect(dto.photos).toEqual([
+			{
+				id: "upl_first",
+				url: "/api/v1/chat/attachments/upl_first",
+				thumbnailUrl: "/api/v1/chat/attachments/upl_first?size=thumbnail",
+			},
+			{
+				id: "upl_second",
+				url: "/api/v1/chat/attachments/upl_second",
+				thumbnailUrl: "/api/v1/chat/attachments/upl_second?size=thumbnail",
+			},
+		]);
+		expect(dto.files).toEqual([
+			{
+				id: "upl_minutes",
+				url: "/api/v1/chat/attachments/upl_minutes",
+				name: "Minutes.pdf",
+				size: 5120,
+			},
+		]);
+		const deleted = mapToMessageDto(
+			{ ...row, deletedAt: at(9) },
+			viewer,
+			users,
+		);
+		expect(deleted.photos).toEqual([]);
+		expect(deleted.files).toEqual([]);
+	});
+
 	it("lets only the author edit, and marks an edited message", () => {
 		const row = messageRow({ editedAt: at(4) });
 		expect(mapToMessageDto(row, viewer, users)).toMatchObject({
@@ -242,6 +304,7 @@ describe("collectMessageUserIds", () => {
 					gif: null,
 					deletedAt: null,
 					authorUserId: priya.id,
+					attachments: [],
 				},
 			}),
 		]);
