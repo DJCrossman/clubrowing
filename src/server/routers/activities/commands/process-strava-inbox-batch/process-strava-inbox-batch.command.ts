@@ -79,6 +79,8 @@ export async function processStravaInboxBatchCommand(
 							boatId: split.concept2.boatId ?? split.strava.boatId,
 							ergId: split.concept2.ergId ?? split.strava.ergId,
 							workoutId: split.concept2.workoutId ?? split.strava.workoutId,
+							screenshotId:
+								split.concept2.screenshotId ?? split.strava.screenshotId,
 						},
 					});
 					continue;
@@ -175,6 +177,7 @@ type ExistingActivity = {
 	boatId: string | null;
 	ergId: string | null;
 	workoutId: string | null;
+	screenshotId: string | null;
 };
 type Concept2OnlyActivity = ExistingActivity & CrossSourceShape;
 
@@ -220,6 +223,7 @@ async function getExistingActivities({
 				boatId: true,
 				ergId: true,
 				workoutId: true,
+				screenshotId: true,
 			},
 		}),
 		db.activity.findMany({
@@ -238,6 +242,7 @@ async function getExistingActivities({
 				boatId: true,
 				ergId: true,
 				workoutId: true,
+				screenshotId: true,
 			},
 		}),
 	]);
@@ -249,6 +254,7 @@ async function getExistingActivities({
 			boatId: row.boatId,
 			ergId: row.ergId,
 			workoutId: row.workoutId,
+			screenshotId: row.screenshotId,
 		};
 		if (row.stravaId !== null) byStravaId.set(row.stravaId, entry);
 		if (row.conceptTwoId !== null)
@@ -274,6 +280,7 @@ async function getExistingActivities({
 					boatId: row.boatId,
 					ergId: row.ergId,
 					workoutId: row.workoutId,
+					screenshotId: row.screenshotId,
 					...concept2MatchShape({
 						startDate: row.startDate,
 						result,

@@ -22,7 +22,10 @@ interface ActivityCreateDrawerProps {
 	boats: Boats;
 	ergs: Ergs;
 	workouts: Workouts;
-	onSubmit: (data: CreateActivity) => Promise<void> | void;
+	onSubmit: (submission: {
+		data: CreateActivity;
+		screenshot: File | null;
+	}) => Promise<void> | void;
 	onUploadErgActivityScreenshot: UploadErgActivityScreenshot;
 	onClose: () => void;
 }
@@ -62,8 +65,8 @@ export const ActivityCreateDrawer = ({
 						boats={boats}
 						ergs={ergs}
 						workouts={workouts}
-						onSubmit={async (data: CreateActivity) => {
-							await onSubmit(data);
+						onSubmit={async (submission) => {
+							await onSubmit(submission);
 							onClose();
 						}}
 						onCancel={onClose}

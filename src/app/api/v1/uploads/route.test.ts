@@ -128,7 +128,7 @@ describe("POST /api/v1/uploads", () => {
 		expect(metadata.height).toBe(2000);
 	});
 
-	it("stores a screenshot as a private WebP no bigger than 1600 pixels", async () => {
+	it("stores a screenshot as a private WebP no bigger than 800 pixels", async () => {
 		const response = await POST(
 			uploadRequest(await png(3000, 2000), { kind: "screenshot" }),
 		);
@@ -143,8 +143,8 @@ describe("POST /api/v1/uploads", () => {
 		});
 		const metadata = await sharp(stored).metadata();
 		expect(metadata.format).toBe("webp");
-		expect(metadata.width).toBeLessThanOrEqual(1600);
-		expect(metadata.height).toBeLessThanOrEqual(1600);
+		expect(metadata.width).toBeLessThanOrEqual(800);
+		expect(metadata.height).toBeLessThanOrEqual(800);
 		expect(create).toHaveBeenCalledWith({
 			data: {
 				userId,

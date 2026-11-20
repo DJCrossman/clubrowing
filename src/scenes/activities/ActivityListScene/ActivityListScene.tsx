@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { startTransition, useOptimistic } from "react";
+import { toast } from "sonner";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AthleteProfilePrompt } from "@/components/athlete-profile-prompt";
 import { MobilePageHeader } from "@/components/mobile-page-header";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
 import { routes } from "@/lib/routes";
 import { trpcClient } from "@/lib/trpc/client";
 import type {
@@ -117,6 +119,45 @@ export const ActivityListScene = ({
 			router.refresh();
 		},
 	});
+	const attachActivityScreenshot =
+		trpcClient.activities.attachActivityScreenshot.useMutation({
+			onSettled: async () => {
+				await utils.activities.getActivities.invalidate();
+				await utils.activities.getActivityById.invalidate();
+				router.refresh();
+			},
+		});
+	const keepActivityScreenshot = async ({
+		activityId,
+		file,
+	}: {
+		activityId: string;
+		file: File;
+	}) => {
+		const formData = new FormData();
+		formData.append(
+			"file",
+			await fitPhotoToUploadLimit({ file, longEdge: 800 }),
+		);
+		formData.append("kind", "screenshot");
+		const response = await fetch("/api/v1/uploads", {
+			method: "POST",
+			body: formData,
+		}).catch(() => null);
+		const body = (await response?.json().catch(() => null)) as {
+			id?: string;
+			error?: string;
+		} | null;
+		if (!response?.ok || !body?.id) {
+			throw new Error(
+				body?.error ?? "The screenshot couldn't be saved. Try again.",
+			);
+		}
+		await attachActivityScreenshot.mutateAsync({
+			id: activityId,
+			uploadId: body.id,
+		});
+	};
 
 	return (
 		<SidebarProvider
@@ -192,8 +233,17 @@ export const ActivityListScene = ({
 					boats={boats}
 					ergs={ergs}
 					workouts={workouts}
-					onSubmit={async (data) => {
-						await createActivity.mutateAsync(data);
+					onSubmit={async ({ data, screenshot }) => {
+						const activity = await createActivity.mutateAsync(data);
+						if (!screenshot) return;
+						keepActivityScreenshot({
+							activityId: activity.id,
+							file: screenshot,
+						}).catch((error) =>
+							toast.error(
+								`The activity was saved, but the screenshot couldn't be kept: ${error instanceof Error ? error.message : "Something went wrong."} You can add it from the activity.`,
+							),
+						);
 					}}
 					onUploadErgActivityScreenshot={uploadErgActivityScreenshot}
 					onClose={() => router.push(listHref)}
@@ -210,7 +260,7 @@ export const ActivityListScene = ({
 				onSubmit={async (data) => {
 					await updateActivity.mutateAsync(data);
 				}}
-				onUploadErgActivityScreenshot={uploadErgActivityScreenshot}
+				onAddScreenshot={keepActivityScreenshot}
 				onClose={() =>
 					startTransition(() => {
 						setOpenActivity(undefined);

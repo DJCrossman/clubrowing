@@ -210,11 +210,13 @@ model activity {
   stravaData     Json?
   conceptTwoId   BigInt?
   conceptTwoData Json?
+  screenshotId   String?      @unique
   athlete        athlete      @relation(fields: [athleteId], references: [id])
   boat           boat?        @relation(fields: [boatId], references: [id])
   erg            erg?         @relation(fields: [ergId], references: [id])
   workout        workout?     @relation(fields: [workoutId], references: [id])
   strokes        activity_strokes?
+  screenshot     upload?      @relation(fields: [screenshotId], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -470,6 +472,7 @@ model upload {
   url       String
   size      Int
   createdAt DateTime @default(now())
+  activity  activity?
 
   @@index([userId, createdAt])
 }

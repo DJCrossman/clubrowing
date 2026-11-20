@@ -59,4 +59,72 @@ describe("processStravaInboxBatchCommand", () => {
 
 		expect(create.mock.calls[0][0].data.stravaId).toBe("9007199254740993");
 	});
+
+	it.each([
+		{
+			when: "takes the Strava copy's screenshot when folding it into a Concept2 row without one",
+			concept2ScreenshotId: null,
+			expected: "upl_strava",
+		},
+		{
+			when: "keeps the Concept2 row's own screenshot when folding a Strava copy into it",
+			concept2ScreenshotId: "upl_concept2",
+			expected: "upl_concept2",
+		},
+	])("$when", async ({ concept2ScreenshotId, expected }) => {
+		const update = vi.fn();
+		const tx = {
+			$executeRaw: vi.fn(),
+			activity: {
+				findMany: vi
+					.fn()
+					.mockResolvedValueOnce([
+						{
+							id: "act_strava",
+							stravaId: "9007199254740993",
+							conceptTwoId: null,
+							conceptTwoData: null,
+							boatId: null,
+							ergId: null,
+							workoutId: null,
+							screenshotId: "upl_strava",
+						},
+						{
+							id: "act_concept2",
+							stravaId: null,
+							conceptTwoId: BigInt(789),
+							conceptTwoData: {},
+							boatId: null,
+							ergId: null,
+							workoutId: null,
+							screenshotId: concept2ScreenshotId,
+						},
+					])
+					.mockResolvedValue([]),
+				delete: vi.fn(),
+				update,
+			},
+			activity_inbox: { update: vi.fn() },
+		};
+		const db = {
+			activity_inbox: {
+				updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+				findUniqueOrThrow: vi.fn().mockResolvedValue({
+					id: "batch_1",
+					athleteId: "ath_1",
+					payload: [
+						{ ...activity, device_name: "Concept2 RowErg", external_id: "789" },
+					],
+				}),
+			},
+			$transaction: (run: (client: typeof tx) => Promise<void>) => run(tx),
+		} as unknown as AuthenticatedContext["db"];
+
+		await processStravaInboxBatchCommand({ batchId: "batch_1" }, { db });
+
+		expect(tx.activity.delete).toHaveBeenCalledWith({
+			where: { id: "act_strava" },
+		});
+		expect(update.mock.calls[0][0].data.screenshotId).toBe(expected);
+	});
 });

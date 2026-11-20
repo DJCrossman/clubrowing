@@ -107,3 +107,11 @@ export type GetActivityStrokesInput = z.infer<
 
 export const deleteActivityInputSchema = z.object({ id: z.string() });
 export type DeleteActivityInput = z.infer<typeof deleteActivityInputSchema>;
+
+export const attachActivityScreenshotInputSchema = z.object({
+	id: z.string(),
+	uploadId: z.string(),
+});
+export type AttachActivityScreenshotInput = z.infer<
+	typeof attachActivityScreenshotInputSchema
+>;

@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { envVars } from "@/lib/env";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
-const MAX_RESIZED_DIMENSION = 1600;
+const MAX_RESIZED_DIMENSION = 800;
 // A small file can declare an enormous image; a 48-megapixel phone photo still fits.
 const MAX_PHOTO_PIXELS = 50_000_000;
 // The storage plan stops serving every file for 30 days past 2,000 uploads in a month.

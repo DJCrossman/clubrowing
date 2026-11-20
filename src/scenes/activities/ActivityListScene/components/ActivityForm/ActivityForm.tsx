@@ -1,12 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MaximizeIcon, XIcon } from "lucide-react";
+import { MaximizeIcon } from "lucide-react";
 import { DateTime } from "luxon";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useMemo, useState } from "react";
 import {
 	type SubmitHandler,
 	type UseFormReturn,
@@ -33,6 +32,7 @@ import {
 	type CreateActivityFormInput,
 	createActivityFormSchema,
 } from "@/schemas";
+import { FullscreenImageOverlay } from "../FullscreenImageOverlay/FullscreenImageOverlay";
 
 const toCreateActivity = (input: CreateActivityFormInput): CreateActivity =>
 	createActivityFormSchema.parse(input);
@@ -48,8 +48,11 @@ interface ActivityFormProps {
 	ergs: Ergs;
 	workouts: Workouts;
 	defaultValues?: Partial<CreateActivityFormInput>;
-	onSubmit: (data: CreateActivity) => void | Promise<void>;
-	onUploadErgActivityScreenshot: UploadErgActivityScreenshot;
+	onSubmit: (submission: {
+		data: CreateActivity;
+		screenshot: File | null;
+	}) => void | Promise<void>;
+	onUploadErgActivityScreenshot?: UploadErgActivityScreenshot;
 	onCancel?: (() => void) | string;
 	isImageFullscreen: boolean;
 	setIsImageFullscreen: (isFullscreen: boolean) => void;
@@ -104,17 +107,6 @@ export function ActivityForm({
 		);
 	}, [workouts, type]);
 
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && isImageFullscreen) {
-				setIsImageFullscreen(false);
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isImageFullscreen, setIsImageFullscreen]);
-
 	const handleUpload = useCallback(
 		async (file: File) => {
 			if (!onUploadErgActivityScreenshot) return;
@@ -165,7 +157,10 @@ export function ActivityForm({
 			form.setError("workoutId", { message: "Please select a workout" });
 			return;
 		}
-		return onSubmit(toCreateActivity(values));
+		return onSubmit({
+			data: toCreateActivity(values),
+			screenshot: uploadedFile,
+		});
 	};
 
 	const previewDistance =
@@ -272,135 +267,140 @@ export function ActivityForm({
 					<TabsContent value="erg" className="space-y-8 pt-4">
 						<WorkoutCombobox form={form} workouts={visibleWorkouts} />
 
-						<fieldset className="space-y-2" disabled={isUploading}>
-							<FormLabel>Upload ERG Screenshot</FormLabel>
-							{!uploadedFile && (
-								<div className="flex items-center gap-2">
-									<Input
-										type="file"
-										accept="image/*"
-										onChange={async (
-											event: React.ChangeEvent<HTMLInputElement>,
-										) => {
-											if (!onUploadErgActivityScreenshot) return;
-											const file = event.target.files?.[0];
-											if (!file) return;
+						{!!onUploadErgActivityScreenshot && (
+							<>
+								<fieldset className="space-y-2" disabled={isUploading}>
+									<FormLabel>Upload ERG Screenshot</FormLabel>
+									{!uploadedFile && (
+										<div className="flex items-center gap-2">
+											<Input
+												type="file"
+												accept="image/*"
+												onChange={async (
+													event: React.ChangeEvent<HTMLInputElement>,
+												) => {
+													if (!onUploadErgActivityScreenshot) return;
+													const file = event.target.files?.[0];
+													if (!file) return;
 
-											if (!file.type.startsWith("image/")) {
-												setUploadError("Please upload an image file");
-												return;
-											}
+													if (!file.type.startsWith("image/")) {
+														setUploadError("Please upload an image file");
+														return;
+													}
 
-											setUploadedFile(file);
-											await handleUpload(file);
-											event.target.value = "";
-										}}
-										disabled={isUploading}
-										className="flex-1"
-									/>
-									{isUploading && (
-										<span className="text-sm text-muted-foreground">
-											Parsing...
-										</span>
+													setUploadedFile(file);
+													await handleUpload(file);
+													event.target.value = "";
+												}}
+												disabled={isUploading}
+												className="flex-1"
+											/>
+											{isUploading && (
+												<span className="text-sm text-muted-foreground">
+													Parsing...
+												</span>
+											)}
+										</div>
 									)}
-								</div>
-							)}
-							{uploadError && (
-								<p className="text-sm text-destructive">{uploadError}</p>
-							)}
-							<p className="text-sm text-muted-foreground">
-								Upload an ERG screenshot to auto-fill activity details.{" "}
-								{uploadedFile && !isUploading && (
-									<>
-										<Button
-											variant="link"
-											size="sm"
-											onClick={() => handleUpload(uploadedFile)}
-										>
-											Parse Again
-										</Button>
-										<Button
-											variant="link"
-											size="sm"
-											onClick={() => {
-												setUploadedFile(null);
-												setUploadError(null);
-											}}
-										>
-											Remove Image
-										</Button>
-									</>
-								)}
-							</p>
-						</fieldset>
-						{!!uploadedFile && (
-							<fieldset disabled={isUploading} className="space-y-4">
-								<div className="space-y-2">
-									<FormLabel>
-										Uploaded Image
-										{isUploading && (
-											<span className="text-sm text-muted-foreground">
-												Parsing...
-											</span>
+									{uploadError && (
+										<p className="text-sm text-destructive">{uploadError}</p>
+									)}
+									<p className="text-sm text-muted-foreground">
+										Upload an ERG screenshot to auto-fill activity details. It's
+										kept with the activity.{" "}
+										{uploadedFile && !isUploading && (
+											<>
+												<Button
+													variant="link"
+													size="sm"
+													onClick={() => handleUpload(uploadedFile)}
+												>
+													Parse Again
+												</Button>
+												<Button
+													variant="link"
+													size="sm"
+													onClick={() => {
+														setUploadedFile(null);
+														setUploadError(null);
+													}}
+												>
+													Remove Image
+												</Button>
+											</>
 										)}
-									</FormLabel>
-									<div className="relative aspect-video w-full max-w-md overflow-hidden rounded-lg border group">
-										<Image
-											src={URL.createObjectURL(uploadedFile)}
-											alt="ERG activity screenshot"
-											fill
-											unoptimized
-											className="object-contain"
-										/>
-										<Button
-											type="button"
-											variant="secondary"
-											size="icon"
-											className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-											onClick={() => setIsImageFullscreen(true)}
-										>
-											<MaximizeIcon className="h-4 w-4" />
-										</Button>
-									</div>
-								</div>
-
-								<div className="space-y-2">
-									<FormLabel>Parsed Data</FormLabel>
-									<div
-										className={cn(
-											"rounded-lg border p-4 space-y-2 bg-muted/50",
-											isUploading && "opacity-55",
-										)}
-									>
-										<div className="grid grid-cols-2 gap-2 text-sm">
-											<div className="font-medium">Description:</div>
-											<div>{form.watch("name") || "—"}</div>
-
-											<div className="font-medium">Distance:</div>
-											<div>
-												{form.watch("distance")
-													? `${form.watch("distance")}m`
-													: "—"}
-											</div>
-
-											<div className="font-medium">Elapsed Time:</div>
-											<div>
-												{form.watch("elapsedTime")
-													? formatDuration(form.watch("elapsedTime"))
-													: "—"}
-											</div>
-											<div className="font-medium">Start Date:</div>
-											<div>
-												{form.watch("startDate")
-													? DateTime.fromISO(
-															form.watch("startDate"),
-														).toLocaleString(DateTime.DATE_MED)
-													: "—"}
+									</p>
+								</fieldset>
+								{!!uploadedFile && (
+									<fieldset disabled={isUploading} className="space-y-4">
+										<div className="space-y-2">
+											<FormLabel>
+												Uploaded Image
+												{isUploading && (
+													<span className="text-sm text-muted-foreground">
+														Parsing...
+													</span>
+												)}
+											</FormLabel>
+											<div className="relative aspect-video w-full max-w-md overflow-hidden rounded-lg border group">
+												<Image
+													src={URL.createObjectURL(uploadedFile)}
+													alt="ERG activity screenshot"
+													fill
+													unoptimized
+													className="object-contain"
+												/>
+												<Button
+													type="button"
+													variant="secondary"
+													size="icon"
+													className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+													onClick={() => setIsImageFullscreen(true)}
+												>
+													<MaximizeIcon className="h-4 w-4" />
+												</Button>
 											</div>
 										</div>
-									</div>
-								</div>
-							</fieldset>
+
+										<div className="space-y-2">
+											<FormLabel>Parsed Data</FormLabel>
+											<div
+												className={cn(
+													"rounded-lg border p-4 space-y-2 bg-muted/50",
+													isUploading && "opacity-55",
+												)}
+											>
+												<div className="grid grid-cols-2 gap-2 text-sm">
+													<div className="font-medium">Description:</div>
+													<div>{form.watch("name") || "—"}</div>
+
+													<div className="font-medium">Distance:</div>
+													<div>
+														{form.watch("distance")
+															? `${form.watch("distance")}m`
+															: "—"}
+													</div>
+
+													<div className="font-medium">Elapsed Time:</div>
+													<div>
+														{form.watch("elapsedTime")
+															? formatDuration(form.watch("elapsedTime"))
+															: "—"}
+													</div>
+													<div className="font-medium">Start Date:</div>
+													<div>
+														{form.watch("startDate")
+															? DateTime.fromISO(
+																	form.watch("startDate"),
+																).toLocaleString(DateTime.DATE_MED)
+															: "—"}
+													</div>
+												</div>
+											</div>
+										</div>
+									</fieldset>
+								)}
+							</>
 						)}
 					</TabsContent>
 				</Tabs>
@@ -413,7 +413,7 @@ export function ActivityForm({
 
 			{isImageFullscreen && uploadedFile && (
 				<FullscreenImageOverlay
-					file={uploadedFile}
+					src={URL.createObjectURL(uploadedFile)}
 					onClose={() => setIsImageFullscreen(false)}
 				/>
 			)}
@@ -493,59 +493,5 @@ const CancelButton = ({
 		>
 			Cancel
 		</Button>
-	);
-};
-
-const FullscreenImageOverlay = ({
-	file,
-	onClose,
-}: {
-	file: File;
-	onClose: () => void;
-}) => {
-	const ref = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (ref.current && !ref.current.contains(event.target as Node)) {
-				onClose();
-			}
-		};
-
-		window.addEventListener("mousedown", handleClickOutside);
-		return () => {
-			window.removeEventListener("mousedown", handleClickOutside);
-		};
-	}, [onClose]);
-
-	if (typeof document === "undefined") return null;
-
-	return createPortal(
-		<div
-			ref={ref}
-			className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-		>
-			<div className="relative w-full h-full">
-				<Image
-					src={URL.createObjectURL(file)}
-					alt="ERG activity screenshot (fullscreen)"
-					fill
-					unoptimized
-					className="object-contain"
-				/>
-			</div>
-			<div className="absolute top-4 right-4">
-				<Button
-					type="button"
-					variant="secondary"
-					size="icon"
-					onClick={onClose}
-					aria-label="Close fullscreen"
-				>
-					<XIcon className="h-4 w-4" />
-				</Button>
-			</div>
-		</div>,
-		document.body,
 	);
 };

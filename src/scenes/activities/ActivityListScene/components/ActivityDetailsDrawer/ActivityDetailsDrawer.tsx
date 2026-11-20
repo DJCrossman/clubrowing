@@ -32,13 +32,10 @@ import type { Activity, Boats, Ergs, Workouts } from "@/lib/trpc/types";
 import type {
 	Concept2Activity,
 	Concept2Strokes,
-	CreateActivity,
 	UpdateActivity,
 } from "@/schemas";
-import {
-	ActivityForm,
-	type UploadErgActivityScreenshot,
-} from "../ActivityForm/ActivityForm";
+import { ActivityForm } from "../ActivityForm/ActivityForm";
+import { ActivityScreenshot } from "./ActivityScreenshot";
 import { ActivitySplitsTable } from "./ActivitySplitsTable";
 import { ActivityStrokesChart } from "./ActivityStrokesChart";
 import { ActivityStrokesChartSkeleton } from "./ActivityStrokesChartSkeleton";
@@ -53,7 +50,10 @@ interface ActivityDetailsDrawerProps {
 	workouts: Workouts;
 	onClose: () => void;
 	onSubmit: (data: UpdateActivity) => Promise<void> | void;
-	onUploadErgActivityScreenshot: UploadErgActivityScreenshot;
+	onAddScreenshot: (params: {
+		activityId: string;
+		file: File;
+	}) => Promise<void>;
 }
 
 export const ActivityDetailsDrawer = ({
@@ -66,7 +66,7 @@ export const ActivityDetailsDrawer = ({
 	workouts,
 	onClose,
 	onSubmit,
-	onUploadErgActivityScreenshot,
+	onAddScreenshot,
 }: ActivityDetailsDrawerProps) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isImageFullscreen, setIsImageFullscreen] = useState(false);
@@ -189,11 +189,10 @@ export const ActivityDetailsDrawer = ({
 										}
 							}
 							onCancel={() => setIsEditing(false)}
-							onSubmit={async (data: CreateActivity) => {
+							onSubmit={async ({ data }) => {
 								await onSubmit({ id: activity.id, ...data });
 								setIsEditing(false);
 							}}
-							onUploadErgActivityScreenshot={onUploadErgActivityScreenshot}
 							isImageFullscreen={isImageFullscreen}
 							setIsImageFullscreen={setIsImageFullscreen}
 						/>
@@ -312,6 +311,16 @@ export const ActivityDetailsDrawer = ({
 									</DetailRow>
 								)}
 							</DetailList>
+							<ActivityScreenshot
+								key={activity.id}
+								activity={activity}
+								canAddScreenshot={hasAthlete && activity.athlete.id === user.id}
+								onAddScreenshot={(file) =>
+									onAddScreenshot({ activityId: activity.id, file })
+								}
+								isImageFullscreen={isImageFullscreen}
+								setIsImageFullscreen={setIsImageFullscreen}
+							/>
 						</>
 					)}
 				</div>
