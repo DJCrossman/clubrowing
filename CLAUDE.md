@@ -30,6 +30,7 @@ required var is missing: `DATABASE_URL`, `INTEGRATION_TOKEN_ENCRYPTION_KEY`,
 and `CLERK_SECRET_KEY`. Migrations run against the **unpooled** connection
 (`DATABASE_URL_UNPOOLED`); the app runtime uses the pooled `DATABASE_URL`.
 `BLOB_READ_WRITE_TOKEN` is optional; without it `POST /api/v1/uploads` answers 503.
+`NEXT_PUBLIC_GIPHY_API_KEY` is optional; without it the chat composer's GIF button is hidden.
 
 ## Worktrees & isolated instances
 

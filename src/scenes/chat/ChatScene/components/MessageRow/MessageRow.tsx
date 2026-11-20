@@ -5,6 +5,7 @@ import type { ChatMessage } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { formatMessageTime } from "../../utils/messageFormatting";
 import { GifTile } from "../GifPicker/GifTile";
+import { MessageGif } from "../GifPicker/MessageGif";
 import { MessageFiles } from "../MessageFiles/MessageFiles";
 import { MessagePhotos } from "../MessagePhotos/MessagePhotos";
 import { ForwardedBlock } from "./ForwardedBlock";
@@ -83,7 +84,14 @@ export function MessageRow({
 					/>
 				))}
 				{message.forwarded && <ForwardedBlock forwarded={message.forwarded} />}
-				{message.gif && (
+				{message.gif && message.gifId && (
+					<MessageGif
+						id={message.gifId}
+						title={message.gif}
+						variant={compact ? "compact" : "message"}
+					/>
+				)}
+				{message.gif && !message.gifId && (
 					<GifTile
 						label={message.gif}
 						variant={compact ? "compact" : "message"}

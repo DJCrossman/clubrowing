@@ -436,6 +436,7 @@ model message {
   parentId        String?
   text            String?
   gif             String?
+  gifId           String?
   quotedMessageId String?
   forwardedFromId String?
   createdAt       DateTime           @default(now())

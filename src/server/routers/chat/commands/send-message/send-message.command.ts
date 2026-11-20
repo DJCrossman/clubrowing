@@ -22,7 +22,8 @@ export async function sendMessageCommand(
 				channelId: input.channelId,
 				authorUserId: user.id,
 				text: input.text || null,
-				gif: input.gif || null,
+				gif: input.gif?.title ?? null,
+				gifId: input.gif?.id ?? null,
 				quotedMessageId: input.quotedMessageId ?? null,
 				// Only the sender's own uploads that no message or activity holds yet, so a
 				// double send can't attach the same file twice.

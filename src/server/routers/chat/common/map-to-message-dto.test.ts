@@ -28,6 +28,7 @@ const messageRow = (overrides: Partial<MessageRow> = {}): MessageRow => ({
 	parentId: null,
 	text: "Water's flat, see you at 6",
 	gif: null,
+	gifId: null,
 	quotedMessageId: null,
 	forwardedFromId: null,
 	createdAt: at(0),
@@ -66,6 +67,7 @@ describe("mapForwardedMessage", () => {
 		id: "msg_original",
 		text: "Regatta entries close Friday",
 		gif: null,
+		gifId: null,
 		deletedAt,
 		createdAt: at(1),
 		authorUserId: mike.id,
@@ -82,6 +84,7 @@ describe("mapForwardedMessage", () => {
 			author: mike,
 			text: "Regatta entries close Friday",
 			gif: null,
+			gifId: null,
 			photoCount: 2,
 			fileCount: 1,
 			fileName: "Entry form.pdf",
@@ -97,6 +100,18 @@ describe("mapForwardedMessage", () => {
 				users,
 			)?.channelName,
 		).toBe("a direct message");
+	});
+
+	it("carries the original's GIF id beside its title, and neither once deleted", () => {
+		const live = original({ kind: "everyone", groupId: null });
+		const removed = original({ kind: "everyone", groupId: null }, at(5));
+		const gif = { gif: "Rowing hard", gifId: "xT9IgG50Fb7Mi0prBC" };
+		expect(
+			mapForwardedMessage(live && { ...live, ...gif }, users),
+		).toMatchObject(gif);
+		expect(
+			mapForwardedMessage(removed && { ...removed, ...gif }, users),
+		).toMatchObject({ gif: null, gifId: null });
 	});
 
 	it("hides the content of a deleted original", () => {
@@ -268,6 +283,27 @@ describe("mapToMessageDto", () => {
 		);
 		expect(deleted.photos).toEqual([]);
 		expect(deleted.files).toEqual([]);
+	});
+
+	it("carries the GIF id beside its title, and neither once deleted", () => {
+		const row = messageRow({
+			text: null,
+			gif: "Nailed it",
+			gifId: "3o7abKhOpu0NwenH3O",
+		});
+		expect(mapToMessageDto(row, viewer, users)).toMatchObject({
+			gif: "Nailed it",
+			gifId: "3o7abKhOpu0NwenH3O",
+		});
+		expect(
+			mapToMessageDto({ ...row, deletedAt: at(9) }, viewer, users),
+		).toMatchObject({ gif: null, gifId: null });
+	});
+
+	it("keeps an older GIF that has a title but no id", () => {
+		expect(
+			mapToMessageDto(messageRow({ gif: "nailed it" }), viewer, users),
+		).toMatchObject({ gif: "nailed it", gifId: null });
 	});
 
 	it("lets only the author edit, and marks an edited message", () => {

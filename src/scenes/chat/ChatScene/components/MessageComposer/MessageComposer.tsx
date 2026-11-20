@@ -28,11 +28,12 @@ import {
 import { getMessagePreviewText } from "../../utils/messageFormatting";
 import { EmojiPicker } from "../EmojiPicker/EmojiPicker";
 import { GifPicker } from "../GifPicker/GifPicker";
+import { useGiphy } from "../GifPicker/useGiphy";
 import { ComposerFileStrip } from "./ComposerFileStrip";
 
 export type ComposerSubmission = {
 	text?: string;
-	gif?: string;
+	gif?: { id: string; title: string };
 	files: File[];
 	alsoSendToChannel: boolean;
 };
@@ -74,6 +75,7 @@ export function MessageComposer({
 	const canSend = hasText || files.length > 0;
 	const isSending = form.formState.isSubmitting && files.length > 0;
 	const { ref: registerTextRef, ...textField } = form.register("text");
+	const { canUseGifs, isPaused: gifsPaused } = useGiphy();
 
 	useEffect(() => {
 		if (quotedMessage) {
@@ -265,7 +267,7 @@ export function MessageComposer({
 							/>
 						</>
 					)}
-					{!editingMessage && (
+					{!editingMessage && canUseGifs && (
 						<GifPicker
 							onSelect={(gif) =>
 								onSubmit({
@@ -278,9 +280,13 @@ export function MessageComposer({
 							}
 						>
 							<ComposerButton
-								label="Add a GIF"
+								label={
+									gifsPaused
+										? "GIFs are taking a break. Try again later."
+										: "Add a GIF"
+								}
 								className="[&_svg]:size-5"
-								disabled={isSending}
+								disabled={isSending || gifsPaused}
 							>
 								<IconGif />
 							</ComposerButton>

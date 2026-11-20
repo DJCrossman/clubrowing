@@ -265,6 +265,8 @@ async function generateEnvFile(
 		base.set("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_dummy_emulator");
 		// Repeated e2e runs upload far more in a day than a member would.
 		base.set("MEMBER_DAILY_UPLOAD_LIMIT", "100000");
+		// The e2e tests answer GIPHY's addresses in the browser. The placeholder replaces any real key, so a dummy instance never reaches GIPHY.
+		base.set("NEXT_PUBLIC_GIPHY_API_KEY", "dummy_giphy_key_not_real");
 	}
 	base.set(
 		"STRAVA_CALLBACK_URL",
@@ -611,9 +613,8 @@ async function cmdE2e(playwrightArgs: string[]) {
 		await Bun.sleep(2000);
 	}
 
-	const { E2E_ADMIN_USER_ID, E2E_MEMBER_USER_ID } = await import(
-		"./lib/dummy-data"
-	);
+	const { E2E_ADMIN_USER_ID, E2E_MEMBER_USER_ID, E2E_JUNIOR_USER_ID } =
+		await import("./lib/dummy-data");
 	// The emulator's signing key only lives in the container, so mint there.
 	const mint = spawn(
 		[
@@ -627,7 +628,7 @@ async function cmdE2e(playwrightArgs: string[]) {
 			"bun",
 			"-e",
 			`const headers = { Authorization: "Bearer " + process.env.CLERK_SECRET_KEY, "Content-Type": "application/json" };
-			const sessions = await Promise.all(${JSON.stringify([E2E_ADMIN_USER_ID, E2E_MEMBER_USER_ID])}.map(async (user_id) => {
+			const sessions = await Promise.all(${JSON.stringify([E2E_ADMIN_USER_ID, E2E_MEMBER_USER_ID, E2E_JUNIOR_USER_ID])}.map(async (user_id) => {
 				const session = await fetch(process.env.CLERK_API_URL + "/v1/sessions", { method: "POST", headers, body: JSON.stringify({ user_id }) }).then((r) => r.json());
 				const token = await fetch(process.env.CLERK_API_URL + "/v1/sessions/" + session.id + "/tokens", { method: "POST", headers }).then((r) => r.json());
 				return token.jwt;
@@ -642,10 +643,12 @@ async function cmdE2e(playwrightArgs: string[]) {
 			env: { ...process.env, ...composeEnv(rec) },
 		},
 	);
-	const [adminSession, memberSession] = (await new Response(mint.stdout).text())
+	const [adminSession, memberSession, juniorSession] = (
+		await new Response(mint.stdout).text()
+	)
 		.trim()
 		.split(" ");
-	if ((await mint.exited) !== 0 || !memberSession) {
+	if ((await mint.exited) !== 0 || !juniorSession) {
 		console.error(
 			`❌ Could not mint e2e sessions in '${project(rec.name)}'. Is it running? Start it with: bun run instance:create`,
 		);
@@ -658,6 +661,7 @@ async function cmdE2e(playwrightArgs: string[]) {
 				E2E_BASE_URL: `http://localhost:${rec.port}`,
 				E2E_ADMIN_SESSION: adminSession,
 				E2E_MEMBER_SESSION: memberSession,
+				E2E_JUNIOR_SESSION: juniorSession,
 			},
 		},
 	);

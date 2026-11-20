@@ -13,11 +13,18 @@ const messageTextSchema = z
 		MAX_MESSAGE_LENGTH,
 		`Messages can be at most ${MAX_MESSAGE_LENGTH} characters`,
 	);
-const gifSchema = z.string().trim().min(1).max(100);
+const gifSchema = z.object({
+	id: z.string().trim().min(1).max(100),
+	title: z
+		.string()
+		.trim()
+		.min(1)
+		.transform((title) => title.slice(0, 100)),
+});
 
 const hasContent = (value: {
 	text?: string;
-	gif?: string;
+	gif?: { id: string; title: string };
 	attachmentIds?: string[];
 }) => !!value.text || !!value.gif || !!value.attachmentIds?.length;
 const missingContent = {

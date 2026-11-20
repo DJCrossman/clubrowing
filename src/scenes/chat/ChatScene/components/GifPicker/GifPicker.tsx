@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { type ReactElement, useState } from "react";
 import { useDrawerContentContainer } from "@/components/ui/drawer";
 import {
@@ -7,34 +8,24 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PickerSearch } from "../PickerSearch/PickerSearch";
-import { GifTile } from "./GifTile";
-
-const GIF_PLACEHOLDERS = [
-	"nailed it",
-	"lets go",
-	"cold water",
-	"coffee time",
-	"applause",
-	"sleepy rower",
-	"thumbs up",
-	"victory",
-	"windy day",
-	"early alarm",
-];
+import { useGiphy } from "./useGiphy";
 
 interface GifPickerProps {
 	children: ReactElement;
-	onSelect: (gif: string) => void;
+	onSelect: (gif: { id: string; title: string }) => void;
 }
 
 export function GifPicker({ children, onSelect }: GifPickerProps) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const container = useDrawerContentContainer();
-	const results = GIF_PLACEHOLDERS.filter((label) =>
-		label.includes(query.trim().toLowerCase()),
-	);
+	const { isPaused, searchQuery, rememberGif } = useGiphy({
+		query,
+		isEnabled: open,
+	});
+	const hasFailed = searchQuery.isError || isPaused;
 
 	return (
 		<Popover
@@ -56,30 +47,49 @@ export function GifPicker({ children, onSelect }: GifPickerProps) {
 					placeholder="Search GIFs"
 				/>
 				<div className="grid max-h-[318px] grid-cols-2 gap-1.5 overflow-y-auto">
-					{results.map((label) => (
-						<button
-							key={label}
-							type="button"
-							aria-label={`Send GIF: ${label}`}
-							onClick={() => {
-								onSelect(label);
-								setOpen(false);
-								setQuery("");
-							}}
-							className="rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-						>
-							<GifTile label={label} variant="picker" />
-						</button>
-					))}
+					{!hasFailed &&
+						searchQuery.isPending &&
+						Array.from({ length: 6 }, (_, index) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: placeholders have no identity
+							<Skeleton key={index} className="h-[100px] rounded-lg" />
+						))}
+					{!hasFailed &&
+						searchQuery.data?.map((gif) => (
+							<button
+								key={gif.id}
+								type="button"
+								aria-label={`Send GIF: ${gif.title || "GIF"}`}
+								onClick={() => {
+									rememberGif(gif);
+									onSelect({ id: gif.id, title: gif.title || "GIF" });
+									setOpen(false);
+									setQuery("");
+								}}
+								className="relative h-[100px] overflow-hidden rounded-lg bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+							>
+								<Image
+									src={
+										gif.images.fixed_width.webp || gif.images.fixed_width.url
+									}
+									alt=""
+									fill
+									unoptimized
+									className="object-cover"
+								/>
+							</button>
+						))}
 				</div>
-				{results.length === 0 && (
+				{!hasFailed && searchQuery.data?.length === 0 && (
 					<p className="py-6 text-center text-sm text-muted-foreground">
 						No GIFs found
 					</p>
 				)}
-				<p className="text-[11px] text-muted-foreground">
-					GIF tiles are placeholders for a GIF provider
-				</p>
+				{hasFailed && (
+					<p className="py-6 text-center text-sm text-muted-foreground">
+						GIFs aren't loading right now. Try again in a bit.
+					</p>
+				)}
+				<p className="text-[11px] text-muted-foreground">Powered by GIPHY</p>
 			</PopoverContent>
 		</Popover>
 	);

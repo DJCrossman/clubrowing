@@ -16,7 +16,8 @@ export async function replyInThreadCommand(
 		channelId: target.channelId,
 		authorUserId: user.id,
 		text: input.text || null,
-		gif: input.gif || null,
+		gif: input.gif?.title ?? null,
+		gifId: input.gif?.id ?? null,
 	};
 	const reply = await db.message.create({
 		data: { ...content, parentId: rootId },

@@ -21,6 +21,7 @@ const DAY = 24 * 60 * 60 * 1000;
 export const DUMMY_ORGANIZATION_ID = "org_dummy_rrc";
 export const E2E_ADMIN_USER_ID = "user_e2e_admin";
 export const E2E_MEMBER_USER_ID = "user_e2e_member";
+export const E2E_JUNIOR_USER_ID = "user_e2e_junior";
 
 const PROGRAMS = [
 	{
@@ -40,7 +41,8 @@ const PROGRAMS = [
 	},
 ];
 
-// The first athlete is the e2e admin and the second the e2e member. Every
+// The first athlete is the e2e admin, the second the e2e member and the last
+// the e2e junior, who stays 11 so the under-13 rules always apply. Every
 // athlete is also a Clerk emulator user. `splitSeconds` is their 2K pace per 500 m.
 export const ATHLETES: {
 	userId: string;
@@ -197,6 +199,22 @@ export const ATHLETES: {
 		weightInKg: 76,
 		program: "dummy-learn-to-row",
 		splitSeconds: 121,
+	},
+	{
+		userId: E2E_JUNIOR_USER_ID,
+		email: "kit.puddler@example.com",
+		firstName: "Kit",
+		lastName: "Puddler",
+		gender: "nonbinary",
+		dateOfBirth: new Date(
+			new Date().setUTCFullYear(new Date().getUTCFullYear() - 11),
+		)
+			.toISOString()
+			.slice(0, 10),
+		heightInCm: 148,
+		weightInKg: 40,
+		program: "dummy-learn-to-row",
+		splitSeconds: 140,
 	},
 ];
 

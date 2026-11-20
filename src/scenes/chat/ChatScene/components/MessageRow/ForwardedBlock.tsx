@@ -3,6 +3,7 @@ import { InitialsAvatar } from "@/components/chat/initials-avatar";
 import { getAttachmentsPreview } from "@/lib/chat/attachments";
 import type { ChatMessage } from "@/lib/trpc/types";
 import { GifTile } from "../GifPicker/GifTile";
+import { MessageGif } from "../GifPicker/MessageGif";
 
 type ForwardedMessage = NonNullable<ChatMessage["forwarded"]>;
 
@@ -37,7 +38,16 @@ export function ForwardedBlock({ forwarded }: { forwarded: ForwardedMessage }) {
 							{forwarded.text}
 						</p>
 					)}
-					{forwarded.gif && <GifTile label={forwarded.gif} variant="compact" />}
+					{forwarded.gif && forwarded.gifId && (
+						<MessageGif
+							id={forwarded.gifId}
+							title={forwarded.gif}
+							variant="compact"
+						/>
+					)}
+					{forwarded.gif && !forwarded.gifId && (
+						<GifTile label={forwarded.gif} variant="compact" />
+					)}
 					{getAttachmentsPreview(forwarded) && (
 						<p className="text-sm text-muted-foreground">
 							{getAttachmentsPreview(forwarded)}

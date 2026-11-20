@@ -25,6 +25,7 @@ export const messageInclude = {
 			id: true,
 			text: true,
 			gif: true,
+			gifId: true,
 			deletedAt: true,
 			createdAt: true,
 			authorUserId: true,
@@ -77,6 +78,7 @@ export function mapToMessageDto(
 		author: getChatUser(users, message.authorUserId),
 		text: deleted ? null : message.text,
 		gif: deleted ? null : message.gif,
+		gifId: deleted ? null : message.gifId,
 		photos: deleted
 			? []
 			: message.attachments.flatMap(({ id, name }) =>
@@ -176,6 +178,7 @@ export function mapForwardedMessage(
 		author: getChatUser(users, original.authorUserId),
 		text: deleted ? null : original.text,
 		gif: deleted ? null : original.gif,
+		gifId: deleted ? null : original.gifId,
 		photoCount: deleted
 			? 0
 			: original.attachments.filter(({ name }) => name === null).length,

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
+import { stubGiphy } from "./giphy-stub";
 import { signInAs } from "./sign-in";
 
 test("a member edits their own message in the composer and it is tagged as edited", async ({
@@ -92,6 +93,155 @@ test("someone else's message offers no edit", async ({ page }) => {
 	await expect(
 		page.getByRole("menuitem", { name: "Edit message" }),
 	).toHaveCount(0);
+});
+
+test("a member finds a GIF and sends it, and someone else sees it", async ({
+	page,
+	browser,
+}) => {
+	const { requests } = await stubGiphy({ page });
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const query = `regatta${test.info().project.name}${Date.now()}`;
+	const id = `${query}1`;
+	const src = `https://media1.giphy.com/media/${id}/200.webp?cid=e2e&rid=200.webp`;
+	await page.getByRole("button", { name: "Add a GIF" }).click();
+	await expect(
+		page.getByRole("button", { name: "Send GIF: Rowing GIF trending1" }),
+	).toBeVisible();
+	await expect(page.getByText("Powered by GIPHY")).toBeVisible();
+	await page.getByPlaceholder("Search GIFs").fill(query);
+	await expect(
+		page.getByRole("button", { name: "Send GIF: Rowing GIF trending1" }),
+	).toHaveCount(0);
+	await page
+		.getByRole("button", { name: `Send GIF: Rowing GIF ${id}`, exact: true })
+		.click();
+	await expect(page.getByText("Powered by GIPHY")).toHaveCount(0);
+
+	const image = page
+		.getByRole("article")
+		.getByRole("img", { name: `Rowing GIF ${id}`, exact: true });
+	await expect(image).toHaveAttribute("src", src);
+	await expect
+		.poll(() =>
+			image.evaluate((element: HTMLImageElement) => element.naturalWidth),
+		)
+		.toBeGreaterThan(0);
+	const apiRequests = requests.filter(
+		(url) => url.hostname === "api.giphy.com",
+	);
+	expect(apiRequests.length).toBeGreaterThan(0);
+	for (const url of apiRequests) {
+		expect(url.searchParams.get("rating")).toBe("g");
+	}
+	expect(
+		apiRequests.filter(
+			(url) =>
+				url.pathname === "/v1/gifs" &&
+				url.searchParams.get("ids")?.split(",").includes(id),
+		),
+	).toHaveLength(0);
+
+	const adminContext = await browser.newContext();
+	const adminPage = await adminContext.newPage();
+	const { requests: adminRequests } = await stubGiphy({ page: adminPage });
+	await signInAs(adminPage, "admin");
+	await adminPage.goto("/chat/everyone");
+	await expect(
+		adminPage
+			.getByRole("article")
+			.getByRole("img", { name: `Rowing GIF ${id}`, exact: true }),
+	).toHaveAttribute("src", src);
+	expect(
+		adminRequests.filter(
+			(url) =>
+				url.hostname === "api.giphy.com" &&
+				url.pathname === "/v1/gifs" &&
+				url.searchParams.get("ids")?.split(",").includes(id),
+		),
+	).toHaveLength(1);
+	await adminContext.close();
+});
+
+test("when the provider refuses, GIFs pause", async ({ page, browser }) => {
+	await stubGiphy({ page });
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const query = `headwind${test.info().project.name}${Date.now()}`;
+	const title = `Rowing GIF ${query}1`;
+	await page.getByRole("button", { name: "Add a GIF" }).click();
+	await page.getByPlaceholder("Search GIFs").fill(query);
+	await page
+		.getByRole("button", { name: `Send GIF: ${title}`, exact: true })
+		.click();
+	await expect(
+		page.getByRole("article").getByRole("img", { name: title, exact: true }),
+	).toBeVisible();
+
+	const refusedContext = await browser.newContext();
+	const refusedPage = await refusedContext.newPage();
+	await stubGiphy({ page: refusedPage, refuseWith: 429 });
+	await signInAs(refusedPage, "member");
+	await refusedPage.goto("/chat/everyone");
+	await expect(
+		refusedPage
+			.getByRole("article")
+			.getByText(`GIF: ${title}`, { exact: true }),
+	).toBeVisible();
+	await expect(
+		refusedPage.getByRole("button", {
+			name: "GIFs are taking a break. Try again later.",
+		}),
+	).toBeDisabled();
+	await expect(
+		refusedPage.getByRole("button", { name: "Add a GIF" }),
+	).toHaveCount(0);
+	await refusedContext.close();
+});
+
+test("a member under 13 has no GIF button and reads GIFs as text", async ({
+	page,
+	browser,
+}) => {
+	await stubGiphy({ page });
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const query = `puddle${test.info().project.name}${Date.now()}`;
+	const title = `Rowing GIF ${query}1`;
+	await page.getByRole("button", { name: "Add a GIF" }).click();
+	await page.getByPlaceholder("Search GIFs").fill(query);
+	await page
+		.getByRole("button", { name: `Send GIF: ${title}`, exact: true })
+		.click();
+	await expect(
+		page.getByRole("article").getByRole("img", { name: title, exact: true }),
+	).toBeVisible();
+
+	const juniorContext = await browser.newContext();
+	const juniorPage = await juniorContext.newPage();
+	const { requests } = await stubGiphy({ page: juniorPage });
+	await signInAs(juniorPage, "junior");
+	await juniorPage.goto("/chat/everyone");
+	await expect(
+		juniorPage.getByRole("textbox", { name: /^Message/ }),
+	).toBeVisible();
+	await expect(
+		juniorPage.getByRole("article").getByText(`GIF: ${title}`, { exact: true }),
+	).toBeVisible();
+	await expect(
+		juniorPage.getByRole("button", { name: "Add a GIF" }),
+	).toHaveCount(0);
+	await expect(
+		juniorPage.getByRole("button", {
+			name: "GIFs are taking a break. Try again later.",
+		}),
+	).toHaveCount(0);
+	expect(requests).toHaveLength(0);
+	await juniorContext.close();
 });
 
 test("a member sends a photo with a caption and everyone in the conversation sees it", async ({
