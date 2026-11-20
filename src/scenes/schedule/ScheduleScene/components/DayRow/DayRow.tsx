@@ -1,7 +1,5 @@
 import { DateTime } from "luxon";
 import type React from "react";
-import { useEffect, useRef } from "react";
-import { MOBILE_BREAKPOINT } from "@/hooks/useIsMobile";
 import type { ScheduleDay } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 
@@ -12,23 +10,8 @@ interface DayRowProps {
 
 export const DayRow = ({ day, children }: DayRowProps) => {
 	const date = DateTime.fromISO(day.date);
-	const sectionRef = useRef<HTMLElement>(null);
-
-	useEffect(() => {
-		const section = sectionRef.current;
-		if (
-			day.isToday &&
-			section &&
-			window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches &&
-			section.getBoundingClientRect().bottom > window.innerHeight
-		) {
-			section.scrollIntoView();
-		}
-	}, [day.isToday]);
-
 	return (
 		<section
-			ref={sectionRef}
 			aria-label={date.toFormat("cccc, LLLL d", { locale: "en-US" })}
 			className={cn(
 				"flex gap-4 border-b py-4 last:border-b-0",
