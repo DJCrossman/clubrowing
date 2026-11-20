@@ -40,6 +40,10 @@ export function useAuth(opts?: { ensureSignedIn?: boolean }): UseAuthResult {
 	const { data, error, isPending, fetchStatus } = useQuery({
 		queryKey: generateQueryKey({ type: "currentUser" }),
 		enabled: ensureSignedIn,
+		// Coming back to the tab, a refetch goes out before clerk-js has renewed
+		// its 60 s session cookie, and that 401 would read as signed out.
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
 		queryFn: async (): Promise<AuthState> => {
 			const response = await fetch("/api/v1/users/me");
 			if (response.status === 401) {
