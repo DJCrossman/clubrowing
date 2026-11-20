@@ -57,12 +57,11 @@ describe("chat user names", () => {
 
 	it("builds admin users from Clerk names and falls back for unknown IDs", () => {
 		expect(
-			toChatUser("user_admin", { firstName: "Dana", lastName: "Fox" }, true),
+			toChatUser("user_admin", { firstName: "Dana", lastName: "Fox" }),
 		).toEqual({
 			id: "user_admin",
 			name: "Dana Fox",
 			initials: "DF",
-			isCoach: true,
 		});
 		expect(getChatUser(new Map(), "user_gone").name).toBe("Former member");
 	});

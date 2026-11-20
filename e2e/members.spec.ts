@@ -17,3 +17,19 @@ test("a member's 2K and 6K tiles lead with the split, then the total time", asyn
 		);
 	}
 });
+
+test("an admin's details show an Admin badge under their name", async ({
+	page,
+}) => {
+	await signInAs(page, "admin");
+	await page.goto("/members");
+	await page.getByRole("link", { name: "Avery Coxwell" }).click();
+
+	await expect(
+		page
+			.getByRole("dialog")
+			.getByRole("heading", { level: 2, name: "Avery Coxwell" })
+			.locator("..")
+			.getByText("Admin", { exact: true }),
+	).toBeVisible();
+});

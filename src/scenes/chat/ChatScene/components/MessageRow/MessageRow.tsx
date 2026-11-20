@@ -55,11 +55,6 @@ export function MessageRow({
 					>
 						{formatMessageTime(message.createdAt)}
 					</time>
-					{author.isCoach && (
-						<span className="rounded-[4px] border border-white/15 px-1.5 text-[11px] text-muted-foreground">
-							Coach
-						</span>
-					)}
 				</div>
 				{message.quoted && <QuoteBlock quoted={message.quoted} />}
 				{message.deleted ? (

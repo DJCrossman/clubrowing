@@ -26,16 +26,12 @@ export async function loadChatUsers(
 			firstName: true,
 			lastName: true,
 			nickname: true,
-			role: true,
 		},
 	});
 	const users = new Map<string, ChatUser>();
 	for (const athlete of athletes) {
 		if (athlete.userId) {
-			users.set(
-				athlete.userId,
-				toChatUser(athlete.userId, athlete, athlete.role === "admin"),
-			);
+			users.set(athlete.userId, toChatUser(athlete.userId, athlete));
 		}
 	}
 	const missing = ids.filter((id) => !users.has(id));
@@ -53,13 +49,10 @@ export async function listChatUsers(db: Db, excludeUserId: string) {
 			firstName: true,
 			lastName: true,
 			nickname: true,
-			role: true,
 		},
 	});
 	const users = athletes.flatMap((athlete) =>
-		athlete.userId
-			? [toChatUser(athlete.userId, athlete, athlete.role === "admin")]
-			: [],
+		athlete.userId ? [toChatUser(athlete.userId, athlete)] : [],
 	);
 	const adminIds = (await loadClerkAdminIds()).filter(
 		(id) => !users.some((user) => user.id === id),
@@ -90,7 +83,7 @@ async function loadClerkUsers(userIds: string[]) {
 		});
 		for (const id of uncached) {
 			const clerkUser = data.find((candidate) => candidate.id === id);
-			const user = clerkUser ? toChatUser(id, clerkUser, true) : null;
+			const user = clerkUser ? toChatUser(id, clerkUser) : null;
 			clerkUserCache.set(id, { user, expiresAt: now + CLERK_CACHE_TTL_MS });
 			if (user) users.set(id, user);
 		}

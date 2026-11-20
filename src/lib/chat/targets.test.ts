@@ -5,13 +5,11 @@ const mike = {
 	id: "user_mike",
 	name: "Mike Tran",
 	initials: "MT",
-	isCoach: false,
 };
 const sarah = {
 	id: "user_sarah",
 	name: "Sarah Kowalski",
 	initials: "SK",
-	isCoach: false,
 };
 const channels = [
 	{

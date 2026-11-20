@@ -2,7 +2,6 @@ export type ChatUser = {
 	id: string;
 	name: string;
 	initials: string;
-	isCoach: boolean;
 };
 
 type NamedPerson = {
@@ -17,21 +16,15 @@ export function getChatUser(users: Map<string, ChatUser>, userId: string) {
 			id: userId,
 			name: "Former member",
 			initials: "?",
-			isCoach: false,
 		}
 	);
 }
 
-export function toChatUser(
-	userId: string,
-	person: NamedPerson,
-	isCoach: boolean,
-): ChatUser {
+export function toChatUser(userId: string, person: NamedPerson): ChatUser {
 	return {
 		id: userId,
 		name: getDisplayName(person),
 		initials: getInitials(person),
-		isCoach,
 	};
 }
 

@@ -137,6 +137,9 @@ export const AthleteDetailsDrawer = ({
 								<h2 className="text-2xl font-bold tracking-tight">
 									{athlete.firstName} {athlete.lastName}
 								</h2>
+								{athlete.role === "admin" && (
+									<Badge variant="outline">Admin</Badge>
+								)}
 								{athlete.groups.length > 0 && (
 									<div className="flex flex-wrap justify-center gap-1.5">
 										{athlete.groups.map((group) => (

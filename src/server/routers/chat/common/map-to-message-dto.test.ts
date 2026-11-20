@@ -10,19 +10,13 @@ import {
 } from "./map-to-message-dto";
 
 const at = (minute: number) => new Date(Date.UTC(2026, 9, 23, 6, minute));
-const user = (
-	id: string,
-	name: string,
-	initials: string,
-	isCoach = false,
-): ChatUser => ({
+const user = (id: string, name: string, initials: string): ChatUser => ({
 	id,
 	name,
 	initials,
-	isCoach,
 });
 const sarah = user("user_sarah", "Sarah Chen", "SC");
-const mike = user("user_mike", "Mike Lee", "ML", true);
+const mike = user("user_mike", "Mike Lee", "ML");
 const priya = user("user_priya", "Priya Shah", "PS");
 const tom = user("user_tom", "Tom Ward", "TW");
 const users = new Map([sarah, mike, priya, tom].map((u) => [u.id, u]));
@@ -172,7 +166,6 @@ describe("mapQuotedMessage", () => {
 			id: "user_gone",
 			name: "Former member",
 			initials: "?",
-			isCoach: false,
 		});
 	});
 });
