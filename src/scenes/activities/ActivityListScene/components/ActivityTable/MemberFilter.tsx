@@ -41,14 +41,7 @@ export function MemberFilter({
 
 	return (
 		<Popover>
-			<PopoverTrigger
-				render={
-					<FilterChip
-						isActive={selectedIds.length > 0}
-						className="max-md:self-start"
-					/>
-				}
-			>
+			<PopoverTrigger render={<FilterChip isActive={selectedIds.length > 0} />}>
 				<span className="sr-only">Members:</span>
 				{selectedIds.length === 0 && "All members"}
 				{selectedIds.length === 1 &&

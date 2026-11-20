@@ -89,11 +89,12 @@ export function ActivityTable({
 		<div className="w-full flex-col justify-start gap-6">
 			<div className="flex flex-col gap-3 px-4 pb-3 md:flex-row md:items-center md:justify-between md:p-4 lg:px-6">
 				<div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
-					<div className="flex shrink-0 gap-2 overflow-x-auto">
+					<div className="flex shrink-0 flex-wrap gap-1.5 overflow-x-auto md:flex-nowrap md:gap-2">
 						{activityTypeOptions.map((option) => (
 							<FilterChip
 								key={option}
 								isActive={!ergTest && (type ?? "all") === option}
+								className="max-md:px-2.5"
 								onClick={() => {
 									setType(
 										ActivityType.find(
@@ -115,6 +116,7 @@ export function ActivityTable({
 							<FilterChip
 								key={option}
 								isActive={ergTest === option}
+								className="max-md:px-2.5"
 								onClick={() => {
 									setErgTest(option);
 									setType(undefined);
@@ -124,21 +126,21 @@ export function ActivityTable({
 								{option.toUpperCase()}
 							</FilterChip>
 						))}
+						{isAdmin && (
+							<MemberFilter
+								athletes={athletes ?? []}
+								athleteIds={athleteIds ?? []}
+								onChange={(nextIds) => {
+									router.replace(
+										nextIds.length
+											? `${routes.activities.list()}?athleteIds=${nextIds.join(",")}`
+											: routes.activities.list(),
+									);
+									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+								}}
+							/>
+						)}
 					</div>
-					{isAdmin && (
-						<MemberFilter
-							athletes={athletes ?? []}
-							athleteIds={athleteIds ?? []}
-							onChange={(nextIds) => {
-								router.replace(
-									nextIds.length
-										? `${routes.activities.list()}?athleteIds=${nextIds.join(",")}`
-										: routes.activities.list(),
-								);
-								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-							}}
-						/>
-					)}
 				</div>
 				<div className="flex items-center max-md:hidden">
 					<Button
