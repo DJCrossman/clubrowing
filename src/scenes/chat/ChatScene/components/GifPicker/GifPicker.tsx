@@ -39,7 +39,8 @@ export function GifPicker({ children, onSelect }: GifPickerProps) {
 			<PopoverContent
 				container={container ?? undefined}
 				align="start"
-				className="flex w-[380px] flex-col gap-2 rounded-xl border-input bg-card p-2.5"
+				sticky
+				className="flex max-h-(--available-height) w-[380px] flex-col gap-2 rounded-xl border-input bg-card p-2.5"
 			>
 				<PickerSearch
 					value={query}

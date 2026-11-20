@@ -245,6 +245,61 @@ test("a member under 13 has no GIF button and reads GIFs as text", async ({
 	await juniorContext.close();
 });
 
+test("on a phone the GIF picker stays above the keyboard and drops back when it closes", async ({
+	page,
+}) => {
+	test.skip(
+		test.info().project.name !== "phone",
+		"Only a phone has an on-screen keyboard.",
+	);
+	await stubGiphy({ page });
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	await page.getByRole("button", { name: "Add a GIF" }).tap();
+	await expect(
+		page.getByRole("button", { name: "Send GIF: Rowing GIF trending1" }),
+	).toBeVisible();
+	const search = page.getByPlaceholder("Search GIFs");
+	const credit = page.getByText("Powered by GIPHY");
+	await search.tap();
+
+	// Headless Chromium has no on-screen keyboard, so report the shorter visual
+	// viewport that a 336 px one leaves behind.
+	const keyboardTop = await page.evaluate(() => {
+		const viewport = window.visualViewport;
+		if (!viewport) return window.innerHeight;
+		const height = window.innerHeight - 336;
+		Object.defineProperty(viewport, "height", {
+			configurable: true,
+			get: () => height,
+		});
+		viewport.dispatchEvent(new Event("resize"));
+		return height;
+	});
+	await expect
+		.poll(() =>
+			credit.evaluate((element) => element.getBoundingClientRect().bottom),
+		)
+		.toBeLessThanOrEqual(keyboardTop);
+	expect(
+		await search.evaluate((element) => element.getBoundingClientRect().top),
+	).toBeGreaterThanOrEqual(0);
+
+	await page.evaluate(() => {
+		const viewport = window.visualViewport;
+		if (!viewport) return;
+		Object.defineProperty(viewport, "height", {
+			get: () => window.innerHeight,
+		});
+		viewport.dispatchEvent(new Event("resize"));
+	});
+	await expect
+		.poll(() =>
+			credit.evaluate((element) => element.getBoundingClientRect().bottom),
+		)
+		.toBeGreaterThan(keyboardTop);
+});
+
 test("a member sends a photo with a caption and everyone in the conversation sees it", async ({
 	page,
 	browser,
