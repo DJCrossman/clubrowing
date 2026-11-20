@@ -427,7 +427,7 @@ async function replaceBranchWithDummyData(
 	console.log(`▶ Applying migrations to '${branch}'...`);
 	const migrateCode = await inherit(
 		["bunx", "--bun", "prisma", "migrate", "deploy"],
-		{ env: { DATABASE_URL: unpooled } },
+		{ env: { DATABASE_URL: unpooled, DATABASE_URL_UNPOOLED: unpooled } },
 	);
 	if (migrateCode !== 0) process.exit(migrateCode);
 
