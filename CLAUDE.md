@@ -29,6 +29,7 @@ required var is missing: `DATABASE_URL`, `INTEGRATION_TOKEN_ENCRYPTION_KEY`,
 `NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID`, plus Clerk's `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 and `CLERK_SECRET_KEY`. Migrations run against the **unpooled** connection
 (`DATABASE_URL_UNPOOLED`); the app runtime uses the pooled `DATABASE_URL`.
+`BLOB_READ_WRITE_TOKEN` is optional; without it `POST /api/v1/uploads` answers 503.
 
 ## Worktrees & isolated instances
 
@@ -109,6 +110,10 @@ bun run instance:e2e              # desktop + 390px phone, a video per test in e
   It has no Frontend API, so `/login` does not work and nobody can sign in by hand. Tests
   sign in with `signInAs(page, "admin" | "member")` from `e2e/sign-in.ts`, using a session
   that `instance:e2e` mints. Sessions last one hour.
+- Vercel Blob is `@emulators/vercel`, started inside the container
+  (`scripts/blob-emulator.ts`). Uploaded files are held in memory and are gone when the
+  container restarts. Nothing reaches Vercel. The per-member daily upload limit is raised
+  there (`MEMBER_DAILY_UPLOAD_LIMIT`) so repeated e2e runs do not trip it.
 - `failed_to_load_clerk_js` in the browser console is expected there; pages do not need it.
 - Both commands look after themselves: `create --dummy` installs dependencies and generates
   the Prisma client when the worktree needs it, and `instance:e2e` waits until the app

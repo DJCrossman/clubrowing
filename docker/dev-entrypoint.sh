@@ -24,6 +24,12 @@ if [[ "${CLERK_API_URL:-}" == http://127.0.0.1:* ]]; then
 	bun scripts/clerk-emulator.ts &
 fi
 
+# Dummy instances point Vercel Blob at this container too; uploads live in its
+# memory (see scripts/blob-emulator.ts).
+if [[ "${VERCEL_BLOB_API_URL:-}" == http://127.0.0.1:* ]]; then
+	bun scripts/blob-emulator.ts &
+fi
+
 # 3. Apply migrations to this instance's Neon branch. prisma.config.ts reads
 #    DATABASE_URL, so we override it with the UNPOOLED endpoint for this command
 #    only — Neon's pooled (PgBouncer) connection can't run DDL/advisory locks.

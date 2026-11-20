@@ -26,6 +26,8 @@ export const envVars = z
 		WEB_PUSH_PRIVATE_KEY: z.string().optional(),
 		WEB_PUSH_SUBJECT: z.string().default("mailto:reginarowing@crossman.io"),
 		REGINA_ROWING_FEEDBACK_TOKEN: z.string().optional(),
+		BLOB_READ_WRITE_TOKEN: z.string().optional(),
+		MEMBER_DAILY_UPLOAD_LIMIT: z.coerce.number().default(30),
 	})
 	/**
 	 * You can't destruct `process.env` as a regular object in the Next.js edge runtimes (e.g.
@@ -50,4 +52,6 @@ export const envVars = z
 		WEB_PUSH_PRIVATE_KEY: process.env.WEB_PUSH_PRIVATE_KEY,
 		WEB_PUSH_SUBJECT: process.env.WEB_PUSH_SUBJECT,
 		REGINA_ROWING_FEEDBACK_TOKEN: process.env.REGINA_ROWING_FEEDBACK_TOKEN,
+		BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+		MEMBER_DAILY_UPLOAD_LIMIT: process.env.MEMBER_DAILY_UPLOAD_LIMIT,
 	});
