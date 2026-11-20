@@ -4,19 +4,27 @@ import { XIcon } from "lucide-react"
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
+import { useIsKeyboardOpen } from "@/hooks/useIsKeyboardOpen"
 import { useIsMobile } from "@/hooks/useIsMobile"
 import { cn } from "@/lib/utils"
 
-/** Side drawers become bottom sheets on phones, whatever direction they ask for. */
+/**
+ * Side drawers become bottom sheets on phones, whatever direction they ask for.
+ * While the on-screen keyboard is open a swipe never drags the drawer, so a
+ * form inside it can be scrolled.
+ */
 function Drawer({
   direction = "bottom",
+  handleOnly,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
   const isMobile = useIsMobile()
+  const isKeyboardOpen = useIsKeyboardOpen()
   return (
     <DrawerPrimitive.Root
       data-slot="drawer"
       direction={isMobile ? "bottom" : direction}
+      handleOnly={handleOnly || isKeyboardOpen}
       {...props}
     />
   )

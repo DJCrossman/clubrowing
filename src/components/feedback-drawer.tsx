@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import {
 	closeFeedback,
 	type FeedbackRequest,
@@ -45,6 +46,9 @@ export const FeedbackDrawer = () => {
 		getFeedbackState,
 		getFeedbackState,
 	);
+	// Read here, not in the form: a hook that mounts with the form still says
+	// desktop on its first render, which is when autoFocus acts.
+	const isMobile = useIsMobile();
 
 	return (
 		<Drawer
@@ -65,7 +69,13 @@ export const FeedbackDrawer = () => {
 					<DrawerCloseButton />
 				</DrawerHeader>
 				<div className="flex-1 overflow-y-auto p-6">
-					{request && <FeedbackForm key={request.id} request={request} />}
+					{request && (
+						<FeedbackForm
+							key={request.id}
+							request={request}
+							autoFocus={!isMobile}
+						/>
+					)}
 				</div>
 			</DrawerContent>
 		</Drawer>
@@ -78,7 +88,13 @@ const TYPE_LABELS: Record<FeedbackType, string> = {
 	question: "Question",
 };
 
-const FeedbackForm = ({ request }: { request: FeedbackRequest }) => {
+const FeedbackForm = ({
+	request,
+	autoFocus,
+}: {
+	request: FeedbackRequest;
+	autoFocus: boolean;
+}) => {
 	const submit = trpcClient.feedback.submit.useMutation();
 	const form = useForm<FeedbackFormValues>({
 		resolver: zodResolver(feedbackFormSchema),
@@ -154,7 +170,7 @@ const FeedbackForm = ({ request }: { request: FeedbackRequest }) => {
 							<FormControl>
 								<Input
 									placeholder="One line about what's up"
-									autoFocus={!request.error}
+									autoFocus={autoFocus && !request.error}
 									{...field}
 								/>
 							</FormControl>
@@ -176,7 +192,7 @@ const FeedbackForm = ({ request }: { request: FeedbackRequest }) => {
 											? "What were you doing when this happened?"
 											: "Anything that helps us understand it"
 									}
-									autoFocus={!!request.error}
+									autoFocus={autoFocus && !!request.error}
 									{...field}
 								/>
 							</FormControl>
