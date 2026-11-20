@@ -13,3 +13,11 @@ export function getAttachmentsPreview({
 	if (photoCount === 0 && fileCount === 1) return `File: ${fileName}`;
 	return `${photoCount + fileCount} files`;
 }
+
+export function getViewableKind(name: string): "pdf" | "xlsx" | "csv" | null {
+	const lowerCaseName = name.toLowerCase();
+	if (lowerCaseName.endsWith(".pdf")) return "pdf";
+	if (lowerCaseName.endsWith(".xlsx")) return "xlsx";
+	if (lowerCaseName.endsWith(".csv")) return "csv";
+	return null;
+}

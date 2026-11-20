@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import { crc32, deflateRawSync } from "node:zlib";
+import { type Browser, expect, type Page, test } from "@playwright/test";
 import sharp from "sharp";
 import { stubGiphy } from "./giphy-stub";
 import { signInAs } from "./sign-in";
@@ -404,7 +405,7 @@ test("someone who cannot read a conversation cannot load its photos", async ({
 	const photoUrl = src ?? "";
 	const fileUrl =
 		(await message
-			.getByRole("link", { name: "Download lineup.csv" })
+			.getByRole("link", { name: "Open lineup.csv" })
 			.getAttribute("href")) ?? "";
 	expect(fileUrl).toContain("/api/v1/chat/attachments/");
 
@@ -457,7 +458,7 @@ test("deleting a message removes its photo", async ({ page }) => {
 			.getAttribute("src")) ?? "";
 	const fileUrl =
 		(await message
-			.getByRole("link", { name: "Download wrong-plan.pdf" })
+			.getByRole("link", { name: "Open wrong-plan.pdf" })
 			.getAttribute("href")) ?? "";
 	expect((await page.request.get(src)).status()).toBe(200);
 	expect((await page.request.get(fileUrl)).status()).toBe(200);
@@ -529,7 +530,7 @@ test("a member sends a PDF with a caption and the other person downloads it unch
 	const chip = page
 		.getByRole("article")
 		.filter({ hasText: caption })
-		.getByRole("link", { name: "Download race-plan.pdf" });
+		.getByRole("link", { name: "Open race-plan.pdf" });
 	await expect(chip).toBeVisible();
 	await expect(chip).toHaveAttribute("download");
 	await expect(
@@ -543,10 +544,18 @@ test("a member sends a PDF with a caption and the other person downloads it unch
 	const adminChip = adminPage
 		.getByRole("article")
 		.filter({ hasText: caption })
-		.getByRole("link", { name: "Download race-plan.pdf" });
+		.getByRole("link", { name: "Open race-plan.pdf" });
 	await expect(adminChip).toBeVisible();
+	await adminChip.click();
+	const viewer = adminPage.getByRole("dialog", { name: "race-plan.pdf" });
+	await expect(
+		viewer.getByText(
+			"This file can't be shown here. Download it to open it on your device.",
+		),
+	).toBeVisible();
+	const download = viewer.getByRole("button", { name: "Download" });
 	const response = await adminPage.request.get(
-		(await adminChip.getAttribute("href")) ?? "",
+		(await download.getAttribute("href")) ?? "",
 	);
 	expect(response.status()).toBe(200);
 	expect(response.headers()["content-disposition"]).toMatch(/^attachment/);
@@ -555,7 +564,358 @@ test("a member sends a PDF with a caption and the other person downloads it unch
 	expect(response.headers()["x-content-type-options"]).toBe("nosniff");
 	expect(response.headers()["content-security-policy"]).toBe("sandbox");
 	expect((await response.body()).equals(racePlan)).toBe(true);
+	const [downloaded] = await Promise.all([
+		adminPage.waitForEvent("download"),
+		download.click(),
+	]);
+	expect(downloaded.suggestedFilename()).toBe("race-plan.pdf");
 	await adminContext.close();
+});
+
+test("a member opens a PDF from a message and its pages are drawn", async ({
+	page,
+	browser,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Crew notes ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "crew-notes.pdf",
+		mimeType: "application/pdf",
+		buffer: await printedPdf(browser),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	await page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open crew-notes.pdf" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "crew-notes.pdf" });
+	await expect(viewer.getByText("crew-notes.pdf")).toBeVisible();
+	const firstPage = viewer.getByRole("img", { name: "Page 1 of 2" });
+	await expect(firstPage).toBeVisible();
+	await expect
+		.poll(() =>
+			firstPage.evaluate((canvas: HTMLCanvasElement) => {
+				if (canvas.width === 0) return false;
+				const pixels = canvas
+					.getContext("2d")
+					?.getImageData(0, 0, canvas.width, canvas.height).data;
+				if (!pixels) return false;
+				const hasPageBackground = pixels.some(
+					(value, index) =>
+						index % 4 === 0 && value > 200 && pixels[index + 3] === 255,
+				);
+				const hasText = pixels.some(
+					(value, index) =>
+						index % 4 === 0 && value < 128 && pixels[index + 3] === 255,
+				);
+				return hasPageBackground && hasText;
+			}),
+		)
+		.toBe(true);
+	await expect(viewer.getByRole("button", { name: "Download" })).toBeVisible();
+});
+
+test("the PDF engine is only downloaded when a member opens a PDF", async ({
+	page,
+	browser,
+}) => {
+	const requested: string[] = [];
+	page.on("request", (request) => requested.push(request.url()));
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Lazy notes ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "lazy-notes.pdf",
+		mimeType: "application/pdf",
+		buffer: await printedPdf(browser),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+	const chip = page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open lazy-notes.pdf" });
+	await expect(chip).toBeVisible();
+	expect(requested.filter((url) => /pdfjs|pdf\.worker/.test(url))).toEqual([]);
+
+	await chip.click();
+	await expect(
+		page
+			.getByRole("dialog", { name: "lazy-notes.pdf" })
+			.getByRole("img", { name: "Page 1 of 2" }),
+	).toBeVisible();
+	expect(requested.some((url) => url.includes("pdfjs"))).toBe(true);
+	expect(requested.some((url) => url.includes("pdf.worker"))).toBe(true);
+});
+
+test("a member opens a CSV from a message and sees its cells in a table", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Erg scores ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "erg-scores.csv",
+		mimeType: "text/csv",
+		buffer: Buffer.from(
+			"Rower,Distance (m),Time\nJordan Sculler,2000,6:52.6\nCasey Catchpole,2000,6:58.9\n",
+		),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	await page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open erg-scores.csv" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "erg-scores.csv" });
+	await expect(
+		viewer.getByRole("columnheader", { name: "Rower" }),
+	).toBeVisible();
+	await expect(
+		viewer.getByRole("cell", { name: "Casey Catchpole" }),
+	).toBeVisible();
+	await expect(viewer.getByRole("cell", { name: "6:52.6" })).toBeVisible();
+	await expect(viewer.getByRole("button", { name: "Download" })).toBeVisible();
+});
+
+test("a member opens an Excel workbook from a message and sees the cells of its first sheet", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Lineups ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "crew-lineups.xlsx",
+		mimeType:
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		buffer: xlsx([
+			{
+				name: "Lineups",
+				rows: [
+					["Boat", "Seat", "Rower", "2K (s)"],
+					["Eight A", "Stroke", "Jordan Sculler", 412.6],
+					["Eight A", 7, "Casey Catchpole", 418.9],
+				],
+			},
+			{ name: "Spares", rows: [["Rower"], ["Kit Puddler"]] },
+		]),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	await page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open crew-lineups.xlsx" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "crew-lineups.xlsx" });
+	await expect(
+		viewer.getByRole("columnheader", { name: "Rower" }),
+	).toBeVisible();
+	await expect(
+		viewer.getByRole("cell", { name: "Jordan Sculler" }),
+	).toBeVisible();
+	await expect(viewer.getByRole("cell", { name: "418.9" })).toBeVisible();
+	await expect(viewer.getByText(/first sheet, Lineups/)).toBeVisible();
+	await expect(viewer.getByText("Kit Puddler")).toHaveCount(0);
+});
+
+test("a sheet with more than 200 rows says the rest was left out", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Season log ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "season-log.csv",
+		mimeType: "text/csv",
+		buffer: Buffer.from(
+			[
+				"Session,Rower",
+				...Array.from(
+					{ length: 250 },
+					(_, index) => `${index + 1},Rower ${index + 1}`,
+				),
+			].join("\n"),
+		),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	await page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open season-log.csv" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "season-log.csv" });
+	await expect(viewer.getByText(/Showing the first 200 rows/)).toBeVisible();
+	await expect(
+		viewer.getByRole("cell", { name: "Rower 1", exact: true }),
+	).toBeVisible();
+	await expect(
+		viewer.getByRole("cell", { name: "Rower 199", exact: true }),
+	).toHaveCount(1);
+	await expect(
+		viewer.getByRole("cell", { name: "Rower 150", exact: true }),
+	).toBeVisible();
+	await expect(
+		viewer.getByRole("cell", { name: "Rower 200", exact: true }),
+	).toHaveCount(0);
+	await expect(
+		viewer.getByRole("cell", { name: "Rower 250", exact: true }),
+	).toHaveCount(0);
+});
+
+test("an empty sheet says it has no rows", async ({ page }) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Empty log ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "empty-log.csv",
+		mimeType: "text/csv",
+		buffer: Buffer.from("\n"),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	await page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open empty-log.csv" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "empty-log.csv" });
+	await expect(viewer.getByText("This file has no rows.")).toBeVisible();
+	await expect(viewer.getByRole("table")).toHaveCount(0);
+});
+
+test("a workbook that would unpack to far more than it holds can't be shown", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const workbook = xlsx([{ name: "Lineups", rows: [["Boat"], ["Eight A"]] }]);
+	const directoryOffset = workbook.readUInt32LE(workbook.length - 6);
+	workbook.writeUInt32LE(600 * 1024 * 1024, directoryOffset + 24);
+	const caption = `Huge sheet ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "huge-sheet.xlsx",
+		mimeType:
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		buffer: workbook,
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	await page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open huge-sheet.xlsx" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "huge-sheet.xlsx" });
+	await expect(
+		viewer.getByText(
+			"This file can't be shown here. Download it to open it on your device.",
+		),
+	).toBeVisible();
+	await expect(viewer.getByRole("table")).toHaveCount(0);
+});
+
+test("a file named like a workbook that is not one can't be shown but can still be downloaded", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Odd sheet ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "odd-sheet.xlsx",
+		mimeType:
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		buffer: Buffer.from("Boat,Seat\nEight A,Stroke\n"),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	await page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open odd-sheet.xlsx" })
+		.click();
+	const viewer = page.getByRole("dialog", { name: "odd-sheet.xlsx" });
+	await expect(
+		viewer.getByText(
+			"This file can't be shown here. Download it to open it on your device.",
+		),
+	).toBeVisible();
+	await expect(viewer.getByRole("table")).toHaveCount(0);
+	const [downloaded] = await Promise.all([
+		page.waitForEvent("download"),
+		viewer.getByRole("button", { name: "Download" }).click(),
+	]);
+	expect(downloaded.suggestedFilename()).toBe("odd-sheet.xlsx");
+});
+
+test("the sheet engine is only downloaded when a member opens a sheet", async ({
+	page,
+}) => {
+	const requested: string[] = [];
+	page.on("request", (request) => requested.push(request.url()));
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Lazy sheet ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "lazy-sheet.csv",
+		mimeType: "text/csv",
+		buffer: Buffer.from("Rower,Seat\nJordan Sculler,Stroke\n"),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+	const chip = page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open lazy-sheet.csv" });
+	await expect(chip).toBeVisible();
+	expect(requested.filter((url) => url.includes("sheet_worker"))).toEqual([]);
+
+	await chip.click();
+	await expect(
+		page
+			.getByRole("dialog", { name: "lazy-sheet.csv" })
+			.getByRole("cell", { name: "Jordan Sculler" }),
+	).toBeVisible();
+	expect(requested.some((url) => url.includes("sheet_worker"))).toBe(true);
 });
 
 test("a message can carry a photo and a file together", async ({ page }) => {
@@ -586,7 +946,7 @@ test("a message can carry a photo and a file together", async ({ page }) => {
 		1,
 	);
 	await expect(
-		message.getByRole("link", { name: "Download crew-list.xlsx" }),
+		message.getByRole("link", { name: "Open crew-list.xlsx" }),
 	).toHaveCount(1);
 });
 
@@ -712,7 +1072,7 @@ test("a member drops a photo and a PDF on the conversation and sends them", asyn
 		message.getByRole("button", { name: "View photo" }),
 	).toBeVisible();
 	await expect(
-		message.getByRole("link", { name: "Download heat-sheet.pdf" }),
+		message.getByRole("link", { name: "Open heat-sheet.pdf" }),
 	).toBeVisible();
 });
 
@@ -932,6 +1292,81 @@ function pdf(text: string) {
 	return Buffer.from(
 		`%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n% ${text}\ntrailer << /Root 1 0 R >>\n%%EOF\n`,
 	);
+}
+
+async function printedPdf(browser: Browser) {
+	const scratch = await browser.newPage();
+	await scratch.setContent(
+		'<h1>Crew notes</h1><p>Seat race at six.</p><h1 style="break-before: page">Page two</h1>',
+	);
+	const buffer = await scratch.pdf();
+	await scratch.close();
+	return buffer;
+}
+
+function xlsx(sheets: { name: string; rows: (string | number)[][] }[]) {
+	const parts: Record<string, string> = {
+		"[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((_, index) => `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`,
+		"_rels/.rels": `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+		"xl/workbook.xml": `<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map(({ name }, index) => `<sheet name="${name}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`).join("")}</sheets></workbook>`,
+		"xl/_rels/workbook.xml.rels": `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`).join("")}</Relationships>`,
+		...Object.fromEntries(
+			sheets.map(({ rows }, index) => [
+				`xl/worksheets/sheet${index + 1}.xml`,
+				`<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows
+					.map(
+						(row, rowIndex) =>
+							`<row r="${rowIndex + 1}">${row
+								.map((value, column) => {
+									const reference = `${String.fromCharCode(65 + column)}${rowIndex + 1}`;
+									if (typeof value === "number") {
+										return `<c r="${reference}"><v>${value}</v></c>`;
+									}
+									return `<c r="${reference}" t="inlineStr"><is><t>${value}</t></is></c>`;
+								})
+								.join("")}</row>`,
+					)
+					.join("")}</sheetData></worksheet>`,
+			]),
+		),
+	};
+	const localParts: Buffer[] = [];
+	const centralParts: Buffer[] = [];
+	let offset = 0;
+	for (const [path, text] of Object.entries(parts)) {
+		const name = Buffer.from(path);
+		const content = Buffer.from(text);
+		const compressed = deflateRawSync(content);
+		const local = Buffer.alloc(30);
+		local.writeUInt32LE(0x04034b50, 0);
+		local.writeUInt16LE(20, 4);
+		local.writeUInt16LE(8, 8);
+		local.writeUInt32LE(crc32(content), 14);
+		local.writeUInt32LE(compressed.length, 18);
+		local.writeUInt32LE(content.length, 22);
+		local.writeUInt16LE(name.length, 26);
+		const central = Buffer.alloc(46);
+		central.writeUInt32LE(0x02014b50, 0);
+		central.writeUInt16LE(20, 4);
+		central.writeUInt16LE(20, 6);
+		central.writeUInt16LE(8, 10);
+		central.writeUInt32LE(crc32(content), 16);
+		central.writeUInt32LE(compressed.length, 20);
+		central.writeUInt32LE(content.length, 24);
+		central.writeUInt16LE(name.length, 28);
+		central.writeUInt32LE(offset, 42);
+		localParts.push(local, name, compressed);
+		centralParts.push(central, name);
+		offset += local.length + name.length + compressed.length;
+	}
+	const directory = Buffer.concat(centralParts);
+	const end = Buffer.alloc(22);
+	end.writeUInt32LE(0x06054b50, 0);
+	end.writeUInt16LE(Object.keys(parts).length, 8);
+	end.writeUInt16LE(Object.keys(parts).length, 10);
+	end.writeUInt32LE(directory.length, 12);
+	end.writeUInt32LE(offset, 16);
+	return Buffer.concat([...localParts, directory, end]);
 }
 
 async function fileTransfer({
