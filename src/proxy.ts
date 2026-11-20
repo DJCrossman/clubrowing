@@ -16,6 +16,13 @@ export default clerkMiddleware(async (auth, req) => {
 		return;
 	}
 
+	// Clerk renews a lapsed session cookie only on a page load, so a link tap or
+	// prefetch reads as signed out until clerk-js renews it. A 401 makes the
+	// router load the page in full rather than follow a redirect to /login.
+	if (req.headers.get("sec-fetch-dest") === "empty" && !(await auth()).userId) {
+		return new NextResponse(null, { status: 401 });
+	}
+
 	await auth.protect({
 		unauthenticatedUrl: new URL("/login", req.url).toString(),
 	});
