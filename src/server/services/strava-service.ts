@@ -140,11 +140,11 @@ async function fetchRecentRowingActivities(
 
 async function fetchStravaActivity(
 	accessToken: string,
-	activityId: number | bigint,
+	activityId: string,
 ): Promise<StravaActivity | null> {
 	const config = getStravaConfig();
 	const response = await fetch(
-		`${config.baseApiUrl}/activities/${activityId.toString()}`,
+		`${config.baseApiUrl}/activities/${activityId}`,
 		{
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -155,7 +155,7 @@ async function fetchStravaActivity(
 
 	if (response.status === 404) {
 		logger.info("activity not found on strava", {
-			activityId: String(activityId),
+			activityId,
 		});
 		return null;
 	}
@@ -171,7 +171,7 @@ async function fetchStravaActivity(
 	const parsed = stravaActivitySchema.safeParse(await response.json());
 	if (!parsed.success) {
 		logger.warn("activity failed schema parse", {
-			activityId: String(activityId),
+			activityId,
 			issues: parsed.error.issues.slice(0, 5),
 		});
 		return null;
@@ -278,7 +278,7 @@ function parseRowingActivities(raws: unknown[]): {
 		if (!sampleInvalidLogged) {
 			const record = raw as Record<string, unknown> | null;
 			logger.warn("rowing activity failed schema parse", {
-				stravaId: record?.id ?? null,
+				stravaId: record?.id_str ?? null,
 				issues: parsed.error.issues.slice(0, 10),
 				sampleKeys:
 					record && typeof record === "object" ? Object.keys(record) : [],

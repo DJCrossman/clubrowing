@@ -13,9 +13,9 @@ const ROWING_SPORT_TYPES = new Set(["Rowing", "VirtualRow"]);
 
 export const stravaWebhookEventSchema = z.object({
 	object_type: z.enum(["activity", "athlete"]),
-	object_id: z.number().int(),
+	object_id: z.string().regex(/^\d+$/),
 	aspect_type: z.enum(["create", "update", "delete"]),
-	owner_id: z.number().int(),
+	owner_id: z.string().regex(/^\d+$/),
 	subscription_id: z.number().int(),
 	event_time: z.number().int(),
 	updates: z.record(z.string(), z.union([z.string(), z.boolean()])).default({}),
@@ -28,7 +28,7 @@ export async function processStravaWebhookEventCommand(
 	{ db, services }: Pick<Context, "db" | "services">,
 ) {
 	const athlete = await db.athlete.findFirst({
-		where: { stravaAthleteId: event.owner_id.toString() },
+		where: { stravaAthleteId: event.owner_id },
 		select: { id: true },
 	});
 	if (!athlete) {
@@ -169,7 +169,7 @@ export async function processStravaWebhookEventCommand(
 			where: {
 				athleteId_stravaId: {
 					athleteId: athlete.id,
-					stravaId: BigInt(activity.id),
+					stravaId: activity.id,
 				},
 			},
 			select: {

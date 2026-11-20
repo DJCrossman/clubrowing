@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-export const stravaActivitySchema = z.object({
-	id: z.number(),
+const stravaActivityFieldsSchema = z.object({
+	id: z.coerce.string(),
+	id_str: z.string().optional(),
 	resource_state: z.number(),
 	external_id: z.string().nullish(),
 	upload_id: z.number().nullish(),
@@ -67,6 +68,10 @@ export const stravaActivitySchema = z.object({
 	suffer_score: z.number().optional(),
 	device_name: z.string().optional(),
 });
+
+export const stravaActivitySchema = stravaActivityFieldsSchema.transform(
+	(activity) => ({ ...activity, id: activity.id_str ?? activity.id }),
+);
 
 export type StravaActivity = z.infer<typeof stravaActivitySchema>;
 

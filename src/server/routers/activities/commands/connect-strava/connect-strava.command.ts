@@ -13,7 +13,7 @@ export async function connectStravaCommand(
 	const updated = await db.athlete.update({
 		where: { id: athlete.id },
 		data: {
-			stravaAthleteId: stravaAthlete.id.toString(),
+			stravaAthleteId: stravaAthlete.id,
 			stravaAccessToken: services.strava.encryptToken(tokens.access_token),
 			stravaRefreshToken: services.strava.encryptToken(tokens.refresh_token),
 			stravaTokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),

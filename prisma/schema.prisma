@@ -206,7 +206,7 @@ model activity {
   boatId         String?
   ergId          String?
   workoutId      String?
-  stravaId       BigInt?
+  stravaId       String?
   stravaData     Json?
   conceptTwoId   BigInt?
   conceptTwoData Json?

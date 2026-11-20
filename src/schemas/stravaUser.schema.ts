@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-export const stravaUserSchema = z.object({
-	id: z.number(),
+const stravaUserFieldsSchema = z.object({
+	id: z.coerce.string(),
+	id_str: z.string().optional(),
 	username: z.string().nullable().optional(),
 	resource_state: z.number(),
 	firstname: z.string(),
@@ -22,6 +23,11 @@ export const stravaUserSchema = z.object({
 	friend: z.null().optional(),
 	follower: z.null().optional(),
 });
+
+export const stravaUserSchema = stravaUserFieldsSchema.transform((athlete) => ({
+	...athlete,
+	id: athlete.id_str ?? athlete.id,
+}));
 
 export type StravaUser = z.infer<typeof stravaUserSchema>;
 

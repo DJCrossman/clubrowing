@@ -21,16 +21,15 @@ export async function removeActivitySource({
 	db: PrismaClient;
 	athleteId: string;
 	source: "strava" | "concept2";
-	externalId: number | bigint;
+	externalId: number | bigint | string;
 }): Promise<{ deleted: number; unlinked: number }> {
 	return db.$transaction(async (tx) => {
 		await lockAthleteActivities({ tx, athleteId });
-		const id = BigInt(externalId);
 		const rows = await tx.activity.findMany({
 			where:
 				source === "strava"
-					? { athleteId, stravaId: id }
-					: { athleteId, conceptTwoId: id },
+					? { athleteId, stravaId: String(externalId) }
+					: { athleteId, conceptTwoId: BigInt(externalId) },
 			select: {
 				id: true,
 				stravaId: true,

@@ -162,7 +162,7 @@ function parseBatchActivities(rawItems: unknown[]): {
 	return { items, invalidItems };
 }
 
-type ExistingActivity = { id: string; stravaId: bigint | null };
+type ExistingActivity = { id: string; stravaId: string | null };
 type StravaOnlyActivity = ExistingActivity &
 	CrossSourceShape & { conceptTwoId: bigint | null };
 
@@ -210,7 +210,7 @@ async function getExistingActivities({
 		byConceptTwoId,
 		stravaOnly: stravaOnly.flatMap((row) => {
 			const activity = parseStoredJson({
-				schema: stravaActivitySchema.pick({
+				schema: stravaActivitySchema.in.pick({
 					elapsed_time: true,
 					distance: true,
 					name: true,

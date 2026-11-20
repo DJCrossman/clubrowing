@@ -144,7 +144,7 @@ export async function processStravaInboxBatchCommand(
 
 type ParsedStravaItem = {
 	activity: StravaActivity;
-	stravaId: bigint;
+	stravaId: string;
 	conceptTwoId: bigint | null;
 };
 
@@ -162,7 +162,7 @@ function parseBatchActivities(rawItems: unknown[]): {
 		}
 		items.push({
 			activity: parsed.data,
-			stravaId: BigInt(parsed.data.id),
+			stravaId: parsed.data.id,
 			conceptTwoId: getConceptTwoIdFromStrava(parsed.data),
 		});
 	}
@@ -250,7 +250,7 @@ async function getExistingActivities({
 			ergId: row.ergId,
 			workoutId: row.workoutId,
 		};
-		if (row.stravaId !== null) byStravaId.set(row.stravaId.toString(), entry);
+		if (row.stravaId !== null) byStravaId.set(row.stravaId, entry);
 		if (row.conceptTwoId !== null)
 			byConceptTwoId.set(row.conceptTwoId.toString(), entry);
 	}
@@ -299,7 +299,7 @@ function takeCrossSourceMatch({
 export function mapStravaActivity(activity: StravaActivity) {
 	return mergeActivity({
 		activity,
-		stravaId: BigInt(activity.id),
+		stravaId: activity.id,
 		conceptTwoId: null,
 	});
 }
@@ -332,7 +332,7 @@ function findSplitCopies({
 	byConceptTwoId: Map<string, ExistingActivity>;
 }): { strava: ExistingActivity; concept2: ExistingActivity } | undefined {
 	if (item.conceptTwoId === null) return undefined;
-	const strava = byStravaId.get(item.stravaId.toString());
+	const strava = byStravaId.get(item.stravaId);
 	const concept2 = byConceptTwoId.get(item.conceptTwoId.toString());
 	if (!strava || !concept2 || strava.id === concept2.id) return undefined;
 	return { strava, concept2 };
@@ -347,7 +347,7 @@ function resolveExistingId({
 	byStravaId: Map<string, ExistingActivity>;
 	byConceptTwoId: Map<string, ExistingActivity>;
 }): ExistingActivity | undefined {
-	const stravaMatch = byStravaId.get(item.stravaId.toString());
+	const stravaMatch = byStravaId.get(item.stravaId);
 	if (stravaMatch) return stravaMatch;
 	if (item.conceptTwoId === null) return undefined;
 	return byConceptTwoId.get(item.conceptTwoId.toString());

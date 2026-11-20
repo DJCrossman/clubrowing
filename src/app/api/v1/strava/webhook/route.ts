@@ -51,7 +51,14 @@ export async function POST(request: Request) {
 
 	let parsedJson: unknown;
 	try {
-		parsedJson = JSON.parse(rawBody);
+		// Read the ids' exact digits: a JSON number rounds above 2^53.
+		parsedJson = JSON.parse(
+			rawBody,
+			(key, value, context?: { source: string }) =>
+				(key === "object_id" || key === "owner_id") && context
+					? context.source
+					: value,
+		);
 	} catch {
 		logger.warn("rejecting event — body is not valid JSON");
 		return NextResponse.json({ error: "bad_json" }, { status: 400 });
