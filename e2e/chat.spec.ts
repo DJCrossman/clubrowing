@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import sharp from "sharp";
 import { stubGiphy } from "./giphy-stub";
 import { signInAs } from "./sign-in";
@@ -667,6 +667,243 @@ test("a file over 4 MB explains the limit until it is removed", async ({
 	await expect(page.getByText("Files can be up to 4 MB")).toHaveCount(0);
 });
 
+test("a member drops a photo and a PDF on the conversation and sends them", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Regatta day ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	const dataTransfer = await fileTransfer({
+		page,
+		files: [
+			{
+				name: "regatta.jpg",
+				mimeType: "image/jpeg",
+				buffer: await photo({ width: 900, height: 600 }),
+			},
+			{
+				name: "heat-sheet.pdf",
+				mimeType: "application/pdf",
+				buffer: pdf(caption),
+			},
+		],
+	});
+	await composer.dispatchEvent("dragenter", { dataTransfer });
+	const overlay = page.getByText("Drop files to add them to your message");
+	await expect(overlay).toBeVisible();
+	await overlay.dispatchEvent("dragover", { dataTransfer });
+	await overlay.dispatchEvent("drop", { dataTransfer });
+
+	await expect(overlay).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "Remove regatta.jpg" }),
+	).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Remove heat-sheet.pdf" }),
+	).toBeVisible();
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	const message = page.getByRole("article").filter({ hasText: caption });
+	await expect(
+		message.getByRole("button", { name: "View photo" }),
+	).toBeVisible();
+	await expect(
+		message.getByRole("link", { name: "Download heat-sheet.pdf" }),
+	).toBeVisible();
+});
+
+test("a pasted screenshot is added to the message, but pasted rich text adds no picture", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	const screenshot = await sharp({
+		create: { width: 320, height: 200, channels: 3, background: "#3b82c4" },
+	})
+		.png()
+		.toBuffer();
+	await composer.evaluate(
+		(element, clipboardData) =>
+			element.dispatchEvent(
+				new ClipboardEvent("paste", {
+					clipboardData,
+					bubbles: true,
+					cancelable: true,
+				}),
+			),
+		await fileTransfer({
+			page,
+			files: [
+				{ name: "screenshot.png", mimeType: "image/png", buffer: screenshot },
+			],
+		}),
+	);
+	await expect(
+		page.getByRole("button", { name: "Remove screenshot.png" }),
+	).toBeVisible();
+
+	await composer.evaluate(
+		(element, clipboardData) => {
+			clipboardData.setData("text/html", "<table><tr><td>2K</td></tr></table>");
+			clipboardData.setData("text/plain", "2K");
+			element.dispatchEvent(
+				new ClipboardEvent("paste", {
+					clipboardData,
+					bubbles: true,
+					cancelable: true,
+				}),
+			);
+		},
+		await fileTransfer({
+			page,
+			files: [{ name: "cells.png", mimeType: "image/png", buffer: screenshot }],
+		}),
+	);
+	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(1);
+	await expect(
+		page.getByRole("button", { name: "Remove cells.png" }),
+	).toHaveCount(0);
+});
+
+test("files dragged or pasted while a message is being edited are not added", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const original = `Trailer leaves at 7 ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await composer.fill(original);
+	await composer.press("Enter");
+	const message = page.getByRole("article").filter({ hasText: original });
+	await expect(message).toBeVisible();
+	await message.click();
+	await message.getByRole("button", { name: "More actions" }).click();
+	await page.getByRole("menuitem", { name: "Edit message" }).click();
+	const editor = page.getByRole("textbox", { name: "Edit message" });
+	await expect(editor).toBeFocused();
+
+	const files = [
+		{
+			name: "trailer.jpg",
+			mimeType: "image/jpeg",
+			buffer: await photo({ width: 900, height: 600 }),
+		},
+	];
+	const dataTransfer = await fileTransfer({ page, files });
+	const overlay = page.getByText("Drop files to add them to your message");
+	await editor.dispatchEvent("dragenter", { dataTransfer });
+	await editor.dispatchEvent("dragover", { dataTransfer });
+	await expect(overlay).toHaveCount(0);
+
+	expect(
+		await editor.evaluate(
+			(element, clipboardData) => {
+				clipboardData.setData("text/plain", "trailer.jpg");
+				return element.dispatchEvent(
+					new ClipboardEvent("paste", {
+						clipboardData,
+						bubbles: true,
+						cancelable: true,
+					}),
+				);
+			},
+			await fileTransfer({ page, files }),
+		),
+		"the paste is left to the browser",
+	).toBe(true);
+	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(0);
+
+	await editor.press("Escape");
+	await expect(page.getByText("Editing message")).toHaveCount(0);
+	await composer.dispatchEvent("dragenter", { dataTransfer });
+	await expect(overlay).toBeVisible();
+});
+
+test("dragging something that is already in the conversation does not offer to add files", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	const files = [
+		{
+			name: "tile.jpg",
+			mimeType: "image/jpeg",
+			buffer: await photo({ width: 300, height: 200 }),
+		},
+	];
+	const overlay = page.getByText("Drop files to add them to your message");
+
+	const fromConversation = await fileTransfer({ page, files });
+	await page
+		.getByRole("article")
+		.first()
+		.dispatchEvent("dragstart", { dataTransfer: fromConversation });
+	await composer.dispatchEvent("dragenter", { dataTransfer: fromConversation });
+	await composer.dispatchEvent("dragover", { dataTransfer: fromConversation });
+	await expect(overlay).toHaveCount(0);
+
+	await composer.dispatchEvent("dragenter", {
+		dataTransfer: await fileTransfer({ page, files }),
+	});
+	await expect(overlay).toBeVisible();
+});
+
+test("a file dropped beside the conversation is ignored and the drop overlay does not outlive the drag", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	const dataTransfer = await fileTransfer({
+		page,
+		files: [
+			{
+				name: "missed.pdf",
+				mimeType: "application/pdf",
+				buffer: pdf("missed"),
+			},
+		],
+	});
+	const overlay = page.getByText("Drop files to add them to your message");
+
+	await composer.dispatchEvent("dragenter", { dataTransfer });
+	await expect(overlay).toBeVisible();
+	expect(
+		await page.locator("body").evaluate(
+			(body, missed) =>
+				body.dispatchEvent(
+					new DragEvent("drop", {
+						dataTransfer: missed,
+						bubbles: true,
+						cancelable: true,
+					}),
+				),
+			dataTransfer,
+		),
+		"the browser is stopped from opening the file",
+	).toBe(false);
+	await expect(overlay).toHaveCount(0);
+	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(0);
+
+	await composer.dispatchEvent("dragenter", { dataTransfer });
+	await expect(overlay).toBeVisible();
+	await composer.dispatchEvent("dragleave", { dataTransfer });
+	await expect(overlay).toHaveCount(0);
+});
+
 async function photo({
 	width,
 	height,
@@ -694,5 +931,31 @@ async function photo({
 function pdf(text: string) {
 	return Buffer.from(
 		`%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n% ${text}\ntrailer << /Root 1 0 R >>\n%%EOF\n`,
+	);
+}
+
+async function fileTransfer({
+	page,
+	files,
+}: {
+	page: Page;
+	files: { name: string; mimeType: string; buffer: Buffer }[];
+}) {
+	return page.evaluateHandle(
+		(encoded) => {
+			const transfer = new DataTransfer();
+			for (const { name, mimeType, base64 } of encoded) {
+				const bytes = Uint8Array.from(atob(base64), (char) =>
+					char.charCodeAt(0),
+				);
+				transfer.items.add(new File([bytes], name, { type: mimeType }));
+			}
+			return transfer;
+		},
+		files.map(({ name, mimeType, buffer }) => ({
+			name,
+			mimeType,
+			base64: buffer.toString("base64"),
+		})),
 	);
 }

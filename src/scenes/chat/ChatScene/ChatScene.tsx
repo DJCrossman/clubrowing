@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ChatHeader } from "@/components/chat/chat-header";
@@ -22,12 +22,15 @@ import { isPicture, MAX_DM_MEMBERS } from "@/schemas/chat.schema";
 import {
 	ChatEmptyState,
 	DeleteMessageDialog,
+	FileDropOverlay,
 	ForwardDialog,
 	MessageComposer,
+	type MessageComposerHandle,
 	MessageList,
 	ThreadPanel,
 } from "./components";
 import { useChatChannel } from "./hooks/useChatChannel";
+import { useFileDrop } from "./hooks/useFileDrop";
 
 interface ChatSceneProps {
 	channelId: string;
@@ -46,6 +49,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const [deletingMessage, setDeletingMessage] = useState<ChatMessage | null>(
 		null,
 	);
+	const composerRef = useRef<MessageComposerHandle>(null);
 	const {
 		channels,
 		channel,
@@ -74,6 +78,10 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const editingMessage = editing?.channelId === channelId ? editing : null;
 	const channelName = channel?.name ?? "";
 	const isUnavailable = messagesQuery.error?.data?.code === "NOT_FOUND";
+	const fileDrop = useFileDrop({
+		isDisabled: !!editingMessage || isUnavailable,
+		onDrop: (files) => composerRef.current?.addFiles(files),
+	});
 
 	return (
 		<SidebarProvider
@@ -116,8 +124,9 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 				<NotificationsBanner className="mx-4 mt-3 w-auto lg:mx-6" />
 				<div className="flex min-h-0 flex-1">
 					<section
+						ref={fileDrop.targetRef}
 						aria-label={channelName || "Chat"}
-						className="flex min-w-0 flex-1 flex-col"
+						className="relative flex min-w-0 flex-1 flex-col"
 					>
 						{isUnavailable ? (
 							<ChatEmptyState
@@ -126,6 +135,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							/>
 						) : (
 							<>
+								{fileDrop.isDraggingFiles && <FileDropOverlay />}
 								<MessageList
 									messages={messages}
 									isLoading={messagesQuery.isPending}
@@ -174,6 +184,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 								<div className="shrink-0 px-4 pt-2 pb-5 lg:px-6">
 									<MessageComposer
 										key={channelId}
+										ref={composerRef}
 										placeholder={`Message ${channelName}`.trim()}
 										quotedMessage={quotedMessage}
 										onCancelQuote={() => setQuote(null)}

@@ -13,7 +13,14 @@ import {
 	IconSend,
 	IconX,
 } from "@tabler/icons-react";
-import { type ComponentProps, useEffect, useId, useRef } from "react";
+import {
+	type ComponentProps,
+	type Ref,
+	useEffect,
+	useId,
+	useImperativeHandle,
+	useRef,
+} from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,6 +45,8 @@ export type ComposerSubmission = {
 	alsoSendToChannel: boolean;
 };
 
+export type MessageComposerHandle = { addFiles: (added: File[]) => void };
+
 interface MessageComposerProps {
 	placeholder: string;
 	alsoSendToLabel?: string;
@@ -48,6 +57,7 @@ interface MessageComposerProps {
 	onCancelEdit?: () => void;
 	onSaveEdit?: (message: ChatMessage, text: string) => Promise<unknown>;
 	onEditLastMessage?: () => void;
+	ref?: Ref<MessageComposerHandle>;
 }
 
 export function MessageComposer({
@@ -60,6 +70,7 @@ export function MessageComposer({
 	onCancelEdit,
 	onSaveEdit,
 	onEditLastMessage,
+	ref,
 }: MessageComposerProps) {
 	const alsoSendToId = useId();
 	const isThread = !!alsoSendToLabel;
@@ -103,6 +114,14 @@ export function MessageComposer({
 		draftBeforeEdit.current = null;
 		onCancelEdit?.();
 	};
+
+	const canAddFiles = !isThread && !editingMessage && !isSending;
+	const addFiles = (added: File[]) => {
+		if (!canAddFiles || !added.length) return;
+		form.setValue("files", [...files, ...added], { shouldValidate: true });
+	};
+
+	useImperativeHandle(ref, () => ({ addFiles }));
 
 	const submit = form.handleSubmit(async (values) => {
 		if (!values.text && !values.files.length) return;
@@ -202,6 +221,18 @@ export function MessageComposer({
 					readOnly={isSending}
 					placeholder={placeholder}
 					aria-label={editingMessage ? "Edit message" : placeholder}
+					onPaste={(event) => {
+						const pasted = [...event.clipboardData.files];
+						if (!canAddFiles || !pasted.length) return;
+						if (
+							event.clipboardData.types.includes("text/html") &&
+							event.clipboardData.getData("text/plain")
+						) {
+							return;
+						}
+						event.preventDefault();
+						addFiles(pasted);
+					}}
 					onKeyDown={(event) => {
 						if (event.key === "Escape" && editingMessage) {
 							finishEditing();
@@ -259,10 +290,7 @@ export function MessageComposer({
 								onChange={(event) => {
 									const chosen = [...(event.target.files ?? [])];
 									event.target.value = "";
-									if (!chosen.length) return;
-									form.setValue("files", [...files, ...chosen], {
-										shouldValidate: true,
-									});
+									addFiles(chosen);
 								}}
 							/>
 						</>
