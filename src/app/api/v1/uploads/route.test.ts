@@ -12,6 +12,7 @@ const count = vi.fn();
 const create = vi.fn();
 const aggregate = vi.fn();
 const findMany = vi.fn();
+const findFirst = vi.fn();
 const deleteMany = vi.fn();
 const after = vi.fn();
 
@@ -19,7 +20,9 @@ vi.mock("@/lib/env", () => ({ envVars: env }));
 vi.mock("@/lib/auth", () => ({ requireAuth }));
 vi.mock("@vercel/blob", () => ({ put, del }));
 vi.mock("@/lib/db", () => ({
-	db: { upload: { count, create, aggregate, findMany, deleteMany } },
+	db: {
+		upload: { count, create, aggregate, findMany, findFirst, deleteMany },
+	},
 }));
 vi.mock("next/server", async (importOriginal) => ({
 	...(await importOriginal<typeof import("next/server")>()),
@@ -40,6 +43,7 @@ describe("POST /api/v1/uploads", () => {
 		put.mockResolvedValue({ url: "https://storage.test/uploads/photo.webp" });
 		create.mockResolvedValue({ id: "upl_1" });
 		findMany.mockResolvedValue([]);
+		findFirst.mockResolvedValue({ id: "upl_file" });
 	});
 
 	it("rejects a signed-out request", async () => {
@@ -437,6 +441,92 @@ describe("POST /api/v1/uploads", () => {
 		expect(metadata.height).toBe(40);
 	});
 
+	it("stores a preview of the member's own unattached file as a photo no bigger than 720 pixels", async () => {
+		const response = await POST(
+			uploadRequest(await png(1600, 1200), {
+				kind: "preview",
+				previewOf: "upl_file",
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		expect(findFirst).toHaveBeenCalledWith({
+			where: {
+				id: "upl_file",
+				userId,
+				name: { not: null },
+				messageId: null,
+				activity: null,
+				preview: null,
+			},
+			select: { id: true },
+		});
+		const [pathname, stored, options] = put.mock.calls[0];
+		expect(pathname).toBe(`uploads/${userId}/photo.webp`);
+		expect(options).toMatchObject({
+			access: "private",
+			contentType: "image/webp",
+		});
+		const metadata = await sharp(stored).metadata();
+		expect(metadata.format).toBe("webp");
+		expect(metadata.width).toBe(720);
+		expect(metadata.height).toBe(540);
+		expect(create).toHaveBeenCalledWith({
+			data: {
+				userId,
+				url: "https://storage.test/uploads/photo.webp",
+				size: stored.length,
+				previewOfId: "upl_file",
+			},
+		});
+	});
+
+	it("refuses a preview that names no file", async () => {
+		const response = await POST(
+			uploadRequest(await png(10, 10), { kind: "preview" }),
+		);
+
+		expect(response.status).toBe(400);
+		expect((await response.json()).error).toBe(
+			"That preview can't be added. Try adding the file again.",
+		);
+		expect(findFirst).not.toHaveBeenCalled();
+		expect(put).not.toHaveBeenCalled();
+		expect(create).not.toHaveBeenCalled();
+	});
+
+	it("refuses a preview of a file the member can't add one to", async () => {
+		// The lookup above only finds the member's own unattached file without a
+		// preview, so another member's file, a photo, an attached file and a file
+		// that already has one all come back empty.
+		findFirst.mockResolvedValue(null);
+
+		const response = await POST(
+			uploadRequest(await png(10, 10), {
+				kind: "preview",
+				previewOf: "upl_file",
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(put).not.toHaveBeenCalled();
+		expect(create).not.toHaveBeenCalled();
+	});
+
+	it("checks the limits before looking up a preview's file", async () => {
+		count.mockImplementation(({ where }) => (where.userId ? 30 : 0));
+
+		const response = await POST(
+			uploadRequest(await png(10, 10), {
+				kind: "preview",
+				previewOf: "upl_file",
+			}),
+		);
+
+		expect(response.status).toBe(429);
+		expect(findFirst).not.toHaveBeenCalled();
+	});
+
 	it("removes the stored photo when its row cannot be saved", async () => {
 		create.mockRejectedValue(new Error("database unavailable"));
 		vi.spyOn(console, "error").mockImplementation(() => {});
@@ -448,7 +538,7 @@ describe("POST /api/v1/uploads", () => {
 	});
 
 	it("removes orphaned photos after a successful upload", async () => {
-		findMany.mockResolvedValue([
+		findMany.mockResolvedValueOnce([
 			{ id: "upl_old", url: "https://storage.test/uploads/old.webp" },
 			{ id: "upl_gone", url: "https://storage.test/uploads/gone.webp" },
 		]);
@@ -461,7 +551,11 @@ describe("POST /api/v1/uploads", () => {
 			expect.objectContaining({
 				where: {
 					OR: [
-						expect.objectContaining({ messageId: null, activity: null }),
+						expect.objectContaining({
+							messageId: null,
+							activity: null,
+							previewOf: null,
+						}),
 						{ message: { deletedAt: { not: null } } },
 					],
 				},
@@ -474,6 +568,34 @@ describe("POST /api/v1/uploads", () => {
 		expect(deleteMany).toHaveBeenCalledWith({
 			where: { id: { in: ["upl_old", "upl_gone"] } },
 		});
+	});
+
+	it("removes the previews of orphaned files with them", async () => {
+		findMany
+			.mockResolvedValueOnce([
+				{ id: "upl_old", url: "https://storage.test/uploads/old" },
+			])
+			.mockResolvedValueOnce([
+				{ id: "upl_preview", url: "https://storage.test/uploads/preview.webp" },
+			]);
+
+		await POST(uploadRequest(await png(10, 10)));
+		await after.mock.calls[0][0]();
+
+		expect(findMany).toHaveBeenLastCalledWith({
+			where: { previewOfId: { in: ["upl_old"] } },
+			select: { id: true, url: true },
+		});
+		expect(del).toHaveBeenCalledWith([
+			"https://storage.test/uploads/old",
+			"https://storage.test/uploads/preview.webp",
+		]);
+		expect(deleteMany).toHaveBeenCalledWith({
+			where: { id: { in: ["upl_old", "upl_preview"] } },
+		});
+		expect(findMany.mock.invocationCallOrder[1]).toBeLessThan(
+			deleteMany.mock.invocationCallOrder[0],
+		);
 	});
 
 	it("still answers 200 when removing orphaned photos fails", async () => {
@@ -503,12 +625,16 @@ function uploadRequest(
 		name = "photo.png",
 		type = "image/png",
 		kind,
-	}: { name?: string; type?: string; kind?: string } = {},
+		previewOf,
+	}: { name?: string; type?: string; kind?: string; previewOf?: string } = {},
 ) {
 	const formData = new FormData();
 	formData.append("file", new File([new Uint8Array(bytes)], name, { type }));
 	if (kind) {
 		formData.append("kind", kind);
+	}
+	if (previewOf) {
+		formData.append("previewOf", previewOf);
 	}
 	return new Request("http://localhost/api/v1/uploads", {
 		method: "POST",

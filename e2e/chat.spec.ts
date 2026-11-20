@@ -1,5 +1,11 @@
 import { crc32, deflateRawSync } from "node:zlib";
-import { type Browser, expect, type Page, test } from "@playwright/test";
+import {
+	type Browser,
+	expect,
+	type Locator,
+	type Page,
+	test,
+} from "@playwright/test";
 import sharp from "sharp";
 import { stubGiphy } from "./giphy-stub";
 import { signInAs } from "./sign-in";
@@ -531,6 +537,90 @@ test("deleting a message removes its photo", async ({ page }) => {
 	expect((await page.request.get(fileUrl)).status()).toBe(404);
 });
 
+test("someone who cannot read a conversation cannot load a PDF's first page", async ({
+	page,
+	browser,
+}) => {
+	await signInAs(page, "admin");
+	const [{ result }] = await (
+		await page.request.get("/api/v1/trpc/chat.getChannels?batch=1&input={}")
+	).json();
+	const masters = result.data.data.find(
+		(channel: { name: string }) => channel.name === "Masters Squad",
+	);
+	await page.goto(`/chat/${masters.id}`);
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+
+	const caption = `Masters seating ${test.info().project.name} ${Date.now()}`;
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "masters-seating.pdf",
+		mimeType: "application/pdf",
+		buffer: await printedPdf(browser),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+	const previewUrl =
+		(await page
+			.getByRole("article")
+			.filter({ hasText: caption })
+			.getByRole("link", { name: "Open masters-seating.pdf" })
+			.locator("img")
+			.getAttribute("src")) ?? "";
+	expect(previewUrl).toContain("/api/v1/chat/attachments/");
+
+	const adminResponse = await page.request.get(previewUrl);
+	expect(adminResponse.status()).toBe(200);
+	expect(adminResponse.headers()["content-type"]).toMatch(/^image\//);
+
+	const memberContext = await browser.newContext();
+	const memberPage = await memberContext.newPage();
+	await signInAs(memberPage, "member");
+	expect((await memberPage.request.get(previewUrl)).status()).toBe(404);
+	await memberContext.close();
+
+	const signedOutContext = await browser.newContext();
+	expect((await signedOutContext.request.get(previewUrl)).status()).toBe(401);
+	await signedOutContext.close();
+});
+
+test("deleting a message removes its PDF's first page", async ({
+	page,
+	browser,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Wrong seating ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "wrong-seating.pdf",
+		mimeType: "application/pdf",
+		buffer: await printedPdf(browser),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+	const message = page.getByRole("article").filter({ hasText: caption });
+	const previewUrl =
+		(await message
+			.getByRole("link", { name: "Open wrong-seating.pdf" })
+			.locator("img")
+			.getAttribute("src")) ?? "";
+	expect((await page.request.get(previewUrl)).status()).toBe(200);
+
+	await message.getByText(caption).click();
+	await message.getByRole("button", { name: "More actions" }).click();
+	await page.getByRole("menuitem", { name: "Delete message" }).click();
+	await page
+		.getByRole("dialog", { name: "Delete message?" })
+		.getByRole("button", { name: "Delete" })
+		.click();
+	await expect(page.getByText(caption)).toHaveCount(0);
+
+	expect((await page.request.get(previewUrl)).status()).toBe(404);
+});
+
 test("choosing more than four photos explains the limit until one is removed", async ({
 	page,
 }) => {
@@ -588,6 +678,7 @@ test("a member sends a PDF with a caption and the other person downloads it unch
 		.getByRole("link", { name: "Open race-plan.pdf" });
 	await expect(chip).toBeVisible();
 	await expect(chip).toHaveAttribute("download");
+	await expect(chip.locator("img")).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "Remove race-plan.pdf" }),
 	).toHaveCount(0);
@@ -701,6 +792,9 @@ test("the PDF engine is only downloaded when a member opens a PDF", async ({
 		.filter({ hasText: caption })
 		.getByRole("link", { name: "Open lazy-notes.pdf" });
 	await expect(chip).toBeVisible();
+	requested.length = 0;
+	await page.reload();
+	await expect(chip.locator("img")).toBeVisible();
 	expect(requested.filter((url) => /pdfjs|pdf\.worker/.test(url))).toEqual([]);
 
 	await chip.click();
@@ -711,6 +805,86 @@ test("the PDF engine is only downloaded when a member opens a PDF", async ({
 	).toBeVisible();
 	expect(requested.some((url) => url.includes("pdfjs"))).toBe(true);
 	expect(requested.some((url) => url.includes("pdf.worker"))).toBe(true);
+});
+
+test("a PDF in a message shows its first page to the sender and to everyone else", async ({
+	page,
+	browser,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Seat race ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "seat-race.pdf",
+		mimeType: "application/pdf",
+		buffer: await printedPdf(browser),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+	await expectFirstPageShown(
+		page
+			.getByRole("article")
+			.filter({ hasText: caption })
+			.getByRole("link", { name: "Open seat-race.pdf" }),
+	);
+
+	const adminContext = await browser.newContext();
+	const adminPage = await adminContext.newPage();
+	await signInAs(adminPage, "admin");
+	await adminPage.goto("/chat/everyone");
+	await expectFirstPageShown(
+		adminPage
+			.getByRole("article")
+			.filter({ hasText: caption })
+			.getByRole("link", { name: "Open seat-race.pdf" }),
+	);
+	await adminContext.close();
+});
+
+test("a PDF still sends when its first-page picture is refused", async ({
+	page,
+	browser,
+}) => {
+	await signInAs(page, "member");
+	let isPreviewRefused = false;
+	await page.route("**/api/v1/uploads", async (route) => {
+		if (
+			route.request().postDataBuffer()?.includes('name="kind"\r\n\r\npreview')
+		) {
+			isPreviewRefused = true;
+			await route.fulfill({
+				status: 429,
+				json: { error: "Too many uploads today." },
+			});
+			return;
+		}
+		await route.continue();
+	});
+	await page.goto("/chat/everyone");
+
+	const caption = `Refused picture ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "regatta-entries.pdf",
+		mimeType: "application/pdf",
+		buffer: await printedPdf(browser),
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	const chip = page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByRole("link", { name: "Open regatta-entries.pdf" });
+	await expect(chip).toBeVisible();
+	expect(isPreviewRefused).toBe(true);
+	await expect(chip.locator("img")).toHaveCount(0);
+	await expect(page.getByText("Too many uploads today.")).toHaveCount(0);
+	await expect(composer).toHaveValue("");
 });
 
 test("a member opens a CSV from a message and sees its cells in a table", async ({
@@ -1357,6 +1531,16 @@ async function printedPdf(browser: Browser) {
 	const buffer = await scratch.pdf();
 	await scratch.close();
 	return buffer;
+}
+
+async function expectFirstPageShown(chip: Locator) {
+	const firstPage = chip.locator("img");
+	await firstPage.scrollIntoViewIfNeeded();
+	await expect
+		.poll(() =>
+			firstPage.evaluate((image: HTMLImageElement) => image.naturalWidth),
+		)
+		.toBeGreaterThan(0);
 }
 
 function xlsx(sheets: { name: string; rows: (string | number)[][] }[]) {

@@ -11,6 +11,7 @@ export async function attachActivityScreenshotCommand(
 		select: {
 			userId: true,
 			messageId: true,
+			previewOfId: true,
 			activity: { select: { id: true } },
 		},
 	});
@@ -18,7 +19,8 @@ export async function attachActivityScreenshotCommand(
 		!upload ||
 		upload.userId !== user.id ||
 		upload.activity ||
-		upload.messageId
+		upload.messageId ||
+		upload.previewOfId
 	) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",

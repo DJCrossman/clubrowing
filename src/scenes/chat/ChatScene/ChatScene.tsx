@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { getViewableKind } from "@/lib/chat/attachments";
 import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
 import { routes } from "@/lib/routes";
 import type { ChatChannel, ChatMessage } from "@/lib/trpc/types";
@@ -373,6 +374,23 @@ async function uploadFiles(files: File[]) {
 			);
 		}
 		attachmentIds.push(result.id);
+		if (getViewableKind(file.name) === "pdf") {
+			try {
+				const { makePdfPreview } = await import(
+					"./components/FileViewer/makePdfPreview"
+				);
+				const picture = await makePdfPreview(file);
+				if (picture) {
+					const preview = new FormData();
+					preview.append("file", picture, "preview.jpg");
+					preview.append("kind", "preview");
+					preview.append("previewOf", result.id);
+					await fetch("/api/v1/uploads", { method: "POST", body: preview });
+				}
+			} catch {
+				// The file is sent without its first-page picture rather than not at all.
+			}
+		}
 	}
 	return attachmentIds;
 }

@@ -33,6 +33,7 @@ export async function sendMessageCommand(
 						userId: user.id,
 						messageId: null,
 						activity: null,
+						previewOf: null,
 					})),
 				},
 			},

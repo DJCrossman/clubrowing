@@ -10,6 +10,7 @@ import { removeOrphanedUploads } from "@/server/common/remove-orphaned-uploads";
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const MAX_PHOTO_DIMENSION = 2560;
 const MAX_SCREENSHOT_DIMENSION = 800;
+const MAX_PREVIEW_DIMENSION = 720;
 // A small file can declare an enormous image; a 48-megapixel phone photo still fits.
 const MAX_PHOTO_PIXELS = 50_000_000;
 // The storage plan stops serving every file for 30 days past 2,000 uploads in a month.
@@ -101,6 +102,27 @@ export async function POST(request: Request) {
 		}
 
 		const kind = formData?.get("kind");
+		const previewOfId = formData?.get("previewOf");
+		const previewOf =
+			kind === "preview" && typeof previewOfId === "string"
+				? await db.upload.findFirst({
+						where: {
+							id: previewOfId,
+							userId,
+							name: { not: null },
+							messageId: null,
+							activity: null,
+							preview: null,
+						},
+						select: { id: true },
+					})
+				: null;
+		if (kind === "preview" && !previewOf) {
+			return NextResponse.json(
+				{ error: "That preview can't be added. Try adding the file again." },
+				{ status: 400 },
+			);
+		}
 		const name =
 			file.name
 				.replace(/[\p{Cc}\p{Cf}/\\]/gu, "")
@@ -142,10 +164,7 @@ export async function POST(request: Request) {
 				? bytes
 				: await storablePhoto({
 						bytes,
-						maxDimension:
-							kind === "screenshot"
-								? MAX_SCREENSHOT_DIMENSION
-								: MAX_PHOTO_DIMENSION,
+						maxDimension: maxPhotoDimension(kind),
 					});
 		if (!stored) {
 			return NextResponse.json(
@@ -174,6 +193,7 @@ export async function POST(request: Request) {
 					url,
 					size: stored.length,
 					...(kind === "file" && { name }),
+					...(previewOf && { previewOfId: previewOf.id }),
 				},
 			})
 			.catch(async (error) => {
@@ -246,4 +266,14 @@ function isProgram({ name, bytes }: { name: string; bytes: Buffer }) {
 		WEB_PAGE_OPENINGS.some((opening) => head.startsWith(opening)) ||
 		(head.startsWith("<?xml") && /<(svg|html)/.test(head))
 	);
+}
+
+function maxPhotoDimension(kind: FormDataEntryValue | null | undefined) {
+	if (kind === "screenshot") {
+		return MAX_SCREENSHOT_DIMENSION;
+	}
+	if (kind === "preview") {
+		return MAX_PREVIEW_DIMENSION;
+	}
+	return MAX_PHOTO_DIMENSION;
 }

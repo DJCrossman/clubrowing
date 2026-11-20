@@ -58,7 +58,10 @@ function createContext({
 }) {
 	const db = {
 		activity: { delete: vi.fn(async () => ({ screenshot })) },
-		upload: { deleteMany: vi.fn(async () => ({ count: 1 })) },
+		upload: {
+			findMany: vi.fn(async () => []),
+			deleteMany: vi.fn(async () => ({ count: 1 })),
+		},
 	};
 	return { db, ctx: { db } as unknown as Context };
 }

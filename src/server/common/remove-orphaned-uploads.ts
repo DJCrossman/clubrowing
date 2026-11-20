@@ -12,6 +12,7 @@ export async function removeOrphanedUploads({ db }: Pick<Context, "db">) {
 					{
 						messageId: null,
 						activity: null,
+						previewOf: null,
 						createdAt: { lt: DateTime.now().minus({ hours: 24 }).toJSDate() },
 					},
 					{ message: { deletedAt: { not: null } } },

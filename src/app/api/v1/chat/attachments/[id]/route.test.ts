@@ -252,6 +252,66 @@ describe("GET /api/v1/chat/attachments/[id]", () => {
 		});
 	});
 
+	it("shows a file's preview to whoever can read the file's message", async () => {
+		db.upload.findUnique.mockResolvedValue({
+			url: storedUrl,
+			name: null,
+			messageId: null,
+			previewOf: { messageId: "msg_1" },
+		});
+
+		const response = await GET(...photoRequest());
+
+		expect(response.status).toBe(200);
+		expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+			new Uint8Array([1, 2, 3]),
+		);
+		expect(response.headers.get("Content-Type")).toBe("image/webp");
+		expect(response.headers.get("Content-Disposition")).toBeNull();
+		expect(response.headers.get("ETag")).toBeTruthy();
+		expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
+		expect(findAccessibleMessage).toHaveBeenCalledWith(db, "msg_1", user);
+	});
+
+	it("answers 404 for a preview of a file that is not attached to a message", async () => {
+		db.upload.findUnique.mockResolvedValue({
+			url: storedUrl,
+			name: null,
+			messageId: null,
+			previewOf: { messageId: null },
+		});
+
+		await expectUnavailable(await GET(...photoRequest()));
+		expect(findAccessibleMessage).not.toHaveBeenCalled();
+	});
+
+	it("answers 404 for a preview of a file whose message was deleted", async () => {
+		db.upload.findUnique.mockResolvedValue({
+			url: storedUrl,
+			name: null,
+			messageId: null,
+			previewOf: { messageId: "msg_1" },
+		});
+		findAccessibleMessage.mockResolvedValue({ deletedAt: new Date() });
+
+		await expectUnavailable(await GET(...photoRequest()));
+		expect(findAccessibleMessage).toHaveBeenCalledWith(db, "msg_1", user);
+	});
+
+	it("answers 404 for a preview when the viewer cannot read the file's message", async () => {
+		db.upload.findUnique.mockResolvedValue({
+			url: storedUrl,
+			name: null,
+			messageId: null,
+			previewOf: { messageId: "msg_1" },
+		});
+		findAccessibleMessage.mockRejectedValue(
+			new TRPCError({ code: "NOT_FOUND", message: "Message not found" }),
+		);
+
+		await expectUnavailable(await GET(...photoRequest()));
+	});
+
 	it("answers 500 when loading fails unexpectedly", async () => {
 		get.mockRejectedValue(new Error("storage unavailable"));
 		vi.spyOn(console, "error").mockImplementation(() => {});

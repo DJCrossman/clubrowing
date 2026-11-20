@@ -250,9 +250,9 @@ describe("mapToMessageDto", () => {
 	it("splits attachments into photos and files in order, and none once deleted", () => {
 		const row = messageRow({
 			attachments: [
-				{ id: "upl_first", name: null, size: 2000 },
-				{ id: "upl_minutes", name: "Minutes.pdf", size: 5120 },
-				{ id: "upl_second", name: null, size: 3000 },
+				{ id: "upl_first", name: null, size: 2000, preview: null },
+				{ id: "upl_minutes", name: "Minutes.pdf", size: 5120, preview: null },
+				{ id: "upl_second", name: null, size: 3000, preview: null },
 			],
 		});
 		const dto = mapToMessageDto(row, viewer, users);
@@ -274,6 +274,7 @@ describe("mapToMessageDto", () => {
 				url: "/api/v1/chat/attachments/upl_minutes",
 				name: "Minutes.pdf",
 				size: 5120,
+				previewUrl: null,
 			},
 		]);
 		const deleted = mapToMessageDto(
@@ -283,6 +284,33 @@ describe("mapToMessageDto", () => {
 		);
 		expect(deleted.photos).toEqual([]);
 		expect(deleted.files).toEqual([]);
+	});
+
+	it("gives a file its preview picture without counting the preview as a photo", () => {
+		const dto = mapToMessageDto(
+			messageRow({
+				attachments: [
+					{
+						id: "upl_minutes",
+						name: "Minutes.pdf",
+						size: 5120,
+						preview: { id: "upl_minutes_preview" },
+					},
+				],
+			}),
+			viewer,
+			users,
+		);
+		expect(dto.files).toEqual([
+			{
+				id: "upl_minutes",
+				url: "/api/v1/chat/attachments/upl_minutes",
+				name: "Minutes.pdf",
+				size: 5120,
+				previewUrl: "/api/v1/chat/attachments/upl_minutes_preview",
+			},
+		]);
+		expect(dto.photos).toEqual([]);
 	});
 
 	it("carries the GIF id beside its title, and neither once deleted", () => {

@@ -132,12 +132,18 @@ async function findViewableAttachment({
 		});
 		const upload = await db.upload.findUnique({
 			where: { id },
-			select: { url: true, name: true, messageId: true },
+			select: {
+				url: true,
+				name: true,
+				messageId: true,
+				previewOf: { select: { messageId: true } },
+			},
 		});
-		if (!upload?.messageId) {
+		const messageId = upload?.messageId ?? upload?.previewOf?.messageId;
+		if (!messageId) {
 			return null;
 		}
-		const message = await findAccessibleMessage(db, upload.messageId, user);
+		const message = await findAccessibleMessage(db, messageId, user);
 		return message.deletedAt ? null : upload;
 	} catch (error) {
 		if (error instanceof TRPCError) {

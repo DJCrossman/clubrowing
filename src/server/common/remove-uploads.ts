@@ -6,8 +6,16 @@ export async function removeUploads({
 	uploads,
 }: Pick<Context, "db"> & { uploads: { id: string; url: string }[] }) {
 	if (uploads.length === 0) return;
-	await del(uploads.map((upload) => upload.url));
+	// Looked up first: once the files' rows are gone, their previews no longer point at them.
+	const removed = [
+		...uploads,
+		...(await db.upload.findMany({
+			where: { previewOfId: { in: uploads.map((upload) => upload.id) } },
+			select: { id: true, url: true },
+		})),
+	];
+	await del(removed.map((upload) => upload.url));
 	await db.upload.deleteMany({
-		where: { id: { in: uploads.map((upload) => upload.id) } },
+		where: { id: { in: removed.map((upload) => upload.id) } },
 	});
 }

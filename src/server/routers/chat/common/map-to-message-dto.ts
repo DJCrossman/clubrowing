@@ -34,7 +34,12 @@ export const messageInclude = {
 		},
 	},
 	attachments: {
-		select: { id: true, name: true, size: true },
+		select: {
+			id: true,
+			name: true,
+			size: true,
+			preview: { select: { id: true } },
+		},
 		orderBy: { createdAt: "asc" },
 	},
 	replies: {
@@ -94,10 +99,19 @@ export function mapToMessageDto(
 				),
 		files: deleted
 			? []
-			: message.attachments.flatMap(({ id, name, size }) =>
+			: message.attachments.flatMap(({ id, name, size, preview }) =>
 					name === null
 						? []
-						: [{ id, url: `/api/v1/chat/attachments/${id}`, name, size }],
+						: [
+								{
+									id,
+									url: `/api/v1/chat/attachments/${id}`,
+									name,
+									size,
+									previewUrl:
+										preview && `/api/v1/chat/attachments/${preview.id}`,
+								},
+							],
 				),
 		deleted,
 		isMine,

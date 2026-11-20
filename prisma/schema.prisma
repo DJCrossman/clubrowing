@@ -469,15 +469,18 @@ model message_reaction {
 }
 
 model upload {
-  id        String   @id @default(dbgenerated("generate_id('upl_'::text)"))
-  userId    String
-  url       String
-  size      Int
-  name      String?
-  messageId String?
-  createdAt DateTime @default(now())
-  activity  activity?
-  message   message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  id          String    @id @default(dbgenerated("generate_id('upl_'::text)"))
+  userId      String
+  url         String
+  size        Int
+  name        String?
+  messageId   String?
+  previewOfId String?   @unique
+  createdAt   DateTime  @default(now())
+  activity    activity?
+  message     message?  @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  previewOf   upload?   @relation("UploadPreview", fields: [previewOfId], references: [id], onDelete: SetNull)
+  preview     upload?   @relation("UploadPreview")
 
   @@index([userId, createdAt])
   @@index([messageId])
