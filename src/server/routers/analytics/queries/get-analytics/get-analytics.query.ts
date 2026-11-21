@@ -12,9 +12,10 @@ export async function getAnalyticsQuery(
 	const athleteId = athlete?.id;
 
 	const now = DateTime.now();
-	const currStart = now.startOf("month").toJSDate();
-	const prevStart = now.minus({ months: 1 }).startOf("month").toJSDate();
-	const prevEnd = now.startOf("month").toJSDate();
+	const weekStart = startOfWeek(now);
+	const currStart = weekStart.toJSDate();
+	const prevStart = weekStart.minus({ weeks: 1 }).toJSDate();
+	const monthStart = now.startOf("month").toJSDate();
 	const seriesStart = now
 		.minus({ days: AnalyticsPeriodDays.three_months })
 		.startOf("day")
@@ -30,7 +31,7 @@ export async function getAnalyticsQuery(
 			: null,
 		athleteId
 			? db.activity.aggregate({
-					where: { athleteId, startDate: { gte: prevStart, lt: prevEnd } },
+					where: { athleteId, startDate: { gte: prevStart, lt: currStart } },
 					_sum: { distance: true, elapsedTime: true },
 					_count: { id: true },
 				})
@@ -67,7 +68,6 @@ export async function getAnalyticsQuery(
 		now,
 	);
 
-	const weekStart = startOfWeek(now);
 	const weekDays = Array.from({ length: 7 }, (_, i) => {
 		const date = weekStart.plus({ days: i });
 		const isoDate = date.toISODate() ?? "";
@@ -95,8 +95,8 @@ export async function getAnalyticsQuery(
 	const sixKmTests = testCandidates.filter((a) => isErgTest(a, 6000));
 	const lastTwoKmRow = twoKmTests[0];
 	const lastSixKmRow = sixKmTests[0];
-	const prevTwoKmRow = twoKmTests.find((a) => a.startDate < currStart);
-	const prevSixKmRow = sixKmTests.find((a) => a.startDate < currStart);
+	const prevTwoKmRow = twoKmTests.find((a) => a.startDate < monthStart);
+	const prevSixKmRow = sixKmTests.find((a) => a.startDate < monthStart);
 
 	const lastTwoKm = lastTwoKmRow
 		? {
