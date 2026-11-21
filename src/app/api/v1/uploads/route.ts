@@ -1,11 +1,11 @@
 import { del, put } from "@vercel/blob";
-import { DateTime } from "luxon";
 import { after, NextResponse } from "next/server";
 import sharp from "sharp";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { envVars } from "@/lib/env";
 import { removeOrphanedUploads } from "@/server/common/remove-orphaned-uploads";
+import { findUploadRefusal } from "./upload-refusal";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const MAX_PHOTO_DIMENSION = 2560;
@@ -13,10 +13,6 @@ const MAX_SCREENSHOT_DIMENSION = 800;
 const MAX_PREVIEW_DIMENSION = 720;
 // A small file can declare an enormous image; a 48-megapixel phone photo still fits.
 const MAX_PHOTO_PIXELS = 50_000_000;
-// The storage plan stops serving every file for 30 days past 2,000 uploads in a month.
-const CLUB_MONTHLY_UPLOAD_LIMIT = 1500;
-// The storage plan stops serving every file for 30 days past 1 GB.
-const MAX_STORED_BYTES = 800 * 1024 * 1024;
 const PHOTO_FORMATS = ["jpeg", "png", "webp"];
 // Programs and installers, then scripts, then web pages.
 const PROGRAM_EXTENSIONS =
@@ -62,27 +58,14 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const [memberUploads, clubUploads, storedBytes] = await Promise.all([
-			db.upload.count({
-				where: {
-					userId,
-					createdAt: { gte: DateTime.now().minus({ days: 1 }).toJSDate() },
-				},
-			}),
-			db.upload.count({
-				where: {
-					createdAt: { gte: DateTime.now().minus({ days: 30 }).toJSDate() },
-				},
-			}),
-			db.upload.aggregate({ _sum: { size: true } }),
-		]);
-		if (memberUploads >= envVars.MEMBER_DAILY_UPLOAD_LIMIT) {
+		const refusal = await findUploadRefusal({ db, userId, size: file.size });
+		if (refusal === "member-daily-count") {
 			return NextResponse.json(
 				{ error: "You've reached today's photo limit. Try again tomorrow." },
 				{ status: 429 },
 			);
 		}
-		if (clubUploads >= CLUB_MONTHLY_UPLOAD_LIMIT) {
+		if (refusal === "club-monthly-count") {
 			return NextResponse.json(
 				{
 					error:
@@ -91,7 +74,15 @@ export async function POST(request: Request) {
 				{ status: 429 },
 			);
 		}
-		if ((storedBytes._sum.size ?? 0) + file.size > MAX_STORED_BYTES) {
+		if (refusal === "stored-bytes") {
+			// Abandoned video uploads hold space until clean-up settles them.
+			after(async () => {
+				try {
+					await removeOrphanedUploads({ db });
+				} catch (error) {
+					console.error("Error removing orphaned photos:", error);
+				}
+			});
 			return NextResponse.json(
 				{
 					error:

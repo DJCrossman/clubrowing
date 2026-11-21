@@ -45,14 +45,17 @@ export function formatReactors(names: string[]) {
 }
 
 export function getMessagePreviewText(
-	message: Pick<ChatMessage, "text" | "gif" | "photos" | "files" | "forwarded">,
+	message: Pick<
+		ChatMessage,
+		"text" | "gif" | "photos" | "files" | "videos" | "forwarded"
+	>,
 ) {
 	if (message.text) return message.text;
 	if (message.gif) return `GIF: ${message.gif}`;
 	const attachments = getAttachmentsPreview({
 		photoCount: message.photos.length,
-		fileCount: message.files.length,
-		fileName: message.files[0]?.name ?? null,
+		fileCount: message.files.length + message.videos.length,
+		fileName: message.files[0]?.name ?? message.videos[0]?.name ?? null,
 	});
 	if (attachments) return attachments;
 	if (message.forwarded) {

@@ -476,12 +476,30 @@ model upload {
   name        String?
   messageId   String?
   previewOfId String?   @unique
+  contentType String?
+  durationMs  Int?
+  width       Int?
+  height      Int?
+  pending     Boolean   @default(false)
   createdAt   DateTime  @default(now())
   activity    activity?
   message     message?  @relation(fields: [messageId], references: [id], onDelete: SetNull)
   previewOf   upload?   @relation("UploadPreview", fields: [previewOfId], references: [id], onDelete: SetNull)
   preview     upload?   @relation("UploadPreview")
+  playbacks   video_playback[]
 
   @@index([userId, createdAt])
   @@index([messageId])
+}
+
+model video_playback {
+  id        String   @id @default(dbgenerated("generate_id('vpb_'::text)"))
+  uploadId  String?
+  userId    String
+  bytes     Int
+  createdAt DateTime @default(now())
+  upload    upload?  @relation(fields: [uploadId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([uploadId, userId, createdAt])
 }

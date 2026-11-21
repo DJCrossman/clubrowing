@@ -72,6 +72,28 @@ describe("attachActivityScreenshotCommand", () => {
 		expect(db.activity.updateMany).not.toHaveBeenCalled();
 	});
 
+	it("refuses a video", async () => {
+		const { db, ctx } = createContext({
+			upload: { userId: "user_me", contentType: "video/mp4", activity: null },
+		});
+
+		await expect(
+			attachActivityScreenshotCommand(input, ctx),
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		expect(db.activity.updateMany).not.toHaveBeenCalled();
+	});
+
+	it("refuses an upload that hasn't finished", async () => {
+		const { db, ctx } = createContext({
+			upload: { userId: "user_me", pending: true, activity: null },
+		});
+
+		await expect(
+			attachActivityScreenshotCommand(input, ctx),
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		expect(db.activity.updateMany).not.toHaveBeenCalled();
+	});
+
 	it("refuses when the activity already has a screenshot", async () => {
 		const { ctx } = createContext({ updatedCount: 0 });
 
@@ -92,6 +114,8 @@ function createContext({
 		userId: string;
 		messageId?: string | null;
 		previewOfId?: string | null;
+		contentType?: string | null;
+		pending?: boolean;
 		activity: { id: string } | null;
 	} | null;
 	updatedCount?: number;

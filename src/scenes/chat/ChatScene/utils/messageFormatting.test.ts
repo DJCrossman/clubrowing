@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	formatLastReply,
 	formatReactors,
+	getMessagePreviewText,
 	groupMessagesByDay,
 } from "./messageFormatting";
 
@@ -54,5 +55,36 @@ describe("formatReactors", () => {
 		expect(formatReactors(["You", "Sarah Chen", "Mike Lee"])).toBe(
 			"You, Sarah Chen and Mike Lee",
 		);
+	});
+});
+
+describe("getMessagePreviewText", () => {
+	it("names a video-only message the way it names a file", () => {
+		const video = {
+			id: "upl_video",
+			name: "Catch timing.mp4",
+			size: 1000,
+			durationMs: null,
+			width: null,
+			height: null,
+			playUrl: "/api/v1/chat/attachments/upl_video/play",
+			posterUrl: null,
+		};
+		const message = {
+			text: null,
+			gif: null,
+			photos: [],
+			files: [],
+			videos: [video],
+			forwarded: null,
+		};
+
+		expect(getMessagePreviewText(message)).toBe("File: Catch timing.mp4");
+		expect(
+			getMessagePreviewText({
+				...message,
+				videos: [video, { ...video, id: "upl_other" }],
+			}),
+		).toBe("2 files");
 	});
 });

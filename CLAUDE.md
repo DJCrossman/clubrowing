@@ -113,7 +113,9 @@ bun run instance:e2e              # desktop + 390px phone, a video per test in e
   that `instance:e2e` mints. Sessions last one hour.
 - Vercel Blob is `@emulators/vercel`, started inside the container
   (`scripts/blob-emulator.ts`). Uploaded files are held in memory and are gone when the
-  container restarts. Nothing reaches Vercel. The per-member daily upload limit is raised
+  container restarts. Nothing reaches Vercel. The host browser also reaches it on the
+  app port + 10000 (loopback only), so direct uploads can be tested; it still never
+  reaches Vercel. The per-member daily upload limit is raised
   there (`MEMBER_DAILY_UPLOAD_LIMIT`) so repeated e2e runs do not trip it.
 - `failed_to_load_clerk_js` in the browser console is expected there; pages do not need it.
 - Both commands look after themselves: `create --dummy` installs dependencies and generates

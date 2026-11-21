@@ -5,6 +5,7 @@ export const MAX_MESSAGE_LENGTH = 4000;
 export const MAX_DM_MEMBERS = 9;
 export const MAX_MESSAGE_ATTACHMENTS = 4;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
 
 const messageTextSchema = z
 	.string()
@@ -138,8 +139,18 @@ export const messageComposerSchema = z.object({
 		// Pictures are exempt: the browser shrinks them before they are uploaded.
 		.refine(
 			(files) =>
-				files.every((file) => isPicture(file) || file.size <= MAX_FILE_BYTES),
+				files.every(
+					(file) =>
+						isPicture(file) || isChatVideo(file) || file.size <= MAX_FILE_BYTES,
+				),
 			"Files can be up to 4 MB",
+		)
+		.refine(
+			(files) =>
+				files.every(
+					(file) => !isChatVideo(file) || file.size <= MAX_VIDEO_BYTES,
+				),
+			"Videos can be up to 20 MB",
 		),
 });
 export type MessageComposerValues = z.infer<typeof messageComposerSchema>;
@@ -155,4 +166,8 @@ export function isPicture(file: File) {
 		file.type.startsWith("image/") ||
 		/\.(jpg|jpeg|png|webp|gif|heic|heif|avif|tif|tiff|bmp)$/i.test(file.name)
 	);
+}
+
+export function isChatVideo(file: File) {
+	return /\.(mp4|mov|m4v|webm)$/i.test(file.name);
 }

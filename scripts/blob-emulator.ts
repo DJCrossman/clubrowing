@@ -15,14 +15,31 @@ if (!apiUrl) {
 	console.error("❌ VERCEL_BLOB_API_URL is not set.");
 	process.exit(1);
 }
-const { origin: baseUrl, hostname, port } = new URL(apiUrl);
+const { origin: baseUrl, port } = new URL(apiUrl);
 
 const { app } = createServer(vercelPlugin, { port: Number(port), baseUrl });
 
 serve({
-	hostname,
+	// All interfaces, so the port docker-compose.yml publishes reaches it.
+	hostname: "0.0.0.0",
 	port: Number(port),
-	fetch: (request) => {
+	fetch: async (request) => {
+		// The emulator has no /signed-token and signs nothing: the delegation carries only the scope presignUrl reads back.
+		if (
+			request.method === "POST" &&
+			new URL(request.url).pathname === "/api/blob/signed-token"
+		) {
+			const {
+				pathname,
+				operations = ["get"],
+				validUntil = Date.now() + 3_600_000,
+			} = await request.json();
+			return Response.json({
+				delegationToken: `${Buffer.from(JSON.stringify({ storeId: "dummy", pathname, operations, validUntil })).toString("base64url")}.emulator`,
+				clientSigningToken: "emulator",
+				validUntil,
+			});
+		}
 		// The emulator refuses private uploads and never checks access on reads, so storing them as public behaves the same.
 		// Set in place: under Bun, new Request(request, { headers }) never finishes reading the streamed upload body.
 		if (request.headers.get("x-vercel-blob-access") === "private") {

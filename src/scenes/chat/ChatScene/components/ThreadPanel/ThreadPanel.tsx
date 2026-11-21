@@ -33,6 +33,7 @@ interface ThreadPanelProps
 	onClose: () => void;
 	onReply: (submission: ComposerSubmission) => Promise<unknown>;
 	onSaveEdit: (message: ChatMessage, text: string) => Promise<unknown>;
+	videosPausedUntil: string | null;
 }
 
 export function ThreadPanel({ isMobile, ...props }: ThreadPanelProps) {
@@ -78,6 +79,7 @@ function ThreadContent({
 	onClose,
 	onReply,
 	onSaveEdit,
+	videosPausedUntil,
 	header,
 	...handlers
 }: Omit<ThreadPanelProps, "isMobile"> & { header?: ReactNode }) {
@@ -125,6 +127,7 @@ function ThreadContent({
 								showThreadSummary={false}
 								compact
 								isHighlighted={thread.root.id === editingMessage?.id}
+								videosPausedUntil={videosPausedUntil}
 								{...bindMessageHandlers(
 									{ ...handlers, onEdit: setEditing },
 									thread.root,

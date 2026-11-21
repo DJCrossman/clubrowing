@@ -19,7 +19,7 @@ import { getViewableKind } from "@/lib/chat/attachments";
 import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
 import { routes } from "@/lib/routes";
 import type { ChatChannel, ChatMessage } from "@/lib/trpc/types";
-import { isPicture, MAX_DM_MEMBERS } from "@/schemas/chat.schema";
+import { isChatVideo, isPicture, MAX_DM_MEMBERS } from "@/schemas/chat.schema";
 import {
 	ChatEmptyState,
 	DeleteMessageDialog,
@@ -50,12 +50,16 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const [deletingMessage, setDeletingMessage] = useState<ChatMessage | null>(
 		null,
 	);
+	const [videoUploadProgress, setVideoUploadProgress] = useState<number | null>(
+		null,
+	);
 	const composerRef = useRef<MessageComposerHandle>(null);
 	const {
 		channels,
 		channel,
 		messages,
 		firstUnreadMessageId,
+		videosPausedUntil,
 		messagesQuery,
 		threadQuery,
 		membersQuery,
@@ -145,6 +149,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									highlightedMessageId={threadMessageId}
 									editingMessageId={editingMessage?.id}
 									firstUnreadMessageId={firstUnreadMessageId}
+									videosPausedUntil={videosPausedUntil}
 									onLoadOlder={() => messagesQuery.fetchNextPage()}
 									emptyState={
 										channel?.kind === "direct_message" ? (
@@ -189,6 +194,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 										placeholder={`Message ${channelName}`.trim()}
 										quotedMessage={quotedMessage}
 										onCancelQuote={() => setQuote(null)}
+										videoUploadProgress={videoUploadProgress}
 										editingMessage={editingMessage}
 										onCancelEdit={() => setEditing(null)}
 										onSaveEdit={(message, text) =>
@@ -201,10 +207,15 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 										}
 										onSubmit={async ({ text, gif, files }) => {
 											const attachmentIds = files.length
-												? await uploadFiles(files).catch((error: Error) => {
-														toast.error(error.message);
-														throw error;
+												? await uploadFiles({
+														files,
+														onVideoProgress: setVideoUploadProgress,
 													})
+														.catch((error: Error) => {
+															toast.error(error.message);
+															throw error;
+														})
+														.finally(() => setVideoUploadProgress(null))
 												: undefined;
 											await sendMessage.mutateAsync({
 												channelId,
@@ -227,6 +238,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							isLoading={threadQuery.isPending}
 							isUnavailable={threadQuery.isError && !threadQuery.data}
 							isMobile={isMobile}
+							videosPausedUntil={videosPausedUntil}
 							onClose={() =>
 								router.push(routes.chat.channel(channelId), { scroll: false })
 							}
@@ -344,9 +356,38 @@ function getBreadcrumbs(channel: ChatChannel | undefined, isAdmin: boolean) {
 	];
 }
 
-async function uploadFiles(files: File[]) {
+async function uploadFiles({
+	files,
+	onVideoProgress,
+}: {
+	files: File[];
+	onVideoProgress: (fraction: number) => void;
+}) {
 	const attachmentIds: string[] = [];
+	const videoBytes = files
+		.filter(isChatVideo)
+		.reduce((total, file) => total + file.size, 0);
+	let uploadedVideoBytes = 0;
 	for (const file of files) {
+		if (isChatVideo(file)) {
+			onVideoProgress(uploadedVideoBytes / videoBytes);
+			const { uploadVideo } = await import(
+				"./components/MessageVideos/uploadVideo"
+			).catch(() => {
+				throw new Error(
+					"We couldn't upload your file. Check your connection and try again.",
+				);
+			});
+			attachmentIds.push(
+				await uploadVideo({
+					file,
+					onProgress: (loaded) =>
+						onVideoProgress((uploadedVideoBytes + loaded) / videoBytes),
+				}),
+			);
+			uploadedVideoBytes += file.size;
+			continue;
+		}
 		const body = new FormData();
 		if (isPicture(file)) {
 			body.append(

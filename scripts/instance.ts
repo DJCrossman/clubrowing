@@ -261,7 +261,15 @@ async function generateEnvFile(
 			(await import("./lib/dummy-data")).DUMMY_ORGANIZATION_ID,
 		);
 		// Served the same way (scripts/blob-emulator.ts). The token replaces any real one, so a dummy instance never reaches the real store.
-		base.set("VERCEL_BLOB_API_URL", "http://127.0.0.1:4012/api/blob");
+		base.set(
+			"VERCEL_BLOB_API_URL",
+			`http://127.0.0.1:${port + 10000}/api/blob`,
+		);
+		// The browser's direct uploads only report progress on a localhost URL, which keeps them on XHR.
+		base.set(
+			"NEXT_PUBLIC_VERCEL_BLOB_API_URL",
+			`http://localhost:${port + 10000}/api/blob`,
+		);
 		base.set("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_dummy_emulator");
 		// Repeated e2e runs upload far more in a day than a member would.
 		base.set("MEMBER_DAILY_UPLOAD_LIMIT", "100000");
@@ -303,7 +311,11 @@ function project(name: string): string {
 }
 
 function composeEnv(rec: InstanceRecord): Record<string, string> {
-	return { INSTANCE: rec.name, APP_PORT: String(rec.port) };
+	return {
+		INSTANCE: rec.name,
+		APP_PORT: String(rec.port),
+		BLOB_PORT: String(rec.port + 10000),
+	};
 }
 
 async function compose(rec: InstanceRecord, args: string[]): Promise<number> {

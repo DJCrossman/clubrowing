@@ -250,9 +250,36 @@ describe("mapToMessageDto", () => {
 	it("splits attachments into photos and files in order, and none once deleted", () => {
 		const row = messageRow({
 			attachments: [
-				{ id: "upl_first", name: null, size: 2000, preview: null },
-				{ id: "upl_minutes", name: "Minutes.pdf", size: 5120, preview: null },
-				{ id: "upl_second", name: null, size: 3000, preview: null },
+				{
+					id: "upl_first",
+					name: null,
+					size: 2000,
+					preview: null,
+					contentType: null,
+					durationMs: null,
+					width: null,
+					height: null,
+				},
+				{
+					id: "upl_minutes",
+					name: "Minutes.pdf",
+					size: 5120,
+					preview: null,
+					contentType: null,
+					durationMs: null,
+					width: null,
+					height: null,
+				},
+				{
+					id: "upl_second",
+					name: null,
+					size: 3000,
+					preview: null,
+					contentType: null,
+					durationMs: null,
+					width: null,
+					height: null,
+				},
 			],
 		});
 		const dto = mapToMessageDto(row, viewer, users);
@@ -294,6 +321,10 @@ describe("mapToMessageDto", () => {
 						id: "upl_minutes",
 						name: "Minutes.pdf",
 						size: 5120,
+						contentType: null,
+						durationMs: null,
+						width: null,
+						height: null,
 						preview: { id: "upl_minutes_preview" },
 					},
 				],
@@ -311,6 +342,61 @@ describe("mapToMessageDto", () => {
 			},
 		]);
 		expect(dto.photos).toEqual([]);
+	});
+
+	it("lists a video by itself, never as a file or photo, with its play link and poster", () => {
+		const row = messageRow({
+			attachments: [
+				{
+					id: "upl_video",
+					name: "Regatta.mp4",
+					size: 4_900_000,
+					contentType: "video/mp4",
+					durationMs: 41000,
+					width: 1080,
+					height: 1920,
+					preview: { id: "upl_poster" },
+				},
+				{
+					id: "upl_clip",
+					name: "Erg.webm",
+					size: 1000,
+					contentType: "video/webm",
+					durationMs: null,
+					width: null,
+					height: null,
+					preview: null,
+				},
+			],
+		});
+		const dto = mapToMessageDto(row, viewer, users);
+		expect(dto.videos).toEqual([
+			{
+				id: "upl_video",
+				name: "Regatta.mp4",
+				size: 4_900_000,
+				durationMs: 41000,
+				width: 1080,
+				height: 1920,
+				playUrl: "/api/v1/chat/attachments/upl_video/play",
+				posterUrl: "/api/v1/chat/attachments/upl_poster",
+			},
+			{
+				id: "upl_clip",
+				name: "Erg.webm",
+				size: 1000,
+				durationMs: null,
+				width: null,
+				height: null,
+				playUrl: "/api/v1/chat/attachments/upl_clip/play",
+				posterUrl: null,
+			},
+		]);
+		expect(dto.files).toEqual([]);
+		expect(dto.photos).toEqual([]);
+		expect(
+			mapToMessageDto({ ...row, deletedAt: at(9) }, viewer, users).videos,
+		).toEqual([]);
 	});
 
 	it("carries the GIF id beside its title, and neither once deleted", () => {

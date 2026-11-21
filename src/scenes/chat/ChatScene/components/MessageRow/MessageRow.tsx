@@ -8,6 +8,7 @@ import { GifTile } from "../GifPicker/GifTile";
 import { MessageGif } from "../GifPicker/MessageGif";
 import { MessageFiles } from "../MessageFiles/MessageFiles";
 import { MessagePhotos } from "../MessagePhotos/MessagePhotos";
+import { MessageVideos } from "../MessageVideos/MessageVideos";
 import { ForwardedBlock } from "./ForwardedBlock";
 import { LinkifiedText } from "./LinkifiedText";
 import { LinkPreviewCard } from "./LinkPreviewCard";
@@ -21,6 +22,7 @@ interface MessageRowProps extends MessageActionHandlers {
 	showThreadSummary?: boolean;
 	compact?: boolean;
 	isHighlighted?: boolean;
+	videosPausedUntil?: string | null;
 }
 
 export function MessageRow({
@@ -28,6 +30,7 @@ export function MessageRow({
 	showThreadSummary = true,
 	compact = false,
 	isHighlighted = false,
+	videosPausedUntil = null,
 	...handlers
 }: MessageRowProps) {
 	const { author } = message;
@@ -102,6 +105,12 @@ export function MessageRow({
 						photos={message.photos}
 						authorName={author.name}
 						compact={compact}
+					/>
+				)}
+				{message.videos.length > 0 && (
+					<MessageVideos
+						videos={message.videos}
+						pausedUntil={videosPausedUntil}
 					/>
 				)}
 				{message.files.length > 0 && <MessageFiles files={message.files} />}

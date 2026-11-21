@@ -1,5 +1,7 @@
+import { head } from "@vercel/blob";
 import { Prisma } from "@/generated/prisma/client";
 import type { SendMessage } from "@/schemas/chat.schema";
+import { storedFileMatches } from "@/server/common/stored-file-matches";
 import type { ViewerContext } from "@/server/context";
 import { findAccessibleChannel } from "@/server/routers/chat/common/chat-access";
 import { loadMessageDtos } from "@/server/routers/chat/common/load-message-dtos";
@@ -16,6 +18,7 @@ export async function sendMessageCommand(
 	if (input.quotedMessageId) {
 		await assertQuotable(ctx, input.quotedMessageId, input.channelId);
 	}
+	await confirmPendingUploads({ db, user, attachmentIds: input.attachmentIds });
 	const message = await db.message
 		.create({
 			data: {
@@ -34,6 +37,7 @@ export async function sendMessageCommand(
 						messageId: null,
 						activity: null,
 						previewOf: null,
+						pending: false,
 					})),
 				},
 			},
@@ -69,6 +73,31 @@ async function assertQuotable(
 		throw new TRPCError({
 			code: "BAD_REQUEST",
 			message: "The quoted message is no longer available",
+		});
+	}
+}
+
+async function confirmPendingUploads({
+	db,
+	user,
+	attachmentIds,
+}: Pick<ViewerContext, "db" | "user"> & { attachmentIds?: string[] }) {
+	if (!attachmentIds?.length) return;
+	const pending = await db.upload.findMany({
+		where: { id: { in: attachmentIds }, userId: user.id, pending: true },
+		select: { id: true, url: true, size: true, contentType: true },
+	});
+	for (const upload of pending) {
+		const stored = await head(upload.url).catch(() => null);
+		if (!stored || !storedFileMatches({ stored, upload })) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: "That video didn't finish uploading. Try adding it again.",
+			});
+		}
+		await db.upload.update({
+			where: { id: upload.id },
+			data: { url: stored.url, size: stored.size, pending: false },
 		});
 	}
 }

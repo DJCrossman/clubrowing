@@ -22,6 +22,7 @@ interface MessageListProps extends MessageHandlers {
 	highlightedMessageId?: string | null;
 	editingMessageId?: string;
 	firstUnreadMessageId?: string;
+	videosPausedUntil: string | null;
 }
 
 export function MessageList({
@@ -34,6 +35,7 @@ export function MessageList({
 	highlightedMessageId,
 	editingMessageId,
 	firstUnreadMessageId,
+	videosPausedUntil,
 	...handlers
 }: MessageListProps) {
 	const bottomRef = useScrollToOwnMessage(messages);
@@ -79,6 +81,7 @@ export function MessageList({
 										message.id === highlightedMessageId ||
 										message.id === editingMessageId
 									}
+									videosPausedUntil={videosPausedUntil}
 									{...bindMessageHandlers(handlers, message)}
 								/>
 							</Fragment>

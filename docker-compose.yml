@@ -29,6 +29,8 @@ services:
       - CHOKIDAR_INTERVAL=300
     ports:
       - "${APP_PORT}:3000"
+      # The blob emulator on a dummy instance; loopback only, as it accepts any token.
+      - "127.0.0.1:${BLOB_PORT}:${BLOB_PORT}"
     extra_hosts:
       # Lets the container reach the host's native Ollama on :11434.
       - "host.docker.internal:host-gateway"

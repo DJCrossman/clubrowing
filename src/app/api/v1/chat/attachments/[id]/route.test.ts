@@ -98,6 +98,19 @@ describe("GET /api/v1/chat/attachments/[id]", () => {
 		await expectUnavailable(await GET(...photoRequest()));
 	});
 
+	it("answers 404 for a video, which only plays from storage", async () => {
+		db.upload.findUnique.mockResolvedValue({
+			url: "https://storage.test/uploads/user_123/video-abc.mp4",
+			name: "Regatta.mp4",
+			contentType: "video/mp4",
+			pending: false,
+			messageId: "msg_1",
+		});
+
+		await expectUnavailable(await GET(...photoRequest()));
+		expect(get).not.toHaveBeenCalled();
+	});
+
 	it("answers 404 when the stored file is missing", async () => {
 		get.mockResolvedValue(null);
 

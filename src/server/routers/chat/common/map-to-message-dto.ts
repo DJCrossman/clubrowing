@@ -38,6 +38,10 @@ export const messageInclude = {
 			id: true,
 			name: true,
 			size: true,
+			contentType: true,
+			durationMs: true,
+			width: true,
+			height: true,
 			preview: { select: { id: true } },
 		},
 		orderBy: { createdAt: "asc" },
@@ -99,19 +103,49 @@ export function mapToMessageDto(
 				),
 		files: deleted
 			? []
-			: message.attachments.flatMap(({ id, name, size, preview }) =>
-					name === null
-						? []
-						: [
-								{
-									id,
-									url: `/api/v1/chat/attachments/${id}`,
-									name,
-									size,
-									previewUrl:
-										preview && `/api/v1/chat/attachments/${preview.id}`,
-								},
-							],
+			: message.attachments.flatMap(
+					({ id, name, size, contentType, preview }) =>
+						name === null || contentType !== null
+							? []
+							: [
+									{
+										id,
+										url: `/api/v1/chat/attachments/${id}`,
+										name,
+										size,
+										previewUrl:
+											preview && `/api/v1/chat/attachments/${preview.id}`,
+									},
+								],
+				),
+		videos: deleted
+			? []
+			: message.attachments.flatMap(
+					({
+						id,
+						name,
+						size,
+						contentType,
+						durationMs,
+						width,
+						height,
+						preview,
+					}) =>
+						name === null || contentType === null
+							? []
+							: [
+									{
+										id,
+										name,
+										size,
+										durationMs,
+										width,
+										height,
+										playUrl: `/api/v1/chat/attachments/${id}/play`,
+										posterUrl:
+											preview && `/api/v1/chat/attachments/${preview.id}`,
+									},
+								],
 				),
 		deleted,
 		isMine,

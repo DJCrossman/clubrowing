@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { crc32, deflateRawSync } from "node:zlib";
 import {
 	type Browser,
@@ -885,6 +887,274 @@ test("a PDF still sends when its first-page picture is refused", async ({
 	await expect(chip.locator("img")).toHaveCount(0);
 	await expect(page.getByText("Too many uploads today.")).toHaveCount(0);
 	await expect(composer).toHaveValue("");
+});
+
+test("a member sends a video and someone else plays it from its poster", async ({
+	page,
+	browser,
+}) => {
+	// Two people, an upload and a playback: past the default 30 s on a loaded run.
+	test.slow();
+	const senderRequests: string[] = [];
+	page.on("request", (request) => senderRequests.push(request.url()));
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `River clip ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	expect(
+		senderRequests.filter((url) => /MessageVideos_[^/]*\._\.js$/.test(url)),
+	).toEqual([]);
+	await page
+		.locator('input[type="file"]')
+		.setInputFiles(join(__dirname, "fixtures", "clip.mp4"));
+	await composer.fill(caption);
+	expect(
+		senderRequests.filter((url) => /MessageVideos_[^/]*\._\.js$/.test(url)),
+	).toEqual([]);
+	await page.getByRole("button", { name: "Send message" }).click();
+	await expect(
+		page
+			.getByRole("article")
+			.filter({ hasText: caption })
+			.getByLabel("clip.mp4", { exact: true }),
+	).toBeVisible();
+	expect(
+		senderRequests.some((url) => /MessageVideos_[^/]*\._\.js$/.test(url)),
+	).toBe(true);
+	expect(
+		senderRequests.filter((url) =>
+			/(^|\.)vercel(-storage)?\.com$/.test(new URL(url).hostname),
+		),
+	).toEqual([]);
+
+	const adminContext = await browser.newContext();
+	const adminPage = await adminContext.newPage();
+	const requested: string[] = [];
+	adminPage.on("request", (request) => requested.push(request.url()));
+	await signInAs(adminPage, "admin");
+	await adminPage.goto("/chat/everyone");
+	const message = adminPage.getByRole("article").filter({ hasText: caption });
+	const player = message.getByLabel("clip.mp4", { exact: true });
+	await expect(player).toBeVisible();
+	await expect(message.getByText(/· \d+:\d\d$/)).toBeVisible();
+	await expect
+		.poll(() =>
+			player.evaluate(
+				(video: HTMLVideoElement) =>
+					new Promise<number>((resolve) => {
+						const poster = new Image();
+						poster.onload = () => resolve(poster.naturalWidth);
+						poster.onerror = () => resolve(0);
+						poster.src = video.poster;
+					}),
+			),
+		)
+		.toBeGreaterThan(0);
+	expect(requested.filter((url) => url.endsWith("/play"))).toEqual([]);
+
+	await player.evaluate((video: HTMLVideoElement) => {
+		video.muted = true;
+		return video.play();
+	});
+	await expect
+		.poll(() => player.evaluate((video: HTMLVideoElement) => video.currentTime))
+		.toBeGreaterThan(0);
+	expect(requested.some((url) => url.endsWith("/play"))).toBe(true);
+	await adminContext.close();
+});
+
+test("a sent video carries no location", async ({ page }) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Where we rowed ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	const fixture = join(__dirname, "fixtures", "clip.mp4");
+	expect(readFileSync(fixture).includes("+50.4452")).toBe(true);
+	await page.locator('input[type="file"]').setInputFiles(fixture);
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+	const player = page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByLabel("clip.mp4", { exact: true });
+	await expect(player).toBeVisible();
+
+	const response = await page.request.get(
+		(await player.getAttribute("src")) ?? "",
+	);
+	expect(response.status()).toBe(200);
+	const stored = await response.body();
+	expect(stored.length).toBe(readFileSync(fixture).length);
+	expect(stored.includes("+50.4452")).toBe(false);
+	expect(stored.includes("104.6189")).toBe(false);
+});
+
+test("a phone clip named like a WebM still arrives without its location", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Renamed clip ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	const clip = readFileSync(join(__dirname, "fixtures", "clip.mp4"));
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "clip.webm",
+		mimeType: "video/webm",
+		buffer: clip,
+	});
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+	const player = page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByLabel("clip.webm", { exact: true });
+	await expect(player).toBeVisible();
+
+	const response = await page.request.get(
+		(await player.getAttribute("src")) ?? "",
+	);
+	expect(response.status()).toBe(200);
+	const stored = await response.body();
+	expect(stored.length).toBe(clip.length);
+	expect(stored.includes("+50.4452")).toBe(false);
+	expect(stored.includes("104.6189")).toBe(false);
+});
+
+test("a video over 20 MB explains the limit until it is removed", async ({
+	page,
+}) => {
+	const uploads: string[] = [];
+	page.on("request", (request) => {
+		if (request.url().includes("/api/v1/uploads")) uploads.push(request.url());
+	});
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	await expect(page.getByRole("textbox", { name: /^Message/ })).toBeVisible();
+
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "whole-race.mp4",
+		mimeType: "video/mp4",
+		buffer: Buffer.alloc(20 * 1024 * 1024 + 1),
+	});
+	await expect(page.getByText("Videos can be up to 20 MB")).toBeVisible();
+	await page.getByRole("button", { name: "Send message" }).click();
+	await expect(page.getByText("Videos can be up to 20 MB")).toBeVisible();
+	expect(uploads).toEqual([]);
+
+	await page.getByRole("button", { name: "Remove whole-race.mp4" }).click();
+	await expect(page.getByText("Videos can be up to 20 MB")).toHaveCount(0);
+});
+
+test("a video the browser can't play offers to try again or download it", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+
+	const caption = `Phone clip ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page
+		.locator('input[type="file"]')
+		.setInputFiles(join(__dirname, "fixtures", "clip-hevc.mp4"));
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+	const message = page.getByRole("article").filter({ hasText: caption });
+	const player = message.getByLabel("clip-hevc.mp4", { exact: true });
+	await expect(player).toBeVisible();
+
+	await player.evaluate((video: HTMLVideoElement) => {
+		video.muted = true;
+		return video.play().catch(() => undefined);
+	});
+	await expect(message.getByText("This video can't play here.")).toBeVisible();
+	await expect(
+		message.getByRole("button", { name: "Download" }),
+	).toHaveAttribute("href", /\/play\?download=1$/);
+
+	await message.getByRole("button", { name: "Try again" }).click();
+	await expect(player).toBeVisible();
+	await expect(message.getByText("This video can't play here.")).toHaveCount(0);
+});
+
+test("videos show as paused, with a date, once the club's viewing allowance is used up", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.route("**/api/v1/trpc/**", async (route) => {
+		const procedures = new URL(route.request().url()).pathname
+			.split("/")
+			.at(-1)
+			?.split(",");
+		if (!procedures?.includes("chat.getMessages")) {
+			await route.continue();
+			return;
+		}
+		const response = await route.fetch();
+		const results: { result?: { data?: Record<string, unknown> } }[] =
+			await response.json();
+		const messages = results[procedures.indexOf("chat.getMessages")]?.result;
+		if (messages?.data) {
+			messages.data.videosPausedUntil = new Date(
+				Date.now() + 10 * 24 * 60 * 60 * 1000,
+			).toISOString();
+		}
+		await route.fulfill({ response, json: results });
+	});
+	await page.goto("/chat/everyone");
+
+	const caption = `Paused clip ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page
+		.locator('input[type="file"]')
+		.setInputFiles(join(__dirname, "fixtures", "clip.mp4"));
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	const message = page.getByRole("article").filter({ hasText: caption });
+	await expect(
+		message.getByText(/^Videos are paused until \S.*\.$/),
+	).toBeVisible();
+	await expect(message.locator("video")).toHaveCount(0);
+});
+
+test("sending a video shows its upload progress", async ({ page }) => {
+	await signInAs(page, "member");
+	// The stored clip is small enough to upload at once, so its picture is held back instead.
+	await page.route("**/api/v1/uploads", async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 2_000));
+		await route.continue();
+	});
+	await page.goto("/chat/everyone");
+
+	const caption = `Slow clip ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+	await page
+		.locator('input[type="file"]')
+		.setInputFiles(join(__dirname, "fixtures", "clip.mp4"));
+	await composer.fill(caption);
+	await page.getByRole("button", { name: "Send message" }).click();
+
+	const progress = page.getByRole("progressbar", { name: "Uploading video" });
+	await expect(progress).toBeVisible();
+	await expect
+		.poll(async () => Number(await progress.getAttribute("aria-valuenow")))
+		.toBeGreaterThan(0);
+	await expect(
+		page
+			.getByRole("article")
+			.filter({ hasText: caption })
+			.getByLabel("clip.mp4", { exact: true }),
+	).toBeVisible();
+	await expect(progress).toHaveCount(0);
 });
 
 test("a member opens a CSV from a message and sees its cells in a table", async ({

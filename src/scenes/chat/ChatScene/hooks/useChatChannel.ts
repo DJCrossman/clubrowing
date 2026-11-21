@@ -44,6 +44,10 @@ export function useChatChannel({
 		[messagesQuery.data],
 	);
 
+	const videosPausedUntil =
+		messagesQuery.data?.pages.find((page) => page.videosPausedUntil)
+			?.videosPausedUntil ?? null;
+
 	const isFresh = messagesQuery.isSuccess && messagesQuery.isFetchedAfterMount;
 	if (isFresh && readMarker?.channelId !== channelId) {
 		setReadMarker({
@@ -131,6 +135,7 @@ export function useChatChannel({
 		channel,
 		messages,
 		firstUnreadMessageId,
+		videosPausedUntil,
 		messagesQuery,
 		threadQuery,
 		membersQuery,

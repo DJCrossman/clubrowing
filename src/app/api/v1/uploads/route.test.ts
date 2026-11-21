@@ -14,14 +14,25 @@ const aggregate = vi.fn();
 const findMany = vi.fn();
 const findFirst = vi.fn();
 const deleteMany = vi.fn();
+const updateMany = vi.fn();
+const head = vi.fn();
+class BlobNotFoundError extends Error {}
 const after = vi.fn();
 
 vi.mock("@/lib/env", () => ({ envVars: env }));
 vi.mock("@/lib/auth", () => ({ requireAuth }));
-vi.mock("@vercel/blob", () => ({ put, del }));
+vi.mock("@vercel/blob", () => ({ put, del, head, BlobNotFoundError }));
 vi.mock("@/lib/db", () => ({
 	db: {
-		upload: { count, create, aggregate, findMany, findFirst, deleteMany },
+		upload: {
+			count,
+			create,
+			aggregate,
+			findMany,
+			findFirst,
+			deleteMany,
+			updateMany,
+		},
 	},
 }));
 vi.mock("next/server", async (importOriginal) => ({
@@ -32,6 +43,13 @@ vi.mock("next/server", async (importOriginal) => ({
 const { POST } = await import("./route");
 
 const userId = "user_123";
+const unfinishedVideo = {
+	id: "upl_unfinished",
+	url: "uploads/user_123/video-a.mp4",
+	size: 5000,
+	contentType: "video/mp4",
+	pending: true,
+};
 
 describe("POST /api/v1/uploads", () => {
 	beforeEach(() => {
@@ -139,6 +157,7 @@ describe("POST /api/v1/uploads", () => {
 			"deleting old messages with photos or files",
 		);
 		expect(put).not.toHaveBeenCalled();
+		expect(after).toHaveBeenCalledOnce();
 	});
 
 	it("accepts an upload that still fits in the club's storage", async () => {
@@ -557,6 +576,7 @@ describe("POST /api/v1/uploads", () => {
 							previewOf: null,
 						}),
 						{ message: { deletedAt: { not: null } } },
+						expect.objectContaining({ pending: true }),
 					],
 				},
 			}),
@@ -596,6 +616,117 @@ describe("POST /api/v1/uploads", () => {
 		expect(findMany.mock.invocationCallOrder[1]).toBeLessThan(
 			deleteMany.mock.invocationCallOrder[0],
 		);
+	});
+
+	it("settles a video upload unfinished after an hour whose file is what its row promised", async () => {
+		const before = Date.now();
+		findMany.mockResolvedValueOnce([unfinishedVideo]);
+		head.mockResolvedValue({
+			url: "https://storage.test/uploads/user_123/video-a.mp4",
+			size: 4000,
+			contentType: "video/mp4",
+		});
+
+		await POST(uploadRequest(await png(10, 10)));
+		await after.mock.calls[0][0]();
+
+		const unfinishedArm = findMany.mock.calls[0][0].where.OR[2];
+		expect(unfinishedArm.pending).toBe(true);
+		expect(
+			Math.abs(before - 60 * 60 * 1000 - unfinishedArm.createdAt.lt.getTime()),
+		).toBeLessThan(5000);
+		expect(head).toHaveBeenCalledWith("uploads/user_123/video-a.mp4");
+		expect(updateMany).toHaveBeenCalledWith({
+			where: { id: "upl_unfinished", pending: true },
+			data: {
+				url: "https://storage.test/uploads/user_123/video-a.mp4",
+				size: 4000,
+				pending: false,
+			},
+		});
+		expect(del).not.toHaveBeenCalled();
+		expect(deleteMany).not.toHaveBeenCalled();
+	});
+
+	it("removes the file and then the row of an unfinished upload that isn't what it promised", async () => {
+		findMany.mockResolvedValueOnce([unfinishedVideo]);
+		head.mockResolvedValue({
+			url: "https://storage.test/uploads/user_123/video-a.mp4",
+			size: 5001,
+			contentType: "video/mp4",
+		});
+
+		await POST(uploadRequest(await png(10, 10)));
+		await after.mock.calls[0][0]();
+
+		expect(del).toHaveBeenCalledWith(
+			"https://storage.test/uploads/user_123/video-a.mp4",
+		);
+		expect(deleteMany).toHaveBeenCalledWith({
+			where: { id: "upl_unfinished", pending: true },
+		});
+		expect(del.mock.invocationCallOrder[0]).toBeLessThan(
+			deleteMany.mock.invocationCallOrder[0],
+		);
+		expect(updateMany).not.toHaveBeenCalled();
+	});
+
+	it("keeps the row of an unfinished upload whose file couldn't be removed", async () => {
+		findMany.mockResolvedValueOnce([unfinishedVideo]);
+		head.mockResolvedValue({
+			url: "https://storage.test/uploads/user_123/video-a.mp4",
+			size: 4000,
+			contentType: "text/html",
+		});
+		del.mockRejectedValueOnce(new Error("storage unavailable"));
+		vi.spyOn(console, "error").mockImplementation(() => {});
+
+		await POST(uploadRequest(await png(10, 10)));
+		await after.mock.calls[0][0]();
+
+		expect(deleteMany).not.toHaveBeenCalled();
+		expect(console.error).toHaveBeenCalled();
+	});
+
+	it("removes only a still-pending row when an unfinished upload's file never arrived", async () => {
+		findMany.mockResolvedValueOnce([unfinishedVideo]);
+		head.mockRejectedValue(new BlobNotFoundError("not found"));
+
+		await POST(uploadRequest(await png(10, 10)));
+		await after.mock.calls[0][0]();
+
+		expect(deleteMany).toHaveBeenCalledWith({
+			where: { id: "upl_unfinished", pending: true },
+		});
+		expect(del).not.toHaveBeenCalled();
+	});
+
+	it("leaves an unfinished upload for the next run when storage can't be asked, and goes on with the batch", async () => {
+		findMany
+			.mockResolvedValueOnce([
+				unfinishedVideo,
+				{
+					id: "upl_old",
+					url: "https://storage.test/uploads/old.webp",
+					size: 10,
+					contentType: null,
+					pending: false,
+				},
+			])
+			.mockResolvedValueOnce([]);
+		head.mockRejectedValue(new Error("storage unavailable"));
+		vi.spyOn(console, "error").mockImplementation(() => {});
+
+		await POST(uploadRequest(await png(10, 10)));
+		await after.mock.calls[0][0]();
+
+		expect(updateMany).not.toHaveBeenCalled();
+		expect(deleteMany).toHaveBeenCalledTimes(1);
+		expect(deleteMany).toHaveBeenCalledWith({
+			where: { id: { in: ["upl_old"] } },
+		});
+		expect(del).toHaveBeenCalledWith(["https://storage.test/uploads/old.webp"]);
+		expect(console.error).toHaveBeenCalled();
 	});
 
 	it("still answers 200 when removing orphaned photos fails", async () => {

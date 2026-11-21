@@ -57,6 +57,7 @@ interface MessageComposerProps {
 	onCancelEdit?: () => void;
 	onSaveEdit?: (message: ChatMessage, text: string) => Promise<unknown>;
 	onEditLastMessage?: () => void;
+	videoUploadProgress?: number | null;
 	ref?: Ref<MessageComposerHandle>;
 }
 
@@ -70,6 +71,7 @@ export function MessageComposer({
 	onCancelEdit,
 	onSaveEdit,
 	onEditLastMessage,
+	videoUploadProgress = null,
 	ref,
 }: MessageComposerProps) {
 	const alsoSendToId = useId();
@@ -210,6 +212,21 @@ export function MessageComposer({
 							)
 						}
 					/>
+				)}
+				{files.length > 0 && videoUploadProgress !== null && (
+					<div
+						role="progressbar"
+						aria-label="Uploading video"
+						aria-valuemin={0}
+						aria-valuemax={100}
+						aria-valuenow={Math.round(videoUploadProgress * 100)}
+						className="mx-3 mt-2 h-1 overflow-hidden rounded-full bg-white/10"
+					>
+						<div
+							className="h-full bg-primary transition-[width]"
+							style={{ width: `${videoUploadProgress * 100}%` }}
+						/>
+					</div>
 				)}
 				<Textarea
 					{...textField}
