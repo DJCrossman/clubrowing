@@ -59,11 +59,13 @@ describe("getActivitiesQuery", () => {
 	it("leaves other athletes' hidden activities out of an admin's list", async () => {
 		const { db, ctx } = createContext([]);
 
-		await getActivitiesQuery({}, {
-			...ctx,
-			user: { id: "user_admin", isAdmin: true },
-			athlete: { id: "ath_admin" },
-		} as unknown as Context);
+		await getActivitiesQuery(
+			{},
+			Object.assign(ctx, {
+				user: { id: "user_admin", isAdmin: true },
+				athlete: { id: "ath_admin" },
+			}),
+		);
 
 		expect(db.activity.findMany).toHaveBeenCalledWith(
 			expect.objectContaining({

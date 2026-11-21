@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { paginate } from "@/lib/pagination";
 import { ActivityType, WorkoutType, withPagination } from "@/schemas";
-import type { Context, ViewerContext } from "@/server/context";
+import type { Context } from "@/server/context";
 import {
 	activityInclude,
 	mapToActivityDto,
@@ -23,7 +23,7 @@ export type GetActivitiesInput = z.infer<typeof getActivitiesInputSchema>;
 
 export async function getActivitiesQuery(
 	input: GetActivitiesInput,
-	{ db, user, athlete }: Context & Partial<Pick<ViewerContext, "athlete">>,
+	{ db, user, athlete }: Context & { athlete?: { id: string } | null },
 ) {
 	const {
 		boatId,
