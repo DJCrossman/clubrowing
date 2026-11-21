@@ -2248,6 +2248,56 @@ test("a mention of someone outside a group chat is saved as plain text", async (
 	await expect(message.locator("mark")).toHaveText("@Jordan Sculler");
 });
 
+test("on a short phone the mention list stays on the screen when the keyboard opens", async ({
+	page,
+}) => {
+	test.skip(
+		test.info().project.name !== "phone",
+		"Only a phone has an on-screen keyboard.",
+	);
+	await page.setViewportSize({ width: 375, height: 667 });
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	await page.getByRole("button", { name: "Mention someone" }).tap();
+	const list = page.getByRole("listbox", { name: "People to mention" });
+	await expect(list).toBeVisible();
+	const height = () =>
+		list.evaluate((element) => element.getBoundingClientRect().height);
+	const openHeight = await height();
+
+	// Headless Chromium has no on-screen keyboard, so report the shorter visual
+	// viewport that a 336 px one leaves behind.
+	await page.evaluate(() => {
+		const viewport = window.visualViewport;
+		if (!viewport) return;
+		const height = window.innerHeight - 336;
+		Object.defineProperty(viewport, "height", {
+			configurable: true,
+			get: () => height,
+		});
+		viewport.dispatchEvent(new Event("resize"));
+	});
+	await expect.poll(height).toBeLessThan(openHeight);
+	expect(
+		await list.evaluate((element) => element.getBoundingClientRect().top),
+	).toBeGreaterThanOrEqual(0);
+	expect(
+		await list.evaluate(
+			(element) => element.scrollHeight > element.clientHeight,
+		),
+	).toBe(true);
+
+	await page.evaluate(() => {
+		const viewport = window.visualViewport;
+		if (!viewport) return;
+		Object.defineProperty(viewport, "height", {
+			get: () => window.innerHeight,
+		});
+		viewport.dispatchEvent(new Event("resize"));
+	});
+	await expect.poll(height).toBe(openHeight);
+});
+
 async function photo({
 	width,
 	height,

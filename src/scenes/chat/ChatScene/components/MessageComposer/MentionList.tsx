@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { InitialsAvatar } from "@/components/chat/initials-avatar";
 import type { ChatMembers } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
@@ -17,13 +18,36 @@ export function MentionList({
 	onHighlight,
 	onPick,
 }: MentionListProps) {
+	const listRef = useRef<HTMLDivElement>(null);
+
+	useLayoutEffect(() => {
+		const list = listRef.current;
+		const composer = list?.offsetParent;
+		if (!list || !composer) return;
+		let frame = 0;
+		// The list never grows past the top of the screen. The message box moves
+		// when the keyboard opens, after the viewport has reported it, so the room
+		// is read on every frame while the list is open. 12 px keeps the 6 px gap
+		// under the list and leaves 6 px above it.
+		const measure = () => {
+			list.style.setProperty(
+				"--room-above",
+				`${composer.getBoundingClientRect().top - (window.visualViewport?.offsetTop ?? 0) - 12}px`,
+			);
+			frame = requestAnimationFrame(measure);
+		};
+		measure();
+		return () => cancelAnimationFrame(frame);
+	}, []);
+
 	return (
 		<div
+			ref={listRef}
 			id={id}
 			role="listbox"
 			aria-label="People to mention"
 			onMouseDown={(event) => event.preventDefault()}
-			className="absolute bottom-full left-0 z-20 mb-1.5 max-h-56 w-full overflow-y-auto rounded-xl border border-input bg-card p-1 shadow-md md:w-72 md:max-w-full"
+			className="absolute bottom-full left-0 z-20 mb-1.5 max-h-[min(14rem,var(--room-above,100vh))] w-full overflow-y-auto rounded-xl border border-input bg-card p-1 shadow-md md:w-72 md:max-w-full"
 		>
 			{people.map((person, index) => (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: the message box keeps focus and handles the keys
