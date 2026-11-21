@@ -1815,6 +1815,284 @@ test("a file dropped beside the conversation is ignored and the drop overlay doe
 	await expect(overlay).toHaveCount(0);
 });
 
+test("a member mentions someone from the @ button and the message shows the mention", async ({
+	page,
+	browser,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await expect(composer).toBeVisible();
+
+	await page.getByRole("button", { name: "Mention someone" }).click();
+	await expect(composer).toBeFocused();
+	await composer.pressSequentially("Cox");
+	const list = page.getByRole("listbox", { name: "People to mention" });
+	const option = list.getByRole("option", { name: "Avery Coxwell" });
+	await expect(option).toBeVisible();
+	const listBox = await list.boundingBox();
+	const composerBox = await composer.boundingBox();
+	const viewport = page.viewportSize();
+	expect(listBox && composerBox && viewport).toBeTruthy();
+	if (listBox && composerBox && viewport) {
+		expect(listBox.y + listBox.height).toBeLessThanOrEqual(composerBox.y);
+		expect(listBox.y).toBeGreaterThanOrEqual(0);
+		expect(listBox.x).toBeGreaterThanOrEqual(0);
+		expect(listBox.x + listBox.width).toBeLessThanOrEqual(viewport.width);
+	}
+	if (test.info().project.name === "phone") {
+		await option.tap();
+	} else {
+		await option.click();
+	}
+	await expect(list).toHaveCount(0);
+	await expect(composer).toHaveValue("@Avery Coxwell ");
+	await expect(composer).toBeFocused();
+
+	const ending = `can you open the boat bay ${test.info().project.name} ${Date.now()}`;
+	await composer.pressSequentially(ending);
+	await composer.press("Enter");
+	const message = page.getByRole("article").filter({ hasText: ending });
+	await expect(
+		message.locator("mark", { hasText: "@Avery Coxwell" }),
+	).toBeVisible();
+
+	const adminContext = await browser.newContext();
+	const adminPage = await adminContext.newPage();
+	await signInAs(adminPage, "admin");
+	await adminPage.goto("/chat/everyone");
+	await expect(
+		adminPage
+			.getByRole("article")
+			.filter({ hasText: ending })
+			.locator("mark", { hasText: "@Avery Coxwell" }),
+	).toBeVisible();
+	await adminContext.close();
+});
+
+test("arrow keys and Enter choose a mention without sending, and Escape closes the list", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	const list = page.getByRole("listbox", { name: "People to mention" });
+	const question = `Who has the trailer keys ${test.info().project.name} ${Date.now()}`;
+
+	await composer.fill(`${question} `);
+	await composer.press("End");
+	await composer.pressSequentially("@r");
+	await expect(list.getByRole("option").nth(1)).toBeVisible();
+	const second =
+		(await list.getByRole("option").nth(1).getAttribute("aria-label")) ?? "";
+	await expect(list.getByRole("option").first()).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	await composer.press("ArrowDown");
+	await expect(list.getByRole("option").nth(1)).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	await composer.press("Enter");
+	await expect(composer).toHaveValue(`${question} @${second} `);
+	await expect(
+		page.getByRole("article").filter({ hasText: question }),
+	).toHaveCount(0);
+
+	await composer.pressSequentially("or @r");
+	await expect(list).toBeVisible();
+	await composer.press("Escape");
+	await expect(list).toHaveCount(0);
+	await expect(composer).toHaveValue(`${question} @${second} or @r`);
+
+	await composer.press("Enter");
+	const message = page.getByRole("article").filter({ hasText: question });
+	await expect(message).toHaveCount(1);
+	await expect(
+		message.locator("mark", { hasText: `@${second}` }),
+	).toBeVisible();
+	await expect(composer).toHaveValue("");
+
+	await composer.pressSequentially("@");
+	await expect(list).toBeVisible();
+	await composer.press("Escape");
+	await expect(list).toHaveCount(0);
+	await composer.press("Backspace");
+	await composer.pressSequentially("@r");
+	await expect(list).toBeVisible();
+});
+
+test("a group chat offers only the people in it", async ({ page }) => {
+	await signInAs(page, "member");
+	const [{ result }] = await (
+		await page.request.get("/api/v1/trpc/chat.getChannels?batch=1&input={}")
+	).json();
+	const crew = result.data.data.find(
+		(channel: { name: string }) => channel.name === "Competitive Crew",
+	);
+	await page.goto(`/chat/${crew.id}`);
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	const list = page.getByRole("listbox", { name: "People to mention" });
+
+	await composer.pressSequentially("@Jordan");
+	await expect(
+		list.getByRole("option", { name: "Jordan Sculler" }),
+	).toBeVisible();
+
+	await composer.fill("");
+	await composer.pressSequentially("@Rowan");
+	await expect(list).toHaveCount(0);
+	await composer.fill("");
+	await composer.pressSequentially("@");
+	await expect(list.getByRole("option").first()).toBeVisible();
+	await expect(list.getByRole("option", { name: "Rowan Rigger" })).toHaveCount(
+		0,
+	);
+});
+
+test("a thread reply can mention someone", async ({ page }) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	const question = `Which erg has the loose chain ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await composer.fill(question);
+	await composer.press("Enter");
+	const root = page.getByRole("article").filter({ hasText: question });
+	await root.click();
+	await root.getByRole("button", { name: "Reply in thread" }).click();
+	const threadComposer = page.getByRole("textbox", { name: "Reply…" });
+	await expect(threadComposer).toBeVisible();
+
+	await threadComposer.pressSequentially("@Aver");
+	const list = page.getByRole("listbox", { name: "People to mention" });
+	const option = list.getByRole("option", { name: "Avery Coxwell" });
+	await expect(option).toBeVisible();
+	if (test.info().project.name === "phone") {
+		const listBox = await list.boundingBox();
+		const viewport = page.viewportSize();
+		expect(listBox && viewport).toBeTruthy();
+		if (listBox && viewport) {
+			expect(listBox.y).toBeGreaterThanOrEqual(0);
+			expect(listBox.x).toBeGreaterThanOrEqual(0);
+			expect(listBox.x + listBox.width).toBeLessThanOrEqual(viewport.width);
+			expect(listBox.y + listBox.height).toBeLessThanOrEqual(viewport.height);
+		}
+		await option.tap();
+	} else {
+		await option.click();
+	}
+	await expect(threadComposer).toHaveValue("@Avery Coxwell ");
+	const reply = `it needs a new chain ${test.info().project.name} ${Date.now()}`;
+	await threadComposer.pressSequentially(reply);
+	await threadComposer.press("Enter");
+	await expect(
+		page
+			.getByRole("article")
+			.filter({ hasText: reply })
+			.locator("mark", { hasText: "@Avery Coxwell" }),
+	).toBeVisible();
+});
+
+test("editing a message keeps its mention, and removing the name removes it", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	const unique = `${test.info().project.name} ${Date.now()}`;
+
+	await composer.pressSequentially(`The launch is ready ${unique} @Jord`);
+	await page
+		.getByRole("listbox", { name: "People to mention" })
+		.getByRole("option", { name: "Jordan Sculler" })
+		.click();
+	await composer.press("Enter");
+	const message = page.getByRole("article").filter({ hasText: unique });
+	const mark = message.locator("mark", { hasText: "@Jordan Sculler" });
+	await expect(mark).toBeVisible();
+
+	const editor = page.getByRole("textbox", { name: "Edit message" });
+	await message.click();
+	await message.getByRole("button", { name: "More actions" }).click();
+	await page.getByRole("menuitem", { name: "Edit message" }).click();
+	await expect(editor).toHaveValue(
+		`The launch is ready ${unique} @Jordan Sculler`,
+	);
+	await expect(editor).toBeFocused();
+	await editor.press("Escape");
+	await expect(page.getByText("Editing message")).toHaveCount(0);
+
+	await message.click();
+	await message.getByRole("button", { name: "More actions" }).click();
+	await page.getByRole("menuitem", { name: "Edit message" }).click();
+	await expect(editor).toBeFocused();
+	await editor.pressSequentially(" at the dock");
+	await editor.press("Enter");
+	await expect(message.getByText("(edited)")).toBeVisible();
+	await expect(message).toContainText("at the dock");
+	await expect(mark).toBeVisible();
+
+	await message.click();
+	await message.getByRole("button", { name: "More actions" }).click();
+	await page.getByRole("menuitem", { name: "Edit message" }).click();
+	await expect(editor).toHaveValue(
+		`The launch is ready ${unique} @Jordan Sculler at the dock`,
+	);
+	await editor.fill(`The launch is ready ${unique} at the dock`);
+	await editor.press("Enter");
+	await expect(message).toContainText(`${unique} at the dock`);
+	await expect(message.locator("mark")).toHaveCount(0);
+});
+
+test("a mention of someone outside a group chat is saved as plain text", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	const [{ result: channels }] = await (
+		await page.request.get("/api/v1/trpc/chat.getChannels?batch=1&input={}")
+	).json();
+	const crew = channels.data.data.find(
+		(channel: { name: string }) => channel.name === "Competitive Crew",
+	);
+	const [{ result: members }] = await (
+		await page.request.get("/api/v1/trpc/chat.getMembers?batch=1&input={}")
+	).json();
+	const userId = (name: string) =>
+		members.data.data.find((person: { name: string }) => person.name === name)
+			.id;
+	const text = `@Rowan Rigger and @Jordan Sculler ${test.info().project.name} ${Date.now()}`;
+
+	const response = await page.request.post(
+		"/api/v1/trpc/chat.sendMessage?batch=1",
+		{
+			data: {
+				0: {
+					channelId: crew.id,
+					text,
+					mentions: [
+						{
+							userId: userId("Rowan Rigger"),
+							start: 0,
+							length: "@Rowan Rigger".length,
+						},
+						{
+							userId: userId("Jordan Sculler"),
+							start: text.indexOf("@Jordan Sculler"),
+							length: "@Jordan Sculler".length,
+						},
+					],
+				},
+			},
+		},
+	);
+	expect(response.ok()).toBeTruthy();
+
+	await page.goto(`/chat/${crew.id}`);
+	const message = page.getByRole("article").filter({ hasText: text });
+	await expect(message.locator("mark")).toHaveText("@Jordan Sculler");
+});
+
 async function photo({
 	width,
 	height,

@@ -1,7 +1,9 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { getDefaultOrganizationId } from "@/server/clerk/default-organization";
 import type { ViewerContext } from "@/server/context";
+import { getGroupMemberIds } from "@/server/routers/groups/common";
 import { TRPCError } from "@/server/trpc";
+import { type AccessibleChannel, canAccessChannel } from "./chat-access";
 import { type ChatUser, toChatUser } from "./chat-user-names";
 
 type Db = ViewerContext["db"];
@@ -61,6 +63,51 @@ export async function listChatUsers(db: Db, excludeUserId: string) {
 	return [...users, ...admins.values()]
 		.filter((user) => user.id !== excludeUserId)
 		.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function listChannelChatUsers({
+	db,
+	channel,
+	excludeUserId,
+}: {
+	db: Db;
+	channel: AccessibleChannel;
+	excludeUserId: string;
+}): Promise<ChatUser[]> {
+	const users = await listChatUsers(db, excludeUserId);
+	if (channel.kind !== "group") {
+		return users.filter((user) =>
+			canAccessChannel(channel, {
+				userId: user.id,
+				isAdmin: false,
+				groupIds: new Set(),
+			}),
+		);
+	}
+	// After listChatUsers, so its Clerk admin lookup is already cached.
+	const [athletes, groupMemberIds, clerkAdminIds] = await Promise.all([
+		db.athlete.findMany({
+			where: { userId: { not: null } },
+			select: { id: true, userId: true, role: true },
+		}),
+		channel.groupId ? getGroupMemberIds(db, channel.groupId) : ([] as string[]),
+		loadClerkAdminIds(),
+	]);
+	const athleteByUserId = new Map(
+		athletes.map((athlete) => [athlete.userId, athlete]),
+	);
+	return users.filter((user) => {
+		const athlete = athleteByUserId.get(user.id);
+		return canAccessChannel(channel, {
+			userId: user.id,
+			isAdmin: athlete?.role === "admin" || clerkAdminIds.includes(user.id),
+			groupIds: new Set(
+				channel.groupId && athlete && groupMemberIds.includes(athlete.id)
+					? [channel.groupId]
+					: [],
+			),
+		});
+	});
 }
 
 async function loadClerkUsers(userIds: string[]) {

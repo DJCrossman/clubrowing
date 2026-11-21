@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mentionsFitText } from "@/lib/chat/mentions";
 
 export const EVERYONE_CHANNEL_ID = "everyone";
 export const MAX_MESSAGE_LENGTH = 4000;
@@ -22,6 +23,13 @@ const gifSchema = z.object({
 		.min(1)
 		.transform((title) => title.slice(0, 100)),
 });
+const mentionsSchema = z.array(
+	z.object({
+		userId: z.string(),
+		start: z.number().int().min(0),
+		length: z.number().int().min(2),
+	}),
+);
 
 const hasContent = (value: {
 	text?: string;
@@ -31,6 +39,15 @@ const hasContent = (value: {
 const missingContent = {
 	message: "A message needs text or a GIF",
 	path: ["text"],
+};
+const mentionsFit = (value: {
+	text?: string;
+	mentions?: z.infer<typeof mentionsSchema>;
+}) =>
+	mentionsFitText({ text: value.text ?? "", mentions: value.mentions ?? [] });
+const mismatchedMentions = {
+	message: "That mention doesn't match the message",
+	path: ["mentions"],
 };
 
 export const getMessagesInputSchema = z.object({
@@ -42,6 +59,11 @@ export type GetMessagesInput = z.infer<typeof getMessagesInputSchema>;
 
 export const getThreadInputSchema = z.object({ messageId: z.string() });
 export type GetThreadInput = z.infer<typeof getThreadInputSchema>;
+
+export const getMembersInputSchema = z
+	.object({ channelId: z.string().optional() })
+	.optional();
+export type GetMembersInput = z.infer<typeof getMembersInputSchema>;
 
 export const sendMessageSchema = z
 	.object({
@@ -57,11 +79,13 @@ export const sendMessageSchema = z
 			)
 			.transform((ids) => [...new Set(ids)])
 			.optional(),
+		mentions: mentionsSchema.optional(),
 	})
 	.refine(hasContent, {
 		message: "A message needs text, a GIF or a file",
 		path: ["text"],
-	});
+	})
+	.refine(mentionsFit, mismatchedMentions);
 export type SendMessage = z.infer<typeof sendMessageSchema>;
 
 export const replyInThreadSchema = z
@@ -70,8 +94,10 @@ export const replyInThreadSchema = z
 		text: messageTextSchema.optional(),
 		gif: gifSchema.optional(),
 		alsoSendToChannel: z.boolean().optional(),
+		mentions: mentionsSchema.optional(),
 	})
-	.refine(hasContent, missingContent);
+	.refine(hasContent, missingContent)
+	.refine(mentionsFit, mismatchedMentions);
 export type ReplyInThread = z.infer<typeof replyInThreadSchema>;
 
 export const toggleReactionSchema = z.object({
@@ -121,10 +147,13 @@ export type LeaveDm = z.infer<typeof leaveDmSchema>;
 export const deleteMessageSchema = z.object({ messageId: z.string() });
 export type DeleteMessage = z.infer<typeof deleteMessageSchema>;
 
-export const editMessageSchema = z.object({
-	messageId: z.string(),
-	text: messageTextSchema.min(1, "A message needs text"),
-});
+export const editMessageSchema = z
+	.object({
+		messageId: z.string(),
+		text: messageTextSchema.min(1, "A message needs text"),
+		mentions: mentionsSchema.optional(),
+	})
+	.refine(mentionsFit, mismatchedMentions);
 export type EditMessage = z.infer<typeof editMessageSchema>;
 
 export const messageComposerSchema = z.object({

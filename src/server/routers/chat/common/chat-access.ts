@@ -9,7 +9,7 @@ import { TRPCError } from "@/server/trpc";
 
 type Db = ViewerContext["db"];
 
-type AccessibleChannel = {
+export type AccessibleChannel = {
 	kind: ChannelKind;
 	groupId: string | null;
 	members: { userId: string; visibleFrom?: Date | null }[];

@@ -10,9 +10,9 @@ import { MessageFiles } from "../MessageFiles/MessageFiles";
 import { MessagePhotos } from "../MessagePhotos/MessagePhotos";
 import { MessageVideos } from "../MessageVideos/MessageVideos";
 import { ForwardedBlock } from "./ForwardedBlock";
-import { LinkifiedText } from "./LinkifiedText";
 import { LinkPreviewCard } from "./LinkPreviewCard";
 import { type MessageActionHandlers, MessageActions } from "./MessageActions";
+import { MessageText } from "./MessageText";
 import { QuoteBlock } from "./QuoteBlock";
 import { ReactionChips } from "./ReactionChips";
 import { ThreadSummary } from "./ThreadSummary";
@@ -68,7 +68,7 @@ export function MessageRow({
 				) : (
 					message.text && (
 						<p className="max-w-[720px] text-sm leading-normal break-words whitespace-pre-wrap">
-							<LinkifiedText text={message.text} />
+							<MessageText text={message.text} mentions={message.mentions} />
 							{message.editedAt && (
 								<span
 									title={`Edited ${formatMessageTime(message.editedAt)}`}

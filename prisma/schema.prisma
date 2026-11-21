@@ -451,6 +451,7 @@ model message {
   forwardedFrom   message?           @relation("forward", fields: [forwardedFromId], references: [id], onDelete: SetNull)
   forwards        message[]          @relation("forward")
   reactions       message_reaction[]
+  mentions        message_mention[]
   attachments     upload[]
 
   @@index([channelId, parentId, createdAt])
@@ -466,6 +467,18 @@ model message_reaction {
   message   message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@unique([messageId, userId, emoji])
+}
+
+model message_mention {
+  id        String  @id @default(dbgenerated("generate_id('men_'::text)"))
+  messageId String
+  userId    String
+  start     Int
+  length    Int
+  message   message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, start])
+  @@index([userId])
 }
 
 model upload {

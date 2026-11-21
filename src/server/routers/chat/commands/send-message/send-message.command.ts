@@ -6,6 +6,7 @@ import type { ViewerContext } from "@/server/context";
 import { findAccessibleChannel } from "@/server/routers/chat/common/chat-access";
 import { loadMessageDtos } from "@/server/routers/chat/common/load-message-dtos";
 import { messageInclude } from "@/server/routers/chat/common/map-to-message-dto";
+import { selectChannelMentions } from "@/server/routers/chat/common/message-mentions";
 import { notifyChannelAfterResponse } from "@/server/routers/chat/common/message-notifications";
 import { TRPCError } from "@/server/trpc";
 
@@ -14,7 +15,7 @@ export async function sendMessageCommand(
 	ctx: ViewerContext,
 ) {
 	const { db, user } = ctx;
-	await findAccessibleChannel(db, input.channelId, user);
+	const channel = await findAccessibleChannel(db, input.channelId, user);
 	if (input.quotedMessageId) {
 		await assertQuotable(ctx, input.quotedMessageId, input.channelId);
 	}
@@ -28,6 +29,14 @@ export async function sendMessageCommand(
 				gif: input.gif?.title ?? null,
 				gifId: input.gif?.id ?? null,
 				quotedMessageId: input.quotedMessageId ?? null,
+				mentions: {
+					create: await selectChannelMentions({
+						db,
+						channel,
+						authorUserId: user.id,
+						mentions: input.mentions ?? [],
+					}),
+				},
 				// Only the sender's own uploads that no message or activity holds yet, so a
 				// double send can't attach the same file twice.
 				attachments: {

@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { MentionRange } from "@/lib/chat/mentions";
 import type { ChatMessage } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import {
@@ -37,17 +38,21 @@ import { EmojiPicker } from "../EmojiPicker/EmojiPicker";
 import { GifPicker } from "../GifPicker/GifPicker";
 import { useGiphy } from "../GifPicker/useGiphy";
 import { ComposerFileStrip } from "./ComposerFileStrip";
+import { MentionList } from "./MentionList";
+import { useMentions } from "./useMentions";
 
 export type ComposerSubmission = {
 	text?: string;
 	gif?: { id: string; title: string };
 	files: File[];
 	alsoSendToChannel: boolean;
+	mentions?: MentionRange[];
 };
 
 export type MessageComposerHandle = { addFiles: (added: File[]) => void };
 
 interface MessageComposerProps {
+	channelId: string;
 	placeholder: string;
 	alsoSendToLabel?: string;
 	quotedMessage?: ChatMessage | null;
@@ -55,13 +60,18 @@ interface MessageComposerProps {
 	onSubmit: (submission: ComposerSubmission) => Promise<unknown>;
 	editingMessage?: ChatMessage | null;
 	onCancelEdit?: () => void;
-	onSaveEdit?: (message: ChatMessage, text: string) => Promise<unknown>;
+	onSaveEdit?: (
+		message: ChatMessage,
+		text: string,
+		mentions: MentionRange[],
+	) => Promise<unknown>;
 	onEditLastMessage?: () => void;
 	videoUploadProgress?: number | null;
 	ref?: Ref<MessageComposerHandle>;
 }
 
 export function MessageComposer({
+	channelId,
 	placeholder,
 	alsoSendToLabel,
 	quotedMessage,
@@ -89,6 +99,7 @@ export function MessageComposer({
 	const isSending = form.formState.isSubmitting && files.length > 0;
 	const { ref: registerTextRef, ...textField } = form.register("text");
 	const { canUseGifs, isPaused: gifsPaused } = useGiphy();
+	const mentions = useMentions({ channelId, form, textareaRef });
 
 	useEffect(() => {
 		if (quotedMessage) {
@@ -101,9 +112,10 @@ export function MessageComposer({
 		draftBeforeEdit.current ??= form.getValues();
 		const text = editingMessage.text ?? "";
 		form.reset({ text, alsoSendToChannel: false, files: [] });
+		mentions.startEditing(editingMessage);
 		textareaRef.current?.focus();
 		textareaRef.current?.setSelectionRange(text.length, text.length);
-	}, [editingMessage, form]);
+	}, [editingMessage, form, mentions.startEditing]);
 
 	const finishEditing = () => {
 		form.reset(
@@ -128,14 +140,18 @@ export function MessageComposer({
 	const submit = form.handleSubmit(async (values) => {
 		if (!values.text && !values.files.length) return;
 		if (editingMessage) {
-			await onSaveEdit?.(editingMessage, values.text).then(
-				finishEditing,
-				() => undefined,
-			);
+			await onSaveEdit?.(
+				editingMessage,
+				values.text,
+				mentions.locate(values.text),
+			).then(finishEditing, () => undefined);
 			return;
 		}
 		if (values.files.length) {
-			await onSubmit(values).then(
+			await onSubmit({
+				...values,
+				mentions: mentions.locate(values.text),
+			}).then(
 				() => form.reset({ text: "", alsoSendToChannel: false, files: [] }),
 				() => undefined,
 			);
@@ -143,14 +159,23 @@ export function MessageComposer({
 		}
 		form.reset({ text: "", alsoSendToChannel: false, files: [] });
 		try {
-			await onSubmit(values);
+			await onSubmit({ ...values, mentions: mentions.locate(values.text) });
 		} catch {
 			form.reset(values);
 		}
 	});
 
 	return (
-		<div>
+		<div className="relative">
+			{mentions.isOpen && (
+				<MentionList
+					id={mentions.listId}
+					people={mentions.suggestions}
+					highlightedIndex={mentions.highlightedIndex}
+					onHighlight={mentions.highlightAt}
+					onPick={mentions.pick}
+				/>
+			)}
 			{editingMessage && (
 				<div className="flex items-center gap-2 rounded-t-[10px] border border-b-0 border-input bg-card px-2.5 py-1.5 text-[13px] text-muted-foreground">
 					<IconPencil className="size-3.5 shrink-0" />
@@ -238,6 +263,16 @@ export function MessageComposer({
 					readOnly={isSending}
 					placeholder={placeholder}
 					aria-label={editingMessage ? "Edit message" : placeholder}
+					aria-autocomplete="list"
+					aria-controls={mentions.isOpen ? mentions.listId : undefined}
+					aria-activedescendant={
+						mentions.isOpen ? mentions.activeOptionId : undefined
+					}
+					onSelect={mentions.onSelect}
+					onBlur={(event) => {
+						textField.onBlur(event);
+						mentions.onBlur();
+					}}
 					onPaste={(event) => {
 						const pasted = [...event.clipboardData.files];
 						if (!canAddFiles || !pasted.length) return;
@@ -251,6 +286,7 @@ export function MessageComposer({
 						addFiles(pasted);
 					}}
 					onKeyDown={(event) => {
+						if (mentions.onKeyDown(event)) return;
 						if (event.key === "Escape" && editingMessage) {
 							finishEditing();
 							return;
@@ -364,7 +400,11 @@ export function MessageComposer({
 						</ComposerButton>
 					</EmojiPicker>
 					{!isThread && !editingMessage && (
-						<ComposerButton label="Mention someone (coming soon)" disabled>
+						<ComposerButton
+							label="Mention someone"
+							disabled={isSending}
+							onClick={mentions.startMention}
+						>
 							<IconAt />
 						</ComposerButton>
 					)}

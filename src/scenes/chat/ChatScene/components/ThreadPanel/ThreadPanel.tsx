@@ -10,6 +10,7 @@ import {
 	DrawerDescription,
 	DrawerTitle,
 } from "@/components/ui/drawer";
+import type { MentionRange } from "@/lib/chat/mentions";
 import type { ChatMessage, ChatThread } from "@/lib/trpc/types";
 import { useScrollToOwnMessage } from "../../hooks/useScrollToOwnMessage";
 import {
@@ -32,7 +33,11 @@ interface ThreadPanelProps
 	isMobile: boolean;
 	onClose: () => void;
 	onReply: (submission: ComposerSubmission) => Promise<unknown>;
-	onSaveEdit: (message: ChatMessage, text: string) => Promise<unknown>;
+	onSaveEdit: (
+		message: ChatMessage,
+		text: string,
+		mentions: MentionRange[],
+	) => Promise<unknown>;
 	videosPausedUntil: string | null;
 }
 
@@ -159,6 +164,7 @@ function ThreadContent({
 				<div className="shrink-0 px-4 pt-2 pb-4">
 					<MessageComposer
 						key={thread.root.id}
+						channelId={thread.root.channelId}
 						placeholder="Reply…"
 						alsoSendToLabel={`Also send to ${channelName}`}
 						onSubmit={onReply}

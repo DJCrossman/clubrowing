@@ -3,6 +3,7 @@ import type { ViewerContext } from "@/server/context";
 import { findAccessibleMessage } from "@/server/routers/chat/common/chat-access";
 import { loadMessageDtos } from "@/server/routers/chat/common/load-message-dtos";
 import { messageInclude } from "@/server/routers/chat/common/map-to-message-dto";
+import { selectChannelMentions } from "@/server/routers/chat/common/message-mentions";
 import { notifyChannelAfterResponse } from "@/server/routers/chat/common/message-notifications";
 
 export async function replyInThreadCommand(
@@ -18,6 +19,14 @@ export async function replyInThreadCommand(
 		text: input.text || null,
 		gif: input.gif?.title ?? null,
 		gifId: input.gif?.id ?? null,
+		mentions: {
+			create: await selectChannelMentions({
+				db,
+				channel: target.channel,
+				authorUserId: user.id,
+				mentions: input.mentions ?? [],
+			}),
+		},
 	};
 	const reply = await db.message.create({
 		data: { ...content, parentId: rootId },

@@ -36,6 +36,7 @@ const messageRow = (overrides: Partial<MessageRow> = {}): MessageRow => ({
 	editedAt: null,
 	deletedAt: null,
 	reactions: [],
+	mentions: [],
 	quotedMessage: null,
 	forwardedFrom: null,
 	replies: [],
@@ -433,6 +434,44 @@ describe("mapToMessageDto", () => {
 			mapToMessageDto({ ...row, deletedAt: at(9) }, viewer, users),
 		).toMatchObject({ canEdit: false, editedAt: null });
 	});
+
+	it("names each mention by the person's current name and marks mine", () => {
+		const row = messageRow({
+			text: "@Mike L and @Sarah Chen, boat at 6",
+			mentions: [
+				{ userId: mike.id, start: 0, length: 7 },
+				{ userId: sarah.id, start: 12, length: 11 },
+			],
+		});
+		expect(mapToMessageDto(row, viewer, users).mentions).toEqual([
+			{ userId: mike.id, start: 0, length: 7, name: "Mike Lee", isMe: false },
+			{
+				userId: sarah.id,
+				start: 12,
+				length: 11,
+				name: "Sarah Chen",
+				isMe: true,
+			},
+		]);
+	});
+
+	it("leaves a mention unnamed when the person can't be found", () => {
+		const row = messageRow({
+			text: "@Gone Person hi",
+			mentions: [{ userId: "user_gone", start: 0, length: 12 }],
+		});
+		expect(mapToMessageDto(row, viewer, users).mentions).toEqual([
+			{ userId: "user_gone", start: 0, length: 12, name: null, isMe: false },
+		]);
+	});
+
+	it("drops mentions from a deleted message", () => {
+		const row = messageRow({
+			deletedAt: at(9),
+			mentions: [{ userId: mike.id, start: 0, length: 7 }],
+		});
+		expect(mapToMessageDto(row, viewer, users).mentions).toEqual([]);
+	});
 });
 
 describe("collectMessageUserIds", () => {
@@ -454,5 +493,12 @@ describe("collectMessageUserIds", () => {
 		expect(new Set(ids)).toEqual(
 			new Set([sarah.id, mike.id, tom.id, priya.id]),
 		);
+	});
+
+	it("collects the people mentioned", () => {
+		const ids = collectMessageUserIds([
+			messageRow({ mentions: [{ userId: tom.id, start: 0, length: 9 }] }),
+		]);
+		expect(ids).toContain(tom.id);
 	});
 });

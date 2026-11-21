@@ -191,21 +191,26 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									<MessageComposer
 										key={channelId}
 										ref={composerRef}
+										channelId={channelId}
 										placeholder={`Message ${channelName}`.trim()}
 										quotedMessage={quotedMessage}
 										onCancelQuote={() => setQuote(null)}
 										videoUploadProgress={videoUploadProgress}
 										editingMessage={editingMessage}
 										onCancelEdit={() => setEditing(null)}
-										onSaveEdit={(message, text) =>
-											editMessage.mutateAsync({ messageId: message.id, text })
+										onSaveEdit={(message, text, mentions) =>
+											editMessage.mutateAsync({
+												messageId: message.id,
+												text,
+												mentions,
+											})
 										}
 										onEditLastMessage={() =>
 											setEditing(
 												messages.findLast((message) => message.canEdit) ?? null,
 											)
 										}
-										onSubmit={async ({ text, gif, files }) => {
+										onSubmit={async ({ text, gif, files, mentions }) => {
 											const attachmentIds = files.length
 												? await uploadFiles({
 														files,
@@ -223,6 +228,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 												gif,
 												quotedMessageId: quotedMessage?.id,
 												attachmentIds,
+												mentions,
 											});
 											setQuote(null);
 										}}
@@ -242,12 +248,13 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							onClose={() =>
 								router.push(routes.chat.channel(channelId), { scroll: false })
 							}
-							onReply={({ text, gif, alsoSendToChannel }) =>
+							onReply={({ text, gif, alsoSendToChannel, mentions }) =>
 								replyInThread.mutateAsync({
 									messageId: threadMessageId,
 									text,
 									gif,
 									alsoSendToChannel,
+									mentions,
 								})
 							}
 							onToggleReaction={(message, emoji) =>
@@ -255,8 +262,12 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							}
 							onForward={setForwardingMessage}
 							onDelete={setDeletingMessage}
-							onSaveEdit={(message, text) =>
-								editMessage.mutateAsync({ messageId: message.id, text })
+							onSaveEdit={(message, text, mentions) =>
+								editMessage.mutateAsync({
+									messageId: message.id,
+									text,
+									mentions,
+								})
 							}
 						/>
 					)}

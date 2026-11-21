@@ -10,6 +10,10 @@ export const messageInclude = {
 		select: { emoji: true, userId: true },
 		orderBy: { createdAt: "asc" },
 	},
+	mentions: {
+		select: { userId: true, start: true, length: true },
+		orderBy: { start: "asc" },
+	},
 	quotedMessage: {
 		select: {
 			id: true,
@@ -64,6 +68,7 @@ export function collectMessageUserIds(messages: MessageRow[]) {
 	return messages.flatMap((message) => [
 		message.authorUserId,
 		...message.reactions.map((reaction) => reaction.userId),
+		...message.mentions.map((mention) => mention.userId),
 		...message.replies.map((reply) => reply.authorUserId),
 		...(message.quotedMessage ? [message.quotedMessage.authorUserId] : []),
 		...(message.forwardedFrom ? [message.forwardedFrom.authorUserId] : []),
@@ -154,6 +159,15 @@ export function mapToMessageDto(
 		reactions: deleted
 			? []
 			: groupReactions(message.reactions, viewer.userId, users),
+		mentions: deleted
+			? []
+			: message.mentions.map(({ userId, start, length }) => ({
+					userId,
+					start,
+					length,
+					name: users.get(userId)?.name ?? null,
+					isMe: userId === viewer.userId,
+				})),
 		quoted: deleted ? null : mapQuotedMessage(message.quotedMessage, users),
 		forwarded: deleted
 			? null

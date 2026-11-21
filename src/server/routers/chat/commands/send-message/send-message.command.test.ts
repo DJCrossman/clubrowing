@@ -13,6 +13,9 @@ vi.mock("@/server/routers/chat/common/chat-access", () => ({
 vi.mock("@/server/routers/chat/common/load-message-dtos", () => ({
 	loadMessageDtos,
 }));
+vi.mock("@/server/routers/chat/common/message-mentions", () => ({
+	selectChannelMentions: vi.fn().mockResolvedValue([]),
+}));
 vi.mock("@/server/routers/chat/common/message-notifications", () => ({
 	notifyChannelAfterResponse,
 }));
