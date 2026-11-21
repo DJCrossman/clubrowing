@@ -10,6 +10,7 @@ export async function attachActivityScreenshotCommand(
 		where: { id: input.uploadId },
 		select: {
 			userId: true,
+			name: true,
 			messageId: true,
 			previewOfId: true,
 			contentType: true,
@@ -20,6 +21,7 @@ export async function attachActivityScreenshotCommand(
 	if (
 		!upload ||
 		upload.userId !== user.id ||
+		upload.name ||
 		upload.activity ||
 		upload.messageId ||
 		upload.previewOfId ||

@@ -61,6 +61,17 @@ describe("attachActivityScreenshotCommand", () => {
 		expect(db.activity.updateMany).not.toHaveBeenCalled();
 	});
 
+	it("refuses a file, which is stored as sent and is not a photo", async () => {
+		const { db, ctx } = createContext({
+			upload: { userId: "user_me", name: "race-plan.pdf", activity: null },
+		});
+
+		await expect(
+			attachActivityScreenshotCommand(input, ctx),
+		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		expect(db.activity.updateMany).not.toHaveBeenCalled();
+	});
+
 	it("refuses a file's preview", async () => {
 		const { db, ctx } = createContext({
 			upload: { userId: "user_me", previewOfId: "upl_file", activity: null },
@@ -113,6 +124,7 @@ function createContext({
 	upload?: {
 		userId: string;
 		messageId?: string | null;
+		name?: string | null;
 		previewOfId?: string | null;
 		contentType?: string | null;
 		pending?: boolean;
