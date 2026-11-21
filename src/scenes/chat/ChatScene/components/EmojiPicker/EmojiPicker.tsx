@@ -42,7 +42,8 @@ export function EmojiPicker({
 			<PopoverContent
 				container={container ?? undefined}
 				align={align}
-				className="w-[352px] rounded-xl border-input bg-card p-0"
+				sticky
+				className="flex max-h-(--available-height) w-[352px] flex-col rounded-xl border-input bg-card p-0"
 				finalFocus={restoreFocus}
 			>
 				<EmojiPickerContent
@@ -80,7 +81,7 @@ function EmojiPickerContent({
 	const emojis = isSearching ? searchEmoji(query) : category.emojis;
 
 	return (
-		<div>
+		<div className="flex min-h-0 flex-col">
 			<div className="px-2.5 pt-2.5 pb-1.5">
 				<PickerSearch
 					value={query}
