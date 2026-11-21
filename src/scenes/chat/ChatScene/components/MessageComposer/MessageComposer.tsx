@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type { MentionRange } from "@/lib/chat/mentions";
 import type { ChatMessage } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
@@ -86,6 +87,8 @@ export function MessageComposer({
 }: MessageComposerProps) {
 	const alsoSendToId = useId();
 	const isThread = !!alsoSendToLabel;
+	const isMobile = useIsMobile();
+	const rootRef = useRef<HTMLDivElement | null>(null);
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const draftBeforeEdit = useRef<MessageComposerValues | null>(null);
@@ -166,7 +169,7 @@ export function MessageComposer({
 	});
 
 	return (
-		<div className="relative">
+		<div ref={rootRef} className="relative">
 			{mentions.isOpen && (
 				<MentionList
 					id={mentions.listId}
@@ -350,6 +353,7 @@ export function MessageComposer({
 					)}
 					{!editingMessage && canUseGifs && (
 						<GifPicker
+							anchor={isMobile ? rootRef : undefined}
 							onSelect={(gif) =>
 								onSubmit({
 									gif,
@@ -374,6 +378,7 @@ export function MessageComposer({
 						</GifPicker>
 					)}
 					<EmojiPicker
+						anchor={isMobile ? rootRef : undefined}
 						align="start"
 						restoreFocus={false}
 						onSelect={(emoji) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { type ComponentProps, type ReactElement, useState } from "react";
 import { useDrawerContentContainer } from "@/components/ui/drawer";
 import {
 	Popover,
@@ -18,6 +18,7 @@ interface EmojiPickerProps {
 	onOpenChange?: (open: boolean) => void;
 	align?: "start" | "center" | "end";
 	restoreFocus?: boolean;
+	anchor?: ComponentProps<typeof PopoverContent>["anchor"];
 }
 
 export function EmojiPicker({
@@ -26,6 +27,7 @@ export function EmojiPicker({
 	onOpenChange,
 	align = "end",
 	restoreFocus = true,
+	anchor,
 }: EmojiPickerProps) {
 	const [open, setOpen] = useState(false);
 	const container = useDrawerContentContainer();
@@ -42,7 +44,8 @@ export function EmojiPicker({
 			<PopoverContent
 				container={container ?? undefined}
 				align={align}
-				sticky
+				anchor={anchor}
+				sticky={!anchor}
 				className="flex max-h-(--available-height) w-[352px] flex-col rounded-xl border-input bg-card p-0"
 				finalFocus={restoreFocus}
 			>

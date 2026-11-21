@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { type ReactElement, useState } from "react";
+import { type ComponentProps, type ReactElement, useState } from "react";
 import { useDrawerContentContainer } from "@/components/ui/drawer";
 import {
 	Popover,
@@ -15,9 +15,10 @@ import { useGiphy } from "./useGiphy";
 interface GifPickerProps {
 	children: ReactElement;
 	onSelect: (gif: { id: string; title: string }) => void;
+	anchor?: ComponentProps<typeof PopoverContent>["anchor"];
 }
 
-export function GifPicker({ children, onSelect }: GifPickerProps) {
+export function GifPicker({ children, onSelect, anchor }: GifPickerProps) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const container = useDrawerContentContainer();
@@ -39,7 +40,8 @@ export function GifPicker({ children, onSelect }: GifPickerProps) {
 			<PopoverContent
 				container={container ?? undefined}
 				align="start"
-				sticky
+				anchor={anchor}
+				sticky={!anchor}
 				className="flex max-h-(--available-height) w-[380px] flex-col gap-2 rounded-xl border-input bg-card p-2.5"
 			>
 				<PickerSearch

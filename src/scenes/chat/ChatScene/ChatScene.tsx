@@ -32,6 +32,7 @@ import {
 } from "./components";
 import { useChatChannel } from "./hooks/useChatChannel";
 import { useFileDrop } from "./hooks/useFileDrop";
+import { useSpaceAboveKeyboard } from "./hooks/useSpaceAboveKeyboard";
 
 interface ChatSceneProps {
 	channelId: string;
@@ -41,6 +42,7 @@ interface ChatSceneProps {
 export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const router = useRouter();
 	const isMobile = useIsMobile();
+	const spaceAboveKeyboard = useSpaceAboveKeyboard({ isEnabled: isMobile });
 	const [quote, setQuote] = useState<ChatMessage | null>(null);
 	const [editing, setEditing] = useState<ChatMessage | null>(null);
 	const [forwardingMessage, setForwardingMessage] =
@@ -98,7 +100,16 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 			}
 		>
 			<AppSidebar variant="inset" />
-			<SidebarInset className="h-svh overflow-hidden md:h-[calc(100svh-1rem)]">
+			<SidebarInset
+				className="h-svh overflow-hidden md:h-[calc(100svh-1rem)]"
+				style={
+					spaceAboveKeyboard && {
+						...spaceAboveKeyboard,
+						paddingBottom: 0,
+						zIndex: 30,
+					}
+				}
+			>
 				<SiteHeader breadcrumbs={getBreadcrumbs(channel, isAdmin)} />
 				<ChatHeader
 					channel={channel}
@@ -150,6 +161,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									editingMessageId={editingMessage?.id}
 									firstUnreadMessageId={firstUnreadMessageId}
 									videosPausedUntil={videosPausedUntil}
+									isKeyboardOpen={!!spaceAboveKeyboard}
 									onLoadOlder={() => messagesQuery.fetchNextPage()}
 									emptyState={
 										channel?.kind === "direct_message" ? (

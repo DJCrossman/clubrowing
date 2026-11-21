@@ -360,6 +360,84 @@ test("on a phone the emoji picker stays above the keyboard and drops back when i
 		.toBeGreaterThan(keyboardTop);
 });
 
+test("on a phone the text bar sits on the keyboard and the pickers open above it", async ({
+	page,
+}) => {
+	test.skip(
+		test.info().project.name !== "phone",
+		"Only a phone has an on-screen keyboard.",
+	);
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	const textbox = page.getByRole("textbox", { name: /^Message/ });
+	const send = page.getByRole("button", { name: "Send message" });
+	const newest = page.getByRole("article").last();
+	await expect(newest).toBeVisible();
+	await textbox.tap();
+
+	// Headless Chromium has no on-screen keyboard, so report the shorter visual
+	// viewport that a 336 px one leaves behind.
+	const keyboardTop = await page.evaluate(() => {
+		const viewport = window.visualViewport;
+		if (!viewport) return window.innerHeight;
+		const height = window.innerHeight - 336;
+		Object.defineProperty(viewport, "height", {
+			configurable: true,
+			get: () => height,
+		});
+		viewport.dispatchEvent(new Event("resize"));
+		return height;
+	});
+	await expect
+		.poll(() =>
+			send.evaluate((element) => element.getBoundingClientRect().bottom),
+		)
+		.toBeLessThanOrEqual(keyboardTop);
+	await expect
+		.poll(async () => {
+			const newestBottom = await newest.evaluate(
+				(element) => element.getBoundingClientRect().bottom,
+			);
+			const textboxTop = await textbox.evaluate(
+				(element) => element.getBoundingClientRect().top,
+			);
+			return newestBottom > 0 && newestBottom <= textboxTop;
+		})
+		.toBe(true);
+
+	await page.getByRole("button", { name: "Add emoji" }).tap();
+	const search = page.getByPlaceholder("Search all emoji");
+	const picker = page.getByRole("dialog").filter({ has: search });
+	await expect(picker).toBeVisible();
+	await expect
+		.poll(async () => {
+			const pickerBottom = await picker.evaluate(
+				(element) => element.getBoundingClientRect().bottom,
+			);
+			const textboxTop = await textbox.evaluate(
+				(element) => element.getBoundingClientRect().top,
+			);
+			return pickerBottom - textboxTop;
+		})
+		.toBeLessThanOrEqual(0);
+
+	await page.keyboard.press("Escape");
+	await expect(picker).toHaveCount(0);
+	await page.evaluate(() => {
+		const viewport = window.visualViewport;
+		if (!viewport) return;
+		Object.defineProperty(viewport, "height", {
+			get: () => window.innerHeight,
+		});
+		viewport.dispatchEvent(new Event("resize"));
+	});
+	await expect
+		.poll(() =>
+			send.evaluate((element) => element.getBoundingClientRect().bottom),
+		)
+		.toBeGreaterThan(keyboardTop);
+});
+
 test("a member sends a photo with a caption and everyone in the conversation sees it", async ({
 	page,
 	browser,

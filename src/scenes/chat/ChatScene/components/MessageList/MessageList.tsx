@@ -3,6 +3,7 @@
 import { Fragment, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { ChatMessage } from "@/lib/trpc/types";
+import { cn } from "@/lib/utils";
 import { useScrollToOwnMessage } from "../../hooks/useScrollToOwnMessage";
 import { groupMessagesByDay } from "../../utils/messageFormatting";
 import {
@@ -23,6 +24,7 @@ interface MessageListProps extends MessageHandlers {
 	editingMessageId?: string;
 	firstUnreadMessageId?: string;
 	videosPausedUntil: string | null;
+	isKeyboardOpen: boolean;
 }
 
 export function MessageList({
@@ -36,6 +38,7 @@ export function MessageList({
 	editingMessageId,
 	firstUnreadMessageId,
 	videosPausedUntil,
+	isKeyboardOpen,
 	...handlers
 }: MessageListProps) {
 	const bottomRef = useScrollToOwnMessage(messages);
@@ -46,7 +49,12 @@ export function MessageList({
 		return emptyState;
 	}
 	return (
-		<div className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto">
+		<div
+			className={cn(
+				"flex min-h-0 flex-1 flex-col-reverse overflow-y-auto",
+				isKeyboardOpen && "[overflow-anchor:none]",
+			)}
+		>
 			<div className="mb-auto flex flex-col pt-4 pb-2">
 				{hasOlder && (
 					<div className="flex justify-center py-2">
