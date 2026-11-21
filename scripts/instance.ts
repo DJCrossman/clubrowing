@@ -708,7 +708,7 @@ async function main() {
 			console.error(
 				`Usage: bun run scripts/instance.ts <command> [name] [flags]\n\n` +
 					`Commands:\n` +
-					`  create [name] [--parent main] [--port N] [--base-env path] [--dummy]\n` +
+					`  create [name] [--parent=main] [--port=N] [--base-env=path] [--dummy]\n` +
 					`  list\n` +
 					`  logs [name]\n` +
 					`  migrate [name]\n` +

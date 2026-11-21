@@ -60,7 +60,7 @@ branch (sanitized), the host port is auto-allocated from 3001, and the Neon bran
 
 | Command | Effect |
 |---|---|
-| `bun run instance:create` | Fork Neon branch off `main` **and** build + start the container (up). `--parent <branch>` / `--port <n>` to override. Idempotent. |
+| `bun run instance:create` | Fork Neon branch off `main` **and** build + start the container (up). `--parent=<branch>` / `--port=<n>` to override. Idempotent. |
 | `bun run instance:list` | All instances (across worktrees): name, URL, branch, status, dir. |
 | `bun run instance:logs` | Tail the container logs. |
 | `bun run instance:migrate` | Apply migrations to this instance's Neon branch only. |

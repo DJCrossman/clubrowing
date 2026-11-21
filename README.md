@@ -306,7 +306,7 @@ the primary worktree — the CLI auto-loads it, so a fresh worktree needs no loc
 bun run instance:create
 
 # Fork from a different parent branch, or pin the port:
-bun run instance:create --parent develop --port 3005
+bun run instance:create --parent=develop --port=3005
 
 # See everything that's running
 bun run instance:list
