@@ -127,6 +127,30 @@ test("an activity's details open from its row before the server responds", async
 	await expect(page).not.toHaveURL(/activityId=/);
 });
 
+test("an activity reopens on its details after sharing was left open", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/activities");
+	const row = page
+		.getByRole("listitem")
+		.filter({ has: page.getByRole("heading", { level: 2 }) })
+		.getByRole("link")
+		.filter({ hasText: "4 x 500m" });
+	const details = page.getByRole("dialog", { name: "4 x 500m" });
+	const share = page.getByRole("dialog", { name: "Share to chat" });
+
+	await row.click();
+	await details.getByRole("button", { name: "Share to chat" }).click();
+	await expect(share).toBeVisible();
+	await page.mouse.click(5, 5);
+	await expect(details).toBeHidden();
+
+	await row.click();
+	await expect(details.getByText("Synced from Concept2")).toBeVisible();
+	await expect(share).toBeHidden();
+});
+
 test("day headers show the year only for activities from an earlier year", async ({
 	page,
 }) => {
