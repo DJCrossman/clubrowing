@@ -127,7 +127,7 @@ test("an activity's details open from its row before the server responds", async
 	await expect(page).not.toHaveURL(/activityId=/);
 });
 
-test("an activity reopens on its details after sharing was left open", async ({
+test("closing the share dialog keeps the activity open on its details", async ({
 	page,
 }) => {
 	await signInAs(page, "member");
@@ -139,13 +139,22 @@ test("an activity reopens on its details after sharing was left open", async ({
 		.filter({ hasText: "4 x 500m" });
 	const details = page.getByRole("dialog", { name: "4 x 500m" });
 	const share = page.getByRole("dialog", { name: "Share to chat" });
+	const shareButton = details.getByRole("button", { name: "Share to chat" });
 
 	await row.click();
-	await details.getByRole("button", { name: "Share to chat" }).click();
-	await expect(share).toBeVisible();
-	await page.mouse.click(5, 5);
-	await expect(details).toBeHidden();
+	await shareButton.click();
+	await share.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(share).toBeHidden();
+	await expect(details.getByText("Synced from Concept2")).toBeVisible();
 
+	await shareButton.click();
+	await expect(share).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(share).toBeHidden();
+	await expect(details.getByText("Synced from Concept2")).toBeVisible();
+
+	await details.getByRole("button", { name: "Close", exact: true }).click();
+	await expect(details).toBeHidden();
 	await row.click();
 	await expect(details.getByText("Synced from Concept2")).toBeVisible();
 	await expect(share).toBeHidden();

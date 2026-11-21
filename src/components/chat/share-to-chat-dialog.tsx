@@ -38,7 +38,7 @@ export function ShareToChatDialog({
 }: ShareToChatDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="gap-4 rounded-xl sm:max-w-[480px]">
+			<DialogContent className="pointer-events-auto z-60 gap-4 rounded-xl sm:max-w-[480px]">
 				<DialogHeader>
 					<DialogTitle>Share to chat</DialogTitle>
 					<DialogDescription className="sr-only">

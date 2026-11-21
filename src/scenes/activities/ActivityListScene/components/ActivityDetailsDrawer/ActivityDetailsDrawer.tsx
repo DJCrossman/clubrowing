@@ -116,7 +116,7 @@ export const ActivityDetailsDrawer = ({
 			open={isOpen}
 			onOpenChange={(open) => !open && handleClose()}
 			direction="right"
-			dismissible={!isImageFullscreen}
+			dismissible={!isImageFullscreen && !isSharing}
 		>
 			<DrawerContent>
 				<DrawerHeader className="flex flex-row items-start justify-between gap-3 border-b">
