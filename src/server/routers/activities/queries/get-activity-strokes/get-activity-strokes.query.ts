@@ -7,6 +7,7 @@ import {
 	type GetActivityStrokesInput,
 } from "@/schemas";
 import type { ViewerContext } from "@/server/context";
+import { canViewActivity } from "@/server/routers/activities/common/can-view-activity";
 import { parseStoredJson } from "@/server/routers/activities/common/cross-source-activity";
 import { getConcept2AccessTokenForAthlete } from "@/server/routers/activities/common/get-concept2-access-token-for-athlete";
 
@@ -26,13 +27,14 @@ export async function getActivityStrokesQuery(
 		select: {
 			id: true,
 			athleteId: true,
+			isHidden: true,
 			conceptTwoId: true,
 			conceptTwoData: true,
 			strokes: { select: { strokes: true } },
 		},
 	});
 	if (!row) return null;
-	if (!user.isAdmin && row.athleteId !== athlete?.id) {
+	if (!canViewActivity({ activity: row, user, athlete })) {
 		throw new TRPCError({
 			code: "FORBIDDEN",
 			message: "Cannot view another athlete's activity",

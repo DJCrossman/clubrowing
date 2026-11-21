@@ -115,3 +115,11 @@ export const attachActivityScreenshotInputSchema = z.object({
 export type AttachActivityScreenshotInput = z.infer<
 	typeof attachActivityScreenshotInputSchema
 >;
+
+export const setActivityHiddenInputSchema = z.object({
+	id: z.string(),
+	isHidden: z.boolean(),
+});
+export type SetActivityHiddenInput = z.infer<
+	typeof setActivityHiddenInputSchema
+>;

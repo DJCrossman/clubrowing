@@ -75,6 +75,25 @@ describe("getAthleteStatsQuery", () => {
 
 		expect(result.isCelebratingPersonalBest).toBe(false);
 	});
+
+	it("leaves a hidden test out of the last and best results", async () => {
+		const result = await getAthleteStatsQuery(
+			{ athleteId: "ath_me" },
+			createContext([
+				activity({ daysAgo: 10, distance: 2000, elapsedTime: 4300 }),
+				activity({
+					daysAgo: 1,
+					distance: 2000,
+					elapsedTime: 4200,
+					isHidden: true,
+				}),
+			]),
+		);
+
+		expect(result.lastTwoKmRaceDuration?.activityId).toBe("act_10");
+		expect(result.bestTwoKmRaceDuration?.activityId).toBe("act_10");
+		expect(result.isCelebratingPersonalBest).toBe(false);
+	});
 });
 
 function activity({
@@ -83,12 +102,14 @@ function activity({
 	distance,
 	elapsedTime,
 	conceptTwoData = { workout_type: "FixedDistanceSplits" },
+	isHidden = false,
 }: {
 	daysAgo: number;
 	type?: string;
 	distance: number;
 	elapsedTime: number;
 	conceptTwoData?: unknown;
+	isHidden?: boolean;
 }) {
 	return {
 		id: `act_${daysAgo}`,
@@ -97,6 +118,7 @@ function activity({
 		elapsedTime,
 		startDate: new Date(Date.UTC(2026, 5, 30 - daysAgo)),
 		conceptTwoData,
+		isHidden,
 	};
 }
 

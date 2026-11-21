@@ -405,6 +405,58 @@ test("only someone who can see the activity can fetch its screenshot", async ({
 	).toHaveCount(0);
 });
 
+test("the owner hides an activity from coaches and can show it again", async ({
+	page,
+}) => {
+	test.setTimeout(120_000);
+	await signInAs(page, "member");
+	const name = `Hidden ${test.info().project.name} ${Date.now()}`;
+	const id = await logActivityFromScreenshot({
+		page,
+		name,
+		shouldKeepScreenshot: false,
+	});
+	const details = page.getByRole("dialog");
+	const hide = details.getByRole("switch", { name: "Hide from others" });
+	await expect(hide).not.toBeChecked();
+	const hidden = page.waitForResponse((response) =>
+		response.url().includes("activities.setActivityHidden"),
+	);
+	await hide.click();
+	expect((await hidden).ok()).toBe(true);
+	await page.reload();
+	await expect(details.getByRole("heading", { name })).toBeVisible();
+	await expect(hide).toBeChecked();
+
+	await signInAs(page, "admin");
+	await page.goto(`/activities?activityId=${id}`);
+	await expect(
+		page.getByRole("button", { name: "2K", exact: true }),
+	).toBeVisible();
+	await expect(details.getByRole("heading", { name })).toHaveCount(0);
+	expect(
+		(
+			await page.request.post("/api/v1/trpc/activities.setActivityHidden", {
+				data: { id, isHidden: false },
+			})
+		).status(),
+	).toBe(403);
+
+	await signInAs(page, "member");
+	await page.goto(`/activities?activityId=${id}`);
+	await expect(hide).toBeChecked();
+	const shown = page.waitForResponse((response) =>
+		response.url().includes("activities.setActivityHidden"),
+	);
+	await hide.click();
+	expect((await shown).ok()).toBe(true);
+
+	await signInAs(page, "admin");
+	await page.goto(`/activities?activityId=${id}`);
+	await expect(details.getByRole("heading", { name })).toBeVisible();
+	await expect(hide).toHaveCount(0);
+});
+
 async function logActivityFromScreenshot({
 	page,
 	name,

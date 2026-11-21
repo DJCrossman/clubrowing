@@ -10,6 +10,7 @@ import { disconnectRcaProcedure } from "./commands/disconnect-rca/disconnect-rca
 import { disconnectStravaProcedure } from "./commands/disconnect-strava/disconnect-strava.procedure";
 import { processConcept2InboxBatchProcedure } from "./commands/process-concept2-inbox-batch/process-concept2-inbox-batch.procedure";
 import { processStravaInboxBatchProcedure } from "./commands/process-strava-inbox-batch/process-strava-inbox-batch.procedure";
+import { setActivityHiddenProcedure } from "./commands/set-activity-hidden/set-activity-hidden.procedure";
 import { syncConcept2ActivitiesProcedure } from "./commands/sync-concept2-activities/sync-concept2-activities.procedure";
 import { syncRcaProcedure } from "./commands/sync-rca/sync-rca.procedure";
 import { syncStravaActivitiesProcedure } from "./commands/sync-strava-activities/sync-strava-activities.procedure";
@@ -31,6 +32,7 @@ export const activitiesRouter = router({
 	updateActivity: updateActivityProcedure,
 	deleteActivity: deleteActivityProcedure,
 	attachActivityScreenshot: attachActivityScreenshotProcedure,
+	setActivityHidden: setActivityHiddenProcedure,
 	getStravaAthlete: getStravaAthleteProcedure,
 	getStravaActivities: getStravaActivitiesProcedure,
 	connectStrava: connectStravaProcedure,

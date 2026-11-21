@@ -1,10 +1,19 @@
 import { concept2ActivitySchema } from "@/schemas/concept2Activity.schema";
 
 export function isErgTest(
-	activity: { type: string; distance: number; conceptTwoData: unknown },
+	activity: {
+		type: string;
+		distance: number;
+		conceptTwoData: unknown;
+		isHidden: boolean;
+	},
 	targetDistance: number,
 ) {
-	if (activity.type !== "erg" || activity.distance !== targetDistance) {
+	if (
+		activity.isHidden ||
+		activity.type !== "erg" ||
+		activity.distance !== targetDistance
+	) {
 		return false;
 	}
 	const { data } = concept2ActivitySchema

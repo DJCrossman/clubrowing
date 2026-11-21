@@ -22,6 +22,7 @@ export async function getLeaderboardQuery(
 						type: true,
 						startDate: true,
 						conceptTwoData: true,
+						isHidden: true,
 					},
 				},
 			},

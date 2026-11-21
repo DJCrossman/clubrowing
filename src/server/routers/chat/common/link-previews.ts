@@ -75,7 +75,10 @@ export async function loadLinkPreviews(
 			: [],
 		activityIds.length
 			? db.activity.findMany({
-					where: { id: { in: activityIds } },
+					where: {
+						id: { in: activityIds },
+						OR: [{ isHidden: false }, { athlete: { userId: viewerUserId } }],
+					},
 					select: {
 						id: true,
 						name: true,

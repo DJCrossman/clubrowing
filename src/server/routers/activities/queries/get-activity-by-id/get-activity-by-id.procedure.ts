@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { getActivityByIdInputSchema } from "@/schemas";
 import { viewerProcedure } from "@/server/procedures";
+import { canViewActivity } from "@/server/routers/activities/common/can-view-activity";
 import {
 	activityInclude,
 	mapToActivityDto,
@@ -15,7 +16,7 @@ export const getActivityByIdProcedure = viewerProcedure
 			include: activityInclude,
 		});
 		if (!row) return null;
-		if (!ctx.user.isAdmin && row.athleteId !== ctx.athlete?.id) {
+		if (!canViewActivity({ activity: row, ...ctx })) {
 			throw new TRPCError({
 				code: "FORBIDDEN",
 				message: "Cannot view another athlete's activity",

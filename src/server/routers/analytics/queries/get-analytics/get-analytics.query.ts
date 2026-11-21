@@ -103,6 +103,7 @@ export async function getAnalyticsQuery(
 					elapsedTime: true,
 					startDate: true,
 					conceptTwoData: true,
+					isHidden: true,
 				},
 				orderBy: { startDate: "desc" },
 			})

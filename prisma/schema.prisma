@@ -211,6 +211,7 @@ model activity {
   conceptTwoId   BigInt?
   conceptTwoData Json?
   screenshotId   String?      @unique
+  isHidden       Boolean      @default(false)
   athlete        athlete      @relation(fields: [athleteId], references: [id])
   boat           boat?        @relation(fields: [boatId], references: [id])
   erg            erg?         @relation(fields: [ergId], references: [id])

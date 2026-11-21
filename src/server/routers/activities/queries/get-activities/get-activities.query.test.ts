@@ -55,6 +55,22 @@ describe("getActivitiesQuery", () => {
 			expect.objectContaining({ where: { athleteId: { in: ["ath_me"] } } }),
 		);
 	});
+
+	it("leaves other athletes' hidden activities out of an admin's list", async () => {
+		const { db, ctx } = createContext([]);
+
+		await getActivitiesQuery({}, {
+			...ctx,
+			user: { id: "user_admin", isAdmin: true },
+			athlete: { id: "ath_admin" },
+		} as unknown as Context);
+
+		expect(db.activity.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { NOT: { isHidden: true, athleteId: { not: "ath_admin" } } },
+			}),
+		);
+	});
 });
 
 function createContext(ergTestCandidates: unknown[]) {

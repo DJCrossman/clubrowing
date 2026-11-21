@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { paginate } from "@/lib/pagination";
 import { ActivityType, WorkoutType, withPagination } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context, ViewerContext } from "@/server/context";
 import {
 	activityInclude,
 	mapToActivityDto,
@@ -23,7 +23,7 @@ export type GetActivitiesInput = z.infer<typeof getActivitiesInputSchema>;
 
 export async function getActivitiesQuery(
 	input: GetActivitiesInput,
-	{ db }: Context,
+	{ db, user, athlete }: Context & Partial<Pick<ViewerContext, "athlete">>,
 ) {
 	const {
 		boatId,
@@ -46,6 +46,9 @@ export async function getActivitiesQuery(
 		...(ergId ? { ergId, type: "erg" as const } : {}),
 		...(type ? { type } : {}),
 		...(workoutType ? { workoutType } : {}),
+		...(user?.isAdmin && {
+			NOT: { isHidden: true, athleteId: { not: athlete?.id } },
+		}),
 	};
 
 	const ergTestDistance = ergTest && { "2k": 2000, "6k": 6000 }[ergTest];
@@ -58,6 +61,7 @@ export async function getActivitiesQuery(
 						type: true,
 						distance: true,
 						conceptTwoData: true,
+						isHidden: true,
 					},
 				})
 			)

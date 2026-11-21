@@ -21,6 +21,7 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
+import { Switch } from "@/components/ui/switch";
 import { useCurrentUser } from "@/hooks/useAuth";
 import {
 	formatCompactDuration,
@@ -54,6 +55,7 @@ interface ActivityDetailsDrawerProps {
 		activityId: string;
 		file: File;
 	}) => Promise<void>;
+	onSetHidden: (isHidden: boolean) => void;
 }
 
 export const ActivityDetailsDrawer = ({
@@ -67,6 +69,7 @@ export const ActivityDetailsDrawer = ({
 	onClose,
 	onSubmit,
 	onAddScreenshot,
+	onSetHidden,
 }: ActivityDetailsDrawerProps) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isImageFullscreen, setIsImageFullscreen] = useState(false);
@@ -311,6 +314,22 @@ export const ActivityDetailsDrawer = ({
 									</DetailRow>
 								)}
 							</DetailList>
+							{hasAthlete && activity.athlete.id === user.id && (
+								<div className="flex items-start justify-between gap-4">
+									<div className="space-y-1">
+										<p className="text-sm font-medium">Hide from others</p>
+										<p className="text-sm text-muted-foreground">
+											Coaches and teammates won't see it, and it won't count as
+											a 2K or 6K. Its meters still count.
+										</p>
+									</div>
+									<Switch
+										aria-label="Hide from others"
+										checked={activity.isHidden}
+										onCheckedChange={onSetHidden}
+									/>
+								</div>
+							)}
 							<ActivityScreenshot
 								key={activity.id}
 								activity={activity}

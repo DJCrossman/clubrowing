@@ -16,6 +16,7 @@ export async function getAthleteStatsQuery(
 			elapsedTime: true,
 			startDate: true,
 			conceptTwoData: true,
+			isHidden: true,
 		},
 	});
 
@@ -29,6 +30,7 @@ export async function getAthleteStatsQuery(
 			elapsedTime: true,
 			startDate: true,
 			conceptTwoData: true,
+			isHidden: true,
 		},
 	});
 

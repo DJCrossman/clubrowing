@@ -1,5 +1,6 @@
 import type { GetActivityByIdInput } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { ViewerContext } from "@/server/context";
+import { canViewActivity } from "@/server/routers/activities/common/can-view-activity";
 import {
 	activityInclude,
 	mapToActivityDto,
@@ -7,12 +8,14 @@ import {
 
 export async function getActivityByIdQuery(
 	input: GetActivityByIdInput,
-	{ db }: Context,
+	{ db, user, athlete }: Pick<ViewerContext, "db" | "user" | "athlete">,
 ) {
 	if (!input.id) return null;
 	const row = await db.activity.findUnique({
 		where: { id: input.id },
 		include: activityInclude,
 	});
-	return row ? mapToActivityDto(row) : null;
+	return row && canViewActivity({ activity: row, user, athlete })
+		? mapToActivityDto(row)
+		: null;
 }
