@@ -499,9 +499,14 @@ export function ActivityForm({
 					</div>
 				)}
 
-				<fieldset className="flex justify-between gap-4" disabled={isUploading}>
+				<fieldset
+					className="flex justify-between gap-4"
+					disabled={isUploading || form.formState.isSubmitting}
+				>
 					<CancelButton onCancel={cancelLinkOrAction} />
-					<Button type="submit">Save</Button>
+					<Button type="submit">
+						{form.formState.isSubmitting ? "Saving..." : "Save"}
+					</Button>
 				</fieldset>
 			</form>
 

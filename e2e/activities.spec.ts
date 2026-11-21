@@ -494,11 +494,24 @@ test("the owner hides an activity from coaches and can show it again", async ({
 	await edit.click();
 	await expect(hide).not.toBeChecked();
 	await hide.click();
+	let respond = () => {};
+	const response = new Promise<void>((resolve) => {
+		respond = resolve;
+	});
+	await page.route("**/activities.updateActivity**", async (route) => {
+		await response;
+		await route.continue();
+	});
 	const hidden = page.waitForResponse((response) =>
 		response.url().includes("activities.updateActivity"),
 	);
 	await details.getByRole("button", { name: "Save", exact: true }).click();
+	await expect(
+		details.getByRole("button", { name: "Saving..." }),
+	).toBeDisabled();
+	respond();
 	expect((await hidden).ok()).toBe(true);
+	await page.unroute("**/activities.updateActivity**");
 	await page.reload();
 	await details.getByRole("button", { name: "Edit", exact: true }).click();
 	await expect(hide).toBeChecked();
