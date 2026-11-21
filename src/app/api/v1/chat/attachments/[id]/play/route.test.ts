@@ -128,6 +128,41 @@ describe("GET /api/v1/chat/attachments/[id]/play", () => {
 		await expectUnavailable(await GET(...playRequest()));
 	});
 
+	it("plays a video that was sent as a plain file, counted like any video", async () => {
+		db.upload.findUnique.mockResolvedValue({
+			userId: "user_sender",
+			url: storedUrl,
+			name: "Practice.mp4",
+			size,
+			contentType: null,
+			pending: false,
+			messageId: "msg_1",
+		});
+
+		const response = await GET(...playRequest());
+
+		expect(response.status).toBe(302);
+		expect(db.video_playback.create).toHaveBeenCalledWith({
+			data: { uploadId: "upl_1", userId: user.id, bytes: size },
+			select: { createdAt: true },
+		});
+		expect(response.headers.get("Location")).toContain(storedUrl);
+	});
+
+	it("answers 404 for a video sent as a plain file that hasn't finished uploading", async () => {
+		db.upload.findUnique.mockResolvedValue({
+			userId: "user_sender",
+			url: pathname,
+			name: "Practice.mp4",
+			size,
+			contentType: null,
+			pending: true,
+			messageId: "msg_1",
+		});
+
+		await expectUnavailable(await GET(...playRequest()));
+	});
+
 	it("counts a play and redirects to a short-lived link that is never cached", async () => {
 		const before = Date.now();
 

@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { isChatVideo } from "@/schemas/chat.schema";
 import { type ChatUser, getChatUser } from "./chat-user-names";
 import type { LinkPreview } from "./link-previews";
 import { getForwardSourceName } from "./map-to-channel-dto";
@@ -110,7 +111,7 @@ export function mapToMessageDto(
 			? []
 			: message.attachments.flatMap(
 					({ id, name, size, contentType, preview }) =>
-						name === null || contentType !== null
+						name === null || contentType !== null || isChatVideo({ name })
 							? []
 							: [
 									{
@@ -136,7 +137,7 @@ export function mapToMessageDto(
 						height,
 						preview,
 					}) =>
-						name === null || contentType === null
+						name === null || (contentType === null && !isChatVideo({ name }))
 							? []
 							: [
 									{
@@ -147,6 +148,11 @@ export function mapToMessageDto(
 										width,
 										height,
 										playUrl: `/api/v1/chat/attachments/${id}/play`,
+										// A video sent as a plain file is served by the file download route.
+										downloadUrl:
+											contentType === null
+												? `/api/v1/chat/attachments/${id}`
+												: `/api/v1/chat/attachments/${id}/play?download=1`,
 										posterUrl:
 											preview && `/api/v1/chat/attachments/${preview.id}`,
 									},

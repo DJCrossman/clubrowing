@@ -1,5 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import type { GetMessagesInput } from "@/schemas/chat.schema";
+import { type GetMessagesInput, isChatVideo } from "@/schemas/chat.schema";
 import { findVideosPausedUntil } from "@/server/common/videos-paused-until";
 import type { ViewerContext } from "@/server/context";
 import {
@@ -43,8 +43,10 @@ export async function getMessagesQuery(
 	const largestVideoSize = Math.max(
 		0,
 		...page.flatMap((message) =>
-			message.attachments.flatMap(({ size, contentType }) =>
-				contentType === null ? [] : [size],
+			message.attachments.flatMap(({ name, size, contentType }) =>
+				contentType !== null || (name !== null && isChatVideo({ name }))
+					? [size]
+					: [],
 			),
 		),
 	);

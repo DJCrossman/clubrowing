@@ -2,6 +2,7 @@ import { issueSignedToken, presignUrl } from "@vercel/blob";
 import { DateTime } from "luxon";
 import { NextResponse } from "next/server";
 import { envVars } from "@/lib/env";
+import { isChatVideo } from "@/schemas/chat.schema";
 import { findVideosPausedUntil } from "@/server/common/videos-paused-until";
 import { createTRPCContext } from "@/server/context";
 import { findViewableAttachment } from "../find-viewable-attachment";
@@ -30,7 +31,12 @@ export async function GET(
 
 		const { id } = await params;
 		const attachment = await findViewableAttachment({ db, user, id });
-		if (!attachment?.contentType || attachment.pending) {
+		if (
+			!attachment ||
+			attachment.pending ||
+			(!attachment.contentType &&
+				!(attachment.name && isChatVideo({ name: attachment.name })))
+		) {
 			return NextResponse.json(
 				{ error: "That video isn't available." },
 				{ status: 404 },

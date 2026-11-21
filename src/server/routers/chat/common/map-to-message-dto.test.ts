@@ -380,6 +380,7 @@ describe("mapToMessageDto", () => {
 				width: 1080,
 				height: 1920,
 				playUrl: "/api/v1/chat/attachments/upl_video/play",
+				downloadUrl: "/api/v1/chat/attachments/upl_video/play?download=1",
 				posterUrl: "/api/v1/chat/attachments/upl_poster",
 			},
 			{
@@ -390,6 +391,7 @@ describe("mapToMessageDto", () => {
 				width: null,
 				height: null,
 				playUrl: "/api/v1/chat/attachments/upl_clip/play",
+				downloadUrl: "/api/v1/chat/attachments/upl_clip/play?download=1",
 				posterUrl: null,
 			},
 		]);
@@ -398,6 +400,52 @@ describe("mapToMessageDto", () => {
 		expect(
 			mapToMessageDto({ ...row, deletedAt: at(9) }, viewer, users).videos,
 		).toEqual([]);
+	});
+
+	it("shows a video that was sent as a plain file as a video, downloaded from the file route", () => {
+		const dto = mapToMessageDto(
+			messageRow({
+				attachments: [
+					{
+						id: "upl_old_clip",
+						name: "Practice.MP4",
+						size: 3_000_000,
+						contentType: null,
+						durationMs: null,
+						width: null,
+						height: null,
+						preview: null,
+					},
+					{
+						id: "upl_minutes",
+						name: "Minutes.pdf",
+						size: 5120,
+						contentType: null,
+						durationMs: null,
+						width: null,
+						height: null,
+						preview: null,
+					},
+				],
+			}),
+			viewer,
+			users,
+		);
+		expect(dto.videos).toEqual([
+			{
+				id: "upl_old_clip",
+				name: "Practice.MP4",
+				size: 3_000_000,
+				durationMs: null,
+				width: null,
+				height: null,
+				playUrl: "/api/v1/chat/attachments/upl_old_clip/play",
+				downloadUrl: "/api/v1/chat/attachments/upl_old_clip",
+				posterUrl: null,
+			},
+		]);
+		expect(dto.files.map(({ id }) => id)).toEqual(["upl_minutes"]);
+		expect(dto.photos).toEqual([]);
 	});
 
 	it("carries the GIF id beside its title, and neither once deleted", () => {

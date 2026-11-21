@@ -197,6 +197,6 @@ export function isPicture(file: File) {
 	);
 }
 
-export function isChatVideo(file: File) {
+export function isChatVideo(file: { name: string }) {
 	return /\.(mp4|mov|m4v|webm)$/i.test(file.name);
 }

@@ -71,10 +71,7 @@ export function MessageVideos({ videos, pausedUntil }: MessageVideosProps) {
 											variant="outline"
 											size="sm"
 											render={
-												<a
-													href={`${video.playUrl}?download=1`}
-													download={video.name}
-												>
+												<a href={video.downloadUrl} download={video.name}>
 													<IconDownload aria-hidden />
 													Download
 												</a>

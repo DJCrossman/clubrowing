@@ -1209,6 +1209,83 @@ test("sending a video shows its upload progress", async ({ page }) => {
 	await expect(progress).toHaveCount(0);
 });
 
+test("a clip that was sent as a plain file shows as a player and plays", async ({
+	page,
+}) => {
+	test.slow();
+	await signInAs(page, "member");
+	await page.goto("/chat/everyone");
+	await expect(page.getByRole("textbox", { name: /^Message/ })).toBeVisible();
+
+	const upload = await page.request.post("/api/v1/uploads", {
+		multipart: {
+			kind: "file",
+			file: {
+				name: "old-clip.mp4",
+				mimeType: "video/mp4",
+				buffer: readFileSync(join(__dirname, "fixtures", "clip.mp4")),
+			},
+		},
+	});
+	expect(upload.status()).toBe(200);
+	const { id } = await upload.json();
+	const caption = `Old clip ${test.info().project.name} ${Date.now()}`;
+	expect(
+		await page.evaluate(
+			async (message) =>
+				(
+					await fetch("/api/v1/trpc/chat.sendMessage?batch=1", {
+						method: "POST",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({ 0: message }),
+					})
+				).status,
+			{ channelId: "everyone", text: caption, attachmentIds: [id] },
+		),
+	).toBe(200);
+
+	const requested: string[] = [];
+	page.on("request", (request) => requested.push(request.url()));
+	await page.reload();
+	const message = page.getByRole("article").filter({ hasText: caption });
+	const player = message.getByLabel("old-clip.mp4", { exact: true });
+	await expect(player).toBeVisible();
+	await expect(
+		message.getByRole("link", { name: "Open old-clip.mp4" }),
+	).toHaveCount(0);
+	expect(requested.filter((url) => url.endsWith("/play"))).toEqual([]);
+
+	await player.evaluate((video: HTMLVideoElement) => {
+		video.muted = true;
+		return video.play();
+	});
+	await expect
+		.poll(() => player.evaluate((video: HTMLVideoElement) => video.currentTime))
+		.toBeGreaterThan(0);
+	expect(requested.some((url) => url.endsWith(`/${id}/play`))).toBe(true);
+
+	await page.route("**/play", (route) => route.abort());
+	await page.reload();
+	await page
+		.getByRole("article")
+		.filter({ hasText: caption })
+		.getByLabel("old-clip.mp4", { exact: true })
+		.evaluate((video: HTMLVideoElement) => {
+			video.muted = true;
+			return video.play().catch(() => undefined);
+		});
+	const download = message.getByRole("button", { name: "Download" });
+	await expect(download).toHaveAttribute(
+		"href",
+		`/api/v1/chat/attachments/${id}`,
+	);
+	expect(
+		(
+			await page.request.get((await download.getAttribute("href")) ?? "")
+		).status(),
+	).toBe(200);
+});
+
 test("a member opens a CSV from a message and sees its cells in a table", async ({
 	page,
 }) => {

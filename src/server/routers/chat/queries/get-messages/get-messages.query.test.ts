@@ -61,6 +61,23 @@ describe("getMessagesQuery and paused videos", () => {
 		);
 	});
 
+	it("asks for the paused state when the page's only video was sent as a plain file", async () => {
+		db.message.findMany.mockResolvedValue([
+			{
+				id: "msg_old_clip",
+				attachments: [
+					{ name: "Practice.mp4", size: 3_000_000, contentType: null },
+				],
+			},
+		]);
+
+		const result = await getMessagesQuery(input, ctx);
+
+		expect(result.videosPausedUntil).toBe(
+			new Date(oldestPlay.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+		);
+	});
+
 	it("does not look at the allowance for a page without videos", async () => {
 		db.message.findMany.mockResolvedValue([fileMessage]);
 

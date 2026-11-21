@@ -68,6 +68,7 @@ describe("getMessagePreviewText", () => {
 			width: null,
 			height: null,
 			playUrl: "/api/v1/chat/attachments/upl_video/play",
+			downloadUrl: "/api/v1/chat/attachments/upl_video/play?download=1",
 			posterUrl: null,
 		};
 		const message = {
