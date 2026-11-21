@@ -20,6 +20,7 @@ export async function updateActivityCommand(
 			distance: input.distance,
 			athleteId: input.athleteId,
 			workoutId: input.workoutId ?? null,
+			isHidden: input.isHidden,
 			type: input.type,
 			...(input.type === "water"
 				? { boatId: input.boatId, ergId: null }

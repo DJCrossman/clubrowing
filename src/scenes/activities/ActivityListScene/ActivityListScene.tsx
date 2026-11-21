@@ -127,15 +127,6 @@ export const ActivityListScene = ({
 				router.refresh();
 			},
 		});
-	const setActivityHidden = trpcClient.activities.setActivityHidden.useMutation(
-		{
-			onSettled: async () => {
-				await utils.activities.getActivities.invalidate();
-				await utils.activities.getActivityById.invalidate();
-				router.refresh();
-			},
-		},
-	);
 	const keepActivityScreenshot = async ({
 		activityId,
 		file,
@@ -270,16 +261,6 @@ export const ActivityListScene = ({
 					await updateActivity.mutateAsync(data);
 				}}
 				onAddScreenshot={keepActivityScreenshot}
-				onSetHidden={(isHidden) => {
-					if (!openActivity) return;
-					startTransition(async () => {
-						setOpenActivity({ ...openActivity, isHidden });
-						await setActivityHidden.mutateAsync({
-							id: openActivity.id,
-							isHidden,
-						});
-					});
-				}}
 				onClose={() =>
 					startTransition(() => {
 						setOpenActivity(undefined);

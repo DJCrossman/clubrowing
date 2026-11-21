@@ -441,15 +441,19 @@ test("the owner hides an activity from coaches and can show it again", async ({
 		shouldKeepScreenshot: false,
 	});
 	const details = page.getByRole("dialog");
+	const edit = details.getByRole("button", { name: "Edit", exact: true });
 	const hide = details.getByRole("switch", { name: "Hide from others" });
+	await expect(hide).toHaveCount(0);
+	await edit.click();
 	await expect(hide).not.toBeChecked();
-	const hidden = page.waitForResponse((response) =>
-		response.url().includes("activities.setActivityHidden"),
-	);
 	await hide.click();
+	const hidden = page.waitForResponse((response) =>
+		response.url().includes("activities.updateActivity"),
+	);
+	await details.getByRole("button", { name: "Save", exact: true }).click();
 	expect((await hidden).ok()).toBe(true);
 	await page.reload();
-	await expect(details.getByRole("heading", { name })).toBeVisible();
+	await details.getByRole("button", { name: "Edit", exact: true }).click();
 	await expect(hide).toBeChecked();
 
 	await signInAs(page, "admin");
@@ -460,25 +464,38 @@ test("the owner hides an activity from coaches and can show it again", async ({
 	await expect(details.getByRole("heading", { name })).toHaveCount(0);
 	expect(
 		(
-			await page.request.post("/api/v1/trpc/activities.setActivityHidden", {
-				data: { id, isHidden: false },
+			await page.request.post("/api/v1/trpc/activities.updateActivity", {
+				data: {
+					id,
+					type: "erg",
+					name,
+					startDate: "2015-06-01T13:00:00.000Z",
+					timezone: "America/Regina",
+					workoutType: "distance",
+					elapsedTime: 301_700,
+					distance: 1234,
+					athleteId: "ath_unused",
+					isHidden: false,
+				},
 			})
 		).status(),
 	).toBe(403);
 
 	await signInAs(page, "member");
 	await page.goto(`/activities?activityId=${id}`);
+	await details.getByRole("button", { name: "Edit", exact: true }).click();
 	await expect(hide).toBeChecked();
-	const shown = page.waitForResponse((response) =>
-		response.url().includes("activities.setActivityHidden"),
-	);
 	await hide.click();
+	const shown = page.waitForResponse((response) =>
+		response.url().includes("activities.updateActivity"),
+	);
+	await details.getByRole("button", { name: "Save", exact: true }).click();
 	expect((await shown).ok()).toBe(true);
 
 	await signInAs(page, "admin");
 	await page.goto(`/activities?activityId=${id}`);
 	await expect(details.getByRole("heading", { name })).toBeVisible();
-	await expect(hide).toHaveCount(0);
+	await expect(edit).toHaveCount(0);
 });
 
 async function logActivityFromScreenshot({

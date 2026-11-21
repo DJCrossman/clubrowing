@@ -4,4 +4,6 @@ import { updateActivityCommand } from "./update-activity.command";
 
 export const updateActivityAdminProcedure = adminProcedure
 	.input(updateActivitySchema)
-	.mutation(({ ctx, input }) => updateActivityCommand(input, ctx));
+	.mutation(({ ctx, input }) =>
+		updateActivityCommand({ ...input, isHidden: undefined }, ctx),
+	);

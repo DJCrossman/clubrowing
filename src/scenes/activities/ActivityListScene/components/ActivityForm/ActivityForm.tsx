@@ -16,12 +16,14 @@ import { Combobox } from "@/components/ui/combo-box";
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDuration, formatMeters } from "@/lib/formatters";
 import type { Boats, Ergs, Workouts } from "@/lib/trpc/types";
@@ -54,6 +56,7 @@ interface ActivityFormProps {
 	}) => void | Promise<void>;
 	onUploadErgActivityScreenshot?: UploadErgActivityScreenshot;
 	onCancel?: (() => void) | string;
+	canHide?: boolean;
 	isImageFullscreen: boolean;
 	setIsImageFullscreen: (isFullscreen: boolean) => void;
 }
@@ -65,6 +68,7 @@ export function ActivityForm({
 	onSubmit,
 	onUploadErgActivityScreenshot,
 	onCancel: cancelLinkOrAction,
+	canHide = false,
 	isImageFullscreen,
 	setIsImageFullscreen,
 }: ActivityFormProps) {
@@ -404,6 +408,31 @@ export function ActivityForm({
 						)}
 					</TabsContent>
 				</Tabs>
+
+				{canHide && (
+					<FormField
+						control={form.control}
+						name="isHidden"
+						render={({ field }) => (
+							<FormItem className="flex items-start justify-between gap-4">
+								<div className="space-y-1">
+									<FormLabel>Hide from others</FormLabel>
+									<FormDescription>
+										Coaches and teammates won't see it, and it won't count as a
+										2K or 6K. Its meters still count.
+									</FormDescription>
+								</div>
+								<FormControl>
+									<Switch
+										aria-label="Hide from others"
+										checked={field.value ?? false}
+										onCheckedChange={field.onChange}
+									/>
+								</FormControl>
+							</FormItem>
+						)}
+					/>
+				)}
 
 				<fieldset className="flex justify-between gap-4" disabled={isUploading}>
 					<CancelButton onCancel={cancelLinkOrAction} />

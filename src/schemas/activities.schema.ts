@@ -13,6 +13,7 @@ const createWaterActivitySchema = z.object({
 	athleteId: z.string(),
 	boatId: z.string(),
 	workoutId: z.string().optional(),
+	isHidden: z.boolean().optional(),
 	type: z.literal("water"),
 });
 
@@ -26,6 +27,7 @@ const createErgActivitySchema = z.object({
 	athleteId: z.string(),
 	ergId: z.string().optional(),
 	workoutId: z.string().optional(),
+	isHidden: z.boolean().optional(),
 	type: z.literal("erg"),
 });
 
@@ -114,12 +116,4 @@ export const attachActivityScreenshotInputSchema = z.object({
 });
 export type AttachActivityScreenshotInput = z.infer<
 	typeof attachActivityScreenshotInputSchema
->;
-
-export const setActivityHiddenInputSchema = z.object({
-	id: z.string(),
-	isHidden: z.boolean(),
-});
-export type SetActivityHiddenInput = z.infer<
-	typeof setActivityHiddenInputSchema
 >;
