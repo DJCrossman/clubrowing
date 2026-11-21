@@ -42,8 +42,83 @@ describe("getAnalyticsQuery", () => {
 			]),
 		);
 
-		expect(analyticMetrics.totalMeters.change).toBe(-5000);
+		expect(analyticMetrics.totalMeters.change).toBe(-5 / 6);
+		expect(analyticMetrics.totalActivities.change).toBe(-0.5);
+	});
+
+	it("gives the change as a share of the week before", async () => {
+		const { analyticMetrics } = await getAnalyticsQuery(
+			undefined,
+			createContext([
+				activity({ daysAgo: 1, distance: 3000 }),
+				activity({ daysAgo: 3, distance: 3000 }),
+				activity({ daysAgo: 4, distance: 4000 }),
+			]),
+		);
+
+		expect(analyticMetrics.totalMeters.change).toBe(0.5);
+		expect(analyticMetrics.totalActivities.change).toBe(1);
+		expect(analyticMetrics.totalDuration.change).toBe(1);
+	});
+
+	it("shows no change when the week before has nothing to compare with", async () => {
+		const { analyticMetrics } = await getAnalyticsQuery(
+			undefined,
+			createContext([activity({ daysAgo: 1, distance: 1000 })]),
+		);
+
+		expect(analyticMetrics.totalMeters.change).toBe(0);
+		expect(analyticMetrics.totalActivities.change).toBe(0);
+		expect(analyticMetrics.totalDuration.change).toBe(0);
+	});
+
+	it("shows a full drop when nothing is logged yet this week", async () => {
+		const { analyticMetrics } = await getAnalyticsQuery(
+			undefined,
+			createContext([activity({ daysAgo: 4, distance: 4000 })]),
+		);
+
+		expect(analyticMetrics.totalMeters.change).toBe(-1);
 		expect(analyticMetrics.totalActivities.change).toBe(-1);
+		expect(analyticMetrics.totalDuration.change).toBe(-1);
+	});
+
+	it("compares the last 2K with the latest one before this month", async () => {
+		const { analyticMetrics } = await getAnalyticsQuery(
+			undefined,
+			createContext([
+				activity({
+					daysAgo: 2,
+					distance: 2000,
+					type: "erg",
+					elapsedTime: 380_000,
+				}),
+				activity({
+					daysAgo: 30,
+					distance: 2000,
+					type: "erg",
+					elapsedTime: 400_000,
+				}),
+			]),
+		);
+
+		expect(analyticMetrics.lastTwoKm?.change).toBe(-0.05);
+	});
+
+	it("shows no change on the last 2K when there is no earlier one", async () => {
+		const { analyticMetrics } = await getAnalyticsQuery(
+			undefined,
+			createContext([
+				activity({
+					daysAgo: 2,
+					distance: 2000,
+					type: "erg",
+					elapsedTime: 380_000,
+				}),
+			]),
+		);
+
+		expect(analyticMetrics.lastTwoKm?.change).toBe(0);
 	});
 
 	it("keeps Saturday evening in Regina in the week that began on Sunday", async () => {
@@ -95,7 +170,9 @@ function createContext(activities: ReturnType<typeof activity>[]) {
 				},
 			),
 			findMany: vi.fn(async ({ where }: { where: { type?: string } }) =>
-				where.type ? [] : activities,
+				where.type
+					? activities.filter((row) => row.type === where.type)
+					: activities,
 			),
 		},
 	};
@@ -105,13 +182,18 @@ function createContext(activities: ReturnType<typeof activity>[]) {
 function activity({
 	daysAgo,
 	distance,
+	type = "water",
+	elapsedTime = 600,
 }: {
 	daysAgo: number;
 	distance: number;
+	type?: string;
+	elapsedTime?: number;
 }) {
 	return {
+		type,
 		distance,
-		elapsedTime: 600,
+		elapsedTime,
 		startDate: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
 	};
 }

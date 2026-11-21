@@ -41,15 +41,23 @@ export async function getAnalyticsQuery(
 
 	const totalMeters = {
 		amount: currAgg?._sum.distance ?? 0,
-		change: (currAgg?._sum.distance ?? 0) - (prevAgg?._sum.distance ?? 0),
+		change: prevAgg?._sum.distance
+			? ((currAgg?._sum.distance ?? 0) - prevAgg._sum.distance) /
+				prevAgg._sum.distance
+			: 0,
 	};
 	const totalActivities = {
 		amount: currAgg?._count.id ?? 0,
-		change: (currAgg?._count.id ?? 0) - (prevAgg?._count.id ?? 0),
+		change: prevAgg?._count.id
+			? ((currAgg?._count.id ?? 0) - prevAgg._count.id) / prevAgg._count.id
+			: 0,
 	};
 	const totalDuration = {
 		amount: currAgg?._sum.elapsedTime ?? 0,
-		change: (currAgg?._sum.elapsedTime ?? 0) - (prevAgg?._sum.elapsedTime ?? 0),
+		change: prevAgg?._sum.elapsedTime
+			? ((currAgg?._sum.elapsedTime ?? 0) - prevAgg._sum.elapsedTime) /
+				prevAgg._sum.elapsedTime
+			: 0,
 	};
 
 	const allDates = athleteId
@@ -111,9 +119,10 @@ export async function getAnalyticsQuery(
 				duration: lastTwoKmRow.elapsedTime,
 				date: lastTwoKmRow.startDate.toISOString(),
 				activityId: lastTwoKmRow.id,
-				change:
-					lastTwoKmRow.elapsedTime -
-					(prevTwoKmRow?.elapsedTime ?? lastTwoKmRow.elapsedTime),
+				change: prevTwoKmRow?.elapsedTime
+					? (lastTwoKmRow.elapsedTime - prevTwoKmRow.elapsedTime) /
+						prevTwoKmRow.elapsedTime
+					: 0,
 			}
 		: undefined;
 
@@ -122,9 +131,10 @@ export async function getAnalyticsQuery(
 				duration: lastSixKmRow.elapsedTime,
 				date: lastSixKmRow.startDate.toISOString(),
 				activityId: lastSixKmRow.id,
-				change:
-					lastSixKmRow.elapsedTime -
-					(prevSixKmRow?.elapsedTime ?? lastSixKmRow.elapsedTime),
+				change: prevSixKmRow?.elapsedTime
+					? (lastSixKmRow.elapsedTime - prevSixKmRow.elapsedTime) /
+						prevSixKmRow.elapsedTime
+					: 0,
 			}
 		: undefined;
 
