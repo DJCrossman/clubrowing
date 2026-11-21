@@ -39,6 +39,7 @@ export async function replyInThreadCommand(
 		input.alsoSendToChannel
 			? await db.message.create({
 					data: { ...content, quotedMessageId: rootId },
+					include: { mentions: { select: { userId: true } } },
 				})
 			: reply,
 	);

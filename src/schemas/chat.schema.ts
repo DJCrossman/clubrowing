@@ -5,6 +5,7 @@ export const EVERYONE_CHANNEL_ID = "everyone";
 export const MAX_MESSAGE_LENGTH = 4000;
 export const MAX_DM_MEMBERS = 9;
 export const MAX_MESSAGE_ATTACHMENTS = 4;
+const MAX_MESSAGE_MENTIONS = 50;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
 
@@ -23,13 +24,18 @@ const gifSchema = z.object({
 		.min(1)
 		.transform((title) => title.slice(0, 100)),
 });
-const mentionsSchema = z.array(
-	z.object({
-		userId: z.string(),
-		start: z.number().int().min(0),
-		length: z.number().int().min(2),
-	}),
-);
+const mentionsSchema = z
+	.array(
+		z.object({
+			userId: z.string(),
+			start: z.number().int().min(0),
+			length: z.number().int().min(2),
+		}),
+	)
+	.max(
+		MAX_MESSAGE_MENTIONS,
+		`A message can mention up to ${MAX_MESSAGE_MENTIONS} people`,
+	);
 
 const hasContent = (value: {
 	text?: string;

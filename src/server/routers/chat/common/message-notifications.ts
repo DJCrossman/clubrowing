@@ -18,7 +18,10 @@ const logger = createLogger("chat.notify");
 type NotifiableMessage = Pick<
 	message,
 	"channelId" | "authorUserId" | "parentId" | "text" | "gif" | "forwardedFromId"
-> & { attachments?: { name: string | null }[] };
+> & {
+	attachments?: { name: string | null }[];
+	mentions?: { userId: string }[];
+};
 
 type NotifiableChannel = {
 	kind: ChannelKind;
@@ -67,22 +70,29 @@ export function notifyChannelAfterResponse(
 							})
 						: null,
 				]);
-			await services.push.sendPush(
-				selectMessageRecipients(
-					channel,
-					athletes,
-					groupMemberIds,
-					message.authorUserId,
-					thread?.map((reply) => reply.authorUserId),
+			const { mentioned, others } = separateMentionedRecipients({
+				channel,
+				athletes,
+				groupMemberIds,
+				authorUserId: message.authorUserId,
+				threadUserIds: thread?.map((reply) => reply.authorUserId),
+				mentionedUserIds: message.mentions?.map(({ userId }) => userId) ?? [],
+			});
+			const authorName = getChatUser(users, message.authorUserId).name;
+			const channelName =
+				channel.kind === "direct_message"
+					? null
+					: (group?.name ?? getChannelName(channel));
+			await Promise.all([
+				services.push.sendPush(
+					others,
+					buildMessageNotification(message, authorName, channelName),
 				),
-				buildMessageNotification(
-					message,
-					getChatUser(users, message.authorUserId).name,
-					channel.kind === "direct_message"
-						? null
-						: (group?.name ?? getChannelName(channel)),
+				services.push.sendPush(
+					mentioned,
+					buildMentionNotification(message, authorName, channelName),
 				),
-			);
+			]);
 		} catch (error) {
 			logger.error("chat message push failed", {
 				channelId: message.channelId,
@@ -90,6 +100,42 @@ export function notifyChannelAfterResponse(
 			});
 		}
 	});
+}
+
+// A mention reaches its person from a thread they are not in, and they
+// are not told twice.
+export function separateMentionedRecipients({
+	channel,
+	athletes,
+	groupMemberIds,
+	authorUserId,
+	threadUserIds,
+	mentionedUserIds,
+}: {
+	channel: NotifiableChannel;
+	athletes: LinkedAthlete[];
+	groupMemberIds: string[];
+	authorUserId: string;
+	threadUserIds?: string[];
+	mentionedUserIds: string[];
+}): { mentioned: string[]; others: string[] } {
+	const mentioned = selectMessageRecipients(
+		channel,
+		athletes,
+		groupMemberIds,
+		authorUserId,
+		mentionedUserIds,
+	);
+	return {
+		mentioned,
+		others: selectMessageRecipients(
+			channel,
+			athletes,
+			groupMemberIds,
+			authorUserId,
+			threadUserIds,
+		).filter((athleteId) => !mentioned.includes(athleteId)),
+	};
 }
 
 export function selectMessageRecipients(
@@ -141,5 +187,21 @@ export function buildMessageNotification(
 		// instead of stacking up.
 		tag: `chat-${message.channelId}`,
 		scope: channelNotificationScope(message.channelId),
+	};
+}
+
+export function buildMentionNotification(
+	message: NotifiableMessage,
+	authorName: string,
+	channelName: string | null,
+): PushMessage {
+	return {
+		...buildMessageNotification(message, authorName, channelName),
+		title: channelName
+			? `${authorName} mentioned you in ${channelName}`
+			: `${authorName} mentioned you`,
+		tag: `chat-mention-${message.channelId}`,
+		// Only the global switch can silence a mention, never a chat's mute.
+		scope: undefined,
 	};
 }

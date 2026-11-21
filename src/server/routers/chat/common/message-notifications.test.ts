@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+	buildMentionNotification,
 	buildMessageNotification,
 	selectMessageRecipients,
+	separateMentionedRecipients,
 } from "./message-notifications";
 
 // Loading chat users reaches Clerk, whose env check throws without a .env.
@@ -229,5 +231,127 @@ describe("buildMessageNotification", () => {
 		);
 		expect(notification.tag).not.toBe(other.tag);
 		expect(notification.scope).toBe("channel:chn_1");
+	});
+});
+
+describe("separateMentionedRecipients", () => {
+	it("tells everyone the ordinary way when nobody is mentioned", () => {
+		expect(
+			separateMentionedRecipients({
+				channel: channel("everyone"),
+				athletes,
+				groupMemberIds: [],
+				authorUserId: "user_me",
+				mentionedUserIds: [],
+			}),
+		).toEqual({
+			mentioned: [],
+			others: selectMessageRecipients(
+				channel("everyone"),
+				athletes,
+				[],
+				"user_me",
+			),
+		});
+	});
+
+	it("reaches a mentioned person who is not in the thread", () => {
+		const { mentioned, others } = separateMentionedRecipients({
+			channel: channel("everyone"),
+			athletes,
+			groupMemberIds: [],
+			authorUserId: "user_me",
+			threadUserIds: ["user_b"],
+			mentionedUserIds: ["user_c"],
+		});
+		expect(mentioned).toEqual(["ath_c"]);
+		expect(others).toEqual(["ath_b"]);
+	});
+
+	it("tells a mentioned thread participant once, as a mention", () => {
+		const { mentioned, others } = separateMentionedRecipients({
+			channel: channel("everyone"),
+			athletes,
+			groupMemberIds: [],
+			authorUserId: "user_me",
+			threadUserIds: ["user_b", "user_c"],
+			mentionedUserIds: ["user_b"],
+		});
+		expect(mentioned).toEqual(["ath_b"]);
+		expect(others).not.toContain("ath_b");
+		expect(others).toContain("ath_c");
+	});
+
+	it("never notifies the author, even when they mention themselves", () => {
+		const { mentioned, others } = separateMentionedRecipients({
+			channel: channel("everyone"),
+			athletes,
+			groupMemberIds: [],
+			authorUserId: "user_me",
+			mentionedUserIds: ["user_me"],
+		});
+		expect(mentioned).not.toContain("ath_me");
+		expect(others).not.toContain("ath_me");
+	});
+
+	it("tells nobody who cannot read the channel, mentioned or not", () => {
+		const group = separateMentionedRecipients({
+			channel: channel("group", { groupId: "grp_masters" }),
+			athletes,
+			groupMemberIds: ["ath_me", "ath_b"],
+			authorUserId: "user_me",
+			mentionedUserIds: ["user_c"],
+		});
+		expect(group.mentioned).not.toContain("ath_c");
+		expect(group.others).not.toContain("ath_c");
+
+		const directMessage = separateMentionedRecipients({
+			channel: channel("direct_message", { userIds: ["user_me", "user_b"] }),
+			athletes,
+			groupMemberIds: [],
+			authorUserId: "user_me",
+			mentionedUserIds: ["user_coach"],
+		});
+		expect(directMessage.mentioned).not.toContain("ath_coach");
+		expect(directMessage.others).not.toContain("ath_coach");
+	});
+});
+
+describe("buildMentionNotification", () => {
+	it("says who mentioned you and in which channel", () => {
+		const title = buildMentionNotification(
+			message,
+			"Avery Coxwell",
+			"Masters",
+		).title;
+		expect(title).toContain("Avery Coxwell");
+		expect(title).toContain("mentioned you");
+		expect(title).toContain("Masters");
+	});
+
+	it("says who mentioned you in a direct message", () => {
+		expect(buildMentionNotification(message, "Avery Coxwell", null).title).toBe(
+			"Avery Coxwell mentioned you",
+		);
+	});
+
+	it("is not replaced by an ordinary message in the same chat", () => {
+		expect(
+			buildMentionNotification(message, "Avery Coxwell", null).tag,
+		).not.toBe(buildMessageNotification(message, "Avery Coxwell", null).tag);
+	});
+
+	it("gets through a muted chat", () => {
+		expect(
+			buildMentionNotification(message, "Avery Coxwell", null).scope,
+		).toBeUndefined();
+	});
+
+	it("shows the same text and opens the same place as the ordinary push", () => {
+		const reply = { ...message, parentId: "msg_root" };
+		const mention = buildMentionNotification(reply, "Avery Coxwell", null);
+		const ordinary = buildMessageNotification(reply, "Avery Coxwell", null);
+		expect(mention.body).toBe(ordinary.body);
+		expect(mention.url).toBe(ordinary.url);
 	});
 });
