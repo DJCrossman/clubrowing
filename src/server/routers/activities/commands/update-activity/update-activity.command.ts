@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { UpdateActivity } from "@/schemas";
 import type { Context } from "@/server/context";
 import {
@@ -9,6 +10,18 @@ export async function updateActivityCommand(
 	input: UpdateActivity,
 	{ db }: Context,
 ) {
+	if (input.type === "water") {
+		const existing = await db.activity.findUnique({
+			where: { id: input.id },
+			select: { conceptTwoId: true },
+		});
+		if (existing?.conceptTwoId != null) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: "A Concept2 result is always an erg activity.",
+			});
+		}
+	}
 	const row = await db.activity.update({
 		where: { id: input.id },
 		data: {

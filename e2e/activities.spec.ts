@@ -160,6 +160,47 @@ test("closing the share dialog keeps the activity open on its details", async ({
 	await expect(share).toBeHidden();
 });
 
+test("a Concept2 result stays an erg activity when edited", async ({
+	page,
+}) => {
+	await signInAs(page, "member");
+	await page.goto("/activities");
+	await page
+		.getByRole("listitem")
+		.filter({ has: page.getByRole("heading", { level: 2 }) })
+		.getByRole("link")
+		.filter({ hasText: "4 x 500m" })
+		.click();
+	const details = page.getByRole("dialog", { name: "4 x 500m" });
+	await details.getByRole("button", { name: "Edit", exact: true }).click();
+
+	await expect(details.getByRole("tab", { name: "ERG" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	await expect(details.getByRole("tab", { name: "Boat" })).toBeDisabled();
+
+	const id = new URL(page.url()).searchParams.get("activityId");
+	expect(
+		(
+			await page.request.post("/api/v1/trpc/activities.updateActivity", {
+				data: {
+					id,
+					type: "water",
+					name: "4 x 500m",
+					startDate: "2026-11-07T13:00:00.000Z",
+					timezone: "America/Regina",
+					workoutType: "distance",
+					elapsedTime: 384_000,
+					distance: 2000,
+					athleteId: "ath_unused",
+					boatId: "boat_unused",
+				},
+			})
+		).status(),
+	).toBe(400);
+});
+
 test("day headers show the year only for activities from an earlier year", async ({
 	page,
 }) => {

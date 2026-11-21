@@ -193,6 +193,7 @@ export const ActivityDetailsDrawer = ({
 										}
 							}
 							canHide
+							canChangeType={!conceptTwoData}
 							canAddScreenshot={!activity.hasScreenshot}
 							onCancel={() => setIsEditing(false)}
 							onSubmit={async ({ data, screenshot }) => {

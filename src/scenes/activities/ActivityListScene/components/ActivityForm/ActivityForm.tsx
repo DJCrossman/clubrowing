@@ -58,6 +58,7 @@ interface ActivityFormProps {
 	onUploadErgActivityScreenshot?: UploadErgActivityScreenshot;
 	onCancel?: (() => void) | string;
 	canHide?: boolean;
+	canChangeType?: boolean;
 	canAddScreenshot?: boolean;
 	isImageFullscreen: boolean;
 	setIsImageFullscreen: (isFullscreen: boolean) => void;
@@ -71,6 +72,7 @@ export function ActivityForm({
 	onUploadErgActivityScreenshot,
 	onCancel: cancelLinkOrAction,
 	canHide = false,
+	canChangeType = true,
 	canAddScreenshot = false,
 	isImageFullscreen,
 	setIsImageFullscreen,
@@ -181,7 +183,9 @@ export function ActivityForm({
 			<form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
 				<Tabs value={type} onValueChange={handleTypeChange}>
 					<TabsList className="grid w-full grid-cols-2">
-						<TabsTrigger value="water">Boat</TabsTrigger>
+						<TabsTrigger value="water" disabled={!canChangeType}>
+							Boat
+						</TabsTrigger>
 						<TabsTrigger value="erg">ERG</TabsTrigger>
 					</TabsList>
 
