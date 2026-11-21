@@ -2,7 +2,7 @@ import { z } from "zod";
 import { envVars } from "@/lib/env";
 import { createLogger } from "@/lib/logger";
 
-const FEEDBACK_REPO = "DJCrossman/rrc-app";
+const FEEDBACK_REPO = "DJCrossman/clubrowing";
 
 const logger = createLogger("github.service");
 
@@ -39,7 +39,7 @@ export function createGitHubService(): GitHubService {
 						Accept: "application/vnd.github+json",
 						Authorization: `Bearer ${token}`,
 						"Content-Type": "application/json",
-						"User-Agent": "rrc-app",
+						"User-Agent": "clubrowing",
 						"X-GitHub-Api-Version": "2022-11-28",
 					},
 					body: JSON.stringify(issue),

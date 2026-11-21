@@ -28,7 +28,7 @@ export function formatICalendar({
 	const lines = [
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
-		"PRODID:-//Regina Rowing Club//Schedule//EN",
+		"PRODID:-//Club Rowing//Schedule//EN",
 		"CALSCALE:GREGORIAN",
 		"METHOD:PUBLISH",
 		`X-WR-CALNAME:${escapeText(name)}`,

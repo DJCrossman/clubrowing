@@ -134,7 +134,7 @@ async function resolveName(explicit?: string): Promise<string> {
 // ── registry ───────────────────────────────────────────────────────────────
 
 async function registryPath(): Promise<string> {
-	return join(await gitCommonDir(), "rrc-instances.json");
+	return join(await gitCommonDir(), "clubrowing-instances.json");
 }
 
 async function readRegistry(): Promise<Registry> {
@@ -307,7 +307,7 @@ async function generateEnvFile(
 // ── docker compose ───────────────────────────────────────────────────────────
 
 function project(name: string): string {
-	return `rrc-${name}`;
+	return `clubrowing-${name}`;
 }
 
 function composeEnv(rec: InstanceRecord): Record<string, string> {
@@ -475,7 +475,7 @@ async function cmdList() {
 			"ps",
 			"-a",
 			"--filter",
-			`name=^/rrc-${rec.name}-app$`,
+			`name=^/clubrowing-${rec.name}-app$`,
 			"--format",
 			"{{.Status}}",
 		]);
@@ -572,7 +572,7 @@ async function cmdDestroy(positional: string[]) {
 
 	// Remove the per-instance image too (underlying layers stay cached, so a
 	// future create still rebuilds fast).
-	const image = `rrc-app-dev:${rec.name}`;
+	const image = `clubrowing-dev:${rec.name}`;
 	const img = await capture(["docker", "image", "rm", "-f", image]);
 	if (img.exitCode === 0) console.log(`   ✓ Image '${image}' removed`);
 

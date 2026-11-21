@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MoreScene } from "@/scenes/more/MoreScene/MoreScene";
 
 export const metadata: Metadata = {
-	title: "More · Regina Rowing Club",
+	title: "More · Club Rowing",
 };
 
 export default function MorePage() {

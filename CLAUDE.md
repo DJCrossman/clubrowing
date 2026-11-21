@@ -5,7 +5,7 @@ this file is the agent-facing runbook.
 
 ## Project
 
-RRC App — Regina Rowing Club app for athletes, workouts, activities, and equipment.
+Club Rowing — the Regina Rowing Club's app for athletes, workouts, activities, and equipment.
 
 - **Next.js 16** (App Router, Turbopack) + React 19 + TypeScript
 - **Bun** is the runtime and package manager — always use `bun` / `bunx`, never npm/yarn/pnpm
@@ -164,12 +164,12 @@ readiness first:
 
 ```bash
 # poll the log, then hit it
-until docker logs rrc-<name>-app 2>&1 | grep -q "Ready in"; do sleep 2; done
+until docker logs clubrowing-<name>-app 2>&1 | grep -q "Ready in"; do sleep 2; done
 curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:<port>/login   # expect 200
 # "/" returns 307 -> /login (Clerk middleware) — that's healthy, not an error
 ```
 
-Container is `rrc-<name>-app`; compose project is `rrc-<name>`.
+Container is `clubrowing-<name>-app`; compose project is `clubrowing-<name>`.
 
 ### Gotchas
 
@@ -182,7 +182,7 @@ Container is `rrc-<name>-app`; compose project is `rrc-<name>`.
 - The dev image uses `bun install` **without** `--frozen-lockfile` on purpose — the host
   lockfile must add linux-native optional deps in the container.
 - Per-instance env files live at `docker/env/<name>.env` (gitignored). The instance
-  registry is `<git-common-dir>/rrc-instances.json`, shared across worktrees so ports never
+  registry is `<git-common-dir>/clubrowing-instances.json`, shared across worktrees so ports never
   collide.
 
 ## Conventions

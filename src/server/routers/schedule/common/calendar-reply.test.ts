@@ -6,7 +6,7 @@ import {
 } from "./calendar-reply";
 import { escapeHtml, renderCalendarReplyPage } from "./calendar-reply-page";
 
-const replyUrl = "https://rrc.test/api/v1/calendar/tok/rsvp/evt_1";
+const replyUrl = "https://clubrowing.test/api/v1/calendar/tok/rsvp/evt_1";
 
 describe("formatCalendarReplyText", () => {
 	it("lists going, maybe and can't-go links with the current reply", () => {

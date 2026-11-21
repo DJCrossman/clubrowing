@@ -19,7 +19,7 @@ const practice: ICalEvent = {
 describe("formatICalendar", () => {
 	it("wraps events in a VCALENDAR with CRLF line endings", () => {
 		const ics = formatICalendar({
-			name: "Regina Rowing Club",
+			name: "Club Rowing",
 			events: [practice],
 			generatedAt,
 		});
@@ -27,10 +27,10 @@ describe("formatICalendar", () => {
 		expect(ics.split("\r\n")).toEqual([
 			"BEGIN:VCALENDAR",
 			"VERSION:2.0",
-			"PRODID:-//Regina Rowing Club//Schedule//EN",
+			"PRODID:-//Club Rowing//Schedule//EN",
 			"CALSCALE:GREGORIAN",
 			"METHOD:PUBLISH",
-			"X-WR-CALNAME:Regina Rowing Club",
+			"X-WR-CALNAME:Club Rowing",
 			"BEGIN:VEVENT",
 			"UID:evt_1@rrc-app",
 			"DTSTAMP:20261023T120000Z",
@@ -49,7 +49,7 @@ describe("formatICalendar", () => {
 
 	it("writes all-day events as local dates with an exclusive end", () => {
 		const ics = formatICalendar({
-			name: "RRC",
+			name: "Club Rowing",
 			generatedAt,
 			events: [
 				{
@@ -66,7 +66,7 @@ describe("formatICalendar", () => {
 
 	it("leaves out DTEND and empty optional fields when there are none", () => {
 		const ics = formatICalendar({
-			name: "RRC",
+			name: "Club Rowing",
 			generatedAt,
 			events: [
 				{
@@ -85,7 +85,11 @@ describe("formatICalendar", () => {
 	});
 
 	it("returns an empty calendar when there are no events", () => {
-		const ics = formatICalendar({ name: "RRC", events: [], generatedAt });
+		const ics = formatICalendar({
+			name: "Club Rowing",
+			events: [],
+			generatedAt,
+		});
 		expect(ics).not.toContain("BEGIN:VEVENT");
 		expect(ics).toContain("END:VCALENDAR");
 	});

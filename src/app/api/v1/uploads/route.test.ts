@@ -429,7 +429,7 @@ describe("POST /api/v1/uploads", () => {
 			create: { width: 40, height: 30, channels: 3, background: "#336699" },
 		})
 			.jpeg()
-			.withExif({ IFD0: { Copyright: "Regina Rowing Club" } })
+			.withExif({ IFD0: { Copyright: "Club Rowing" } })
 			.toBuffer();
 		expect((await sharp(jpeg).metadata()).exif).toBeDefined();
 

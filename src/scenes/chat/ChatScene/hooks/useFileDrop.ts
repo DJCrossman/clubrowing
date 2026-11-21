@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 // A photo or avatar dragged from this page carries a file too. Drags that start
 // in the page are marked with this type so only files from outside count.
-const PAGE_DRAG_TYPE = "application/x-rrc-page-drag";
+const PAGE_DRAG_TYPE = "application/x-clubrowing-page-drag";
 
 export function useFileDrop({
 	isDisabled,

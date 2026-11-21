@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "Regina Rowing Club",
-	description: "Application for the Regina Rowing Club",
+	title: "Club Rowing",
+	description: "The Club Rowing app",
 	icons: { icon: "/api/v1/organization/icon" },
 };
 

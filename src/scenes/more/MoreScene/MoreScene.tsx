@@ -132,7 +132,7 @@ export const MoreScene = () => {
 						</MoreRow>
 					</MoreGroup>
 					<p className="text-center text-xs text-muted-foreground">
-						Regina Rowing Club
+						Club Rowing
 					</p>
 				</div>
 			</SidebarInset>

@@ -5,8 +5,8 @@ import { isValidSignupCode } from "@/lib/auth";
 import { SignUpScene } from "@/scenes/auth/SignUpScene";
 
 export const metadata: Metadata = {
-	title: "Sign Up · Regina Rowing Club",
-	description: "Create an account for the Regina Rowing Club",
+	title: "Sign Up · Club Rowing",
+	description: "Create an account for Club Rowing",
 };
 
 const querySchema = z.object({

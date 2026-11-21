@@ -1,5 +1,5 @@
 const DEFAULT_NOTIFICATION = {
-	title: "Regina Rowing Club",
+	title: "Club Rowing",
 	body: "",
 	url: "/",
 	icon: "/logo.png",

@@ -17,7 +17,7 @@ export async function GET(
 	return new Response(calendar, {
 		headers: {
 			"Content-Type": "text/calendar; charset=utf-8",
-			"Content-Disposition": 'inline; filename="regina-rowing-club.ics"',
+			"Content-Disposition": 'inline; filename="club-rowing.ics"',
 			"Cache-Control": "private, max-age=300",
 		},
 	});

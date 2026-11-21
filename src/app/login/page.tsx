@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { LoginScene } from "@/scenes/auth/LoginScene/LoginScene";
 
 export const metadata: Metadata = {
-	title: "Login · Regina Rowing Club",
-	description: "Application for the Regina Rowing Club",
+	title: "Login · Club Rowing",
+	description: "The Club Rowing app",
 };
 
 export default function LoginPage() {

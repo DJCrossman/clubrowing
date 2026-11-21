@@ -76,6 +76,6 @@ function buildIssueBody(
 			"</details>",
 		);
 	}
-	lines.push("", "_Sent from the RRC app._");
+	lines.push("", "_Sent from the Club Rowing app._");
 	return lines.join("\n");
 }

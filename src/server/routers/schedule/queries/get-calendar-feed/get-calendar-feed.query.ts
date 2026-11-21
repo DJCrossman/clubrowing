@@ -38,7 +38,7 @@ export async function getCalendarFeedQuery(
 	const audiences = await getEventAudiences(db, rows);
 
 	return formatICalendar({
-		name: "Regina Rowing Club",
+		name: "Club Rowing",
 		events: rows
 			.filter((event) => !athleteId || audiences.get(event.id)?.has(athleteId))
 			.map(

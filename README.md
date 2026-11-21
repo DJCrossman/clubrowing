@@ -1,6 +1,6 @@
-# RRC App
+# Club Rowing
 
-Regina Rowing Club application for managing athletes, workouts, activities, and equipment.
+Club Rowing application for managing athletes, workouts, activities, and equipment.
 
 ## Quick Start
 
@@ -193,7 +193,7 @@ so use `localhost` or HTTPS.
 
 The **Feedback** button (sidebar, or **More → Send feedback** on phones) and the **Report**
 actions on error pages and unexpected server-error toasts open a form that files a GitHub
-issue on `DJCrossman/rrc-app`. The repo is public, so issues carry the reporter's athlete and
+issue on `DJCrossman/clubrowing`. The repo is public, so issues carry the reporter's athlete and
 user IDs, never their name or email.
 
 Create a fine-grained personal access token scoped to that repo with **Issues: read and
@@ -342,7 +342,7 @@ bun run instance:migrate
 - Per-instance env files: `docker/env/<name>.env` (gitignored; generated from
   your base `.env` with the branch's `DATABASE_URL` / `DATABASE_URL_UNPOOLED`
   and per-port OAuth callback URLs filled in).
-- Instance registry: `<git-common-dir>/rrc-instances.json` (shared across
+- Instance registry: `<git-common-dir>/clubrowing-instances.json` (shared across
   worktrees so ports never collide).
 
 **Notes & caveats:**

@@ -1,4 +1,4 @@
-# Dev image for running an RRC app instance with hot reload.
+# Dev image for running a Club Rowing instance with hot reload.
 #
 # The app source is bind-mounted at runtime (see docker-compose.yml), so this
 # image only carries the toolchain + a baked dependency layer. The entrypoint

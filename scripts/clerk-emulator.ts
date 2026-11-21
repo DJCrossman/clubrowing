@@ -92,7 +92,7 @@ seedFromConfig(store, baseUrl, {
 	organizations: [
 		{
 			clerk_id: DUMMY_ORGANIZATION_ID,
-			name: "RRC Dummy Club",
+			name: "Dummy Rowing Club",
 			members: ATHLETES.map(({ userId, email }) => ({
 				email,
 				role: userId === E2E_ADMIN_USER_ID ? "admin" : "member",

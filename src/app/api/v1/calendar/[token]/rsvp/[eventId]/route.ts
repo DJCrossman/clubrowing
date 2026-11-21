@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 		const reply = await getCalendarReplyQuery({ token, eventId }, { db });
 		return htmlResponse(
 			renderCalendarReplyPage({
-				title: reply?.event.title ?? "Regina Rowing Club",
+				title: reply?.event.title ?? "Club Rowing",
 				subtitle: reply?.event.subtitle,
 				message: error.message,
 				type: reply?.event.type,

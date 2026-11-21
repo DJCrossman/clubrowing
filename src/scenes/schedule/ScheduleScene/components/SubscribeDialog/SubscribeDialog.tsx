@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const CALENDAR_NAME = "Regina Rowing Club";
+const CALENDAR_NAME = "Club Rowing";
 
 interface SubscribeDialogProps {
 	isOpen: boolean;

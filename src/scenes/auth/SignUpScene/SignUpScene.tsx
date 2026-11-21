@@ -208,7 +208,7 @@ export const SignUpScene = ({
 									<h1 className="text-2xl font-bold">Create Your Account</h1>
 									<p className="text-sm text-muted-foreground">
 										{invitationTicket
-											? "You've been invited to join Regina Rowing Club"
+											? "You've been invited to join Club Rowing"
 											: "Your signup code has been verified"}
 									</p>
 								</div>

@@ -18,7 +18,7 @@ import type { Concept2Strokes } from "../../src/schemas/concept2Strokes.schema";
 
 const DAY = 24 * 60 * 60 * 1000;
 
-export const DUMMY_ORGANIZATION_ID = "org_dummy_rrc";
+export const DUMMY_ORGANIZATION_ID = "org_dummy_clubrowing";
 export const E2E_ADMIN_USER_ID = "user_e2e_admin";
 export const E2E_MEMBER_USER_ID = "user_e2e_member";
 export const E2E_JUNIOR_USER_ID = "user_e2e_junior";
@@ -533,7 +533,7 @@ export async function replaceWithDummyData(unpooledUrl: string) {
 				db.program.create({
 					data: {
 						...program,
-						organizationName: "RRC Dummy Club",
+						organizationName: "Dummy Rowing Club",
 						startDate: new Date(today.getTime() - 90 * DAY),
 						endDate: new Date(today.getTime() + 120 * DAY),
 					},
