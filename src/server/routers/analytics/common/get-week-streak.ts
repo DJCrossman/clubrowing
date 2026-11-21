@@ -1,16 +1,19 @@
 import { DateTime } from "luxon";
+import { CLUB_TIMEZONE } from "@/lib/schedule/week";
 
-// Consecutive Sun–Sat weeks with at least one activity. A week with nothing
-// logged yet doesn't break the streak until it's over, so counting starts from
-// last week when this week is still empty.
+// Consecutive Sun–Sat weeks in club time with at least one activity. A week
+// with nothing logged yet doesn't break the streak until it's over, so counting
+// starts from last week when this week is still empty.
 export function getWeekStreak(dates: Date[], now: DateTime) {
 	const activeWeeks = new Set(
 		dates.map((date) =>
-			startOfWeek(DateTime.fromJSDate(date, { zone: "utc" })).toISODate(),
+			startOfWeek(
+				DateTime.fromJSDate(date, { zone: CLUB_TIMEZONE }),
+			).toISODate(),
 		),
 	);
 
-	let cursor = startOfWeek(now);
+	let cursor = startOfWeek(now.setZone(CLUB_TIMEZONE));
 	if (!activeWeeks.has(cursor.toISODate())) {
 		cursor = cursor.minus({ weeks: 1 });
 	}

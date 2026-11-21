@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { CLUB_TIMEZONE } from "@/lib/schedule/week";
 import { AnalyticsPeriodDays } from "@/schemas";
 import type { ViewerContext } from "@/server/context";
 import { getWeekStreak, startOfWeek } from "../../common/get-week-streak";
@@ -12,7 +13,7 @@ export async function getAnalyticsQuery(
 	const athleteId = athlete?.id;
 
 	const now = DateTime.now();
-	const weekStart = startOfWeek(now);
+	const weekStart = startOfWeek(now.setZone(CLUB_TIMEZONE));
 	const currStart = weekStart.toJSDate();
 	const prevStart = weekStart.minus({ weeks: 1 }).toJSDate();
 	const monthStart = now.startOf("month").toJSDate();
@@ -60,7 +61,14 @@ export async function getAnalyticsQuery(
 		: [];
 
 	const uniqueDays = [
-		...new Set(allDates.map((a) => a.startDate.toISOString().split("T")[0])),
+		...new Set(
+			allDates.map(
+				(a) =>
+					DateTime.fromJSDate(a.startDate, {
+						zone: CLUB_TIMEZONE,
+					}).toISODate() ?? "",
+			),
+		),
 	].sort((a, b) => b.localeCompare(a));
 
 	const currentStreak = getWeekStreak(

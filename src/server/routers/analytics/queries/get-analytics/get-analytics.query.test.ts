@@ -45,6 +45,27 @@ describe("getAnalyticsQuery", () => {
 		expect(analyticMetrics.totalMeters.change).toBe(-5000);
 		expect(analyticMetrics.totalActivities.change).toBe(-1);
 	});
+
+	it("keeps Saturday evening in Regina in the week that began on Sunday", async () => {
+		// 8 pm on Saturday June 20 in Regina, already Sunday in UTC.
+		vi.setSystemTime(new Date("2026-06-21T02:00:00.000Z"));
+
+		const { analyticMetrics } = await getAnalyticsQuery(
+			undefined,
+			createContext([
+				activity({ daysAgo: 0, distance: 1000 }),
+				activity({ daysAgo: 6, distance: 2000 }),
+				activity({ daysAgo: 7, distance: 4000 }),
+			]),
+		);
+
+		expect(analyticMetrics.totalMeters.amount).toBe(3000);
+		expect(
+			analyticMetrics.activeStreak.weekDays
+				.filter((day) => day.hasActivity)
+				.map((day) => day.date),
+		).toEqual(["2026-06-14", "2026-06-20"]);
+	});
 });
 
 function createContext(activities: ReturnType<typeof activity>[]) {
@@ -73,7 +94,9 @@ function createContext(activities: ReturnType<typeof activity>[]) {
 					};
 				},
 			),
-			findMany: vi.fn(async () => []),
+			findMany: vi.fn(async ({ where }: { where: { type?: string } }) =>
+				where.type ? [] : activities,
+			),
 		},
 	};
 	return { db, athlete: { id: "ath_ann" } } as unknown as ViewerContext;
@@ -89,6 +112,6 @@ function activity({
 	return {
 		distance,
 		elapsedTime: 600,
-		startDate: new Date(NOW.getTime() - daysAgo * 24 * 60 * 60 * 1000),
+		startDate: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
 	};
 }
