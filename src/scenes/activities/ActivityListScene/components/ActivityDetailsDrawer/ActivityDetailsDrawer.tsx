@@ -3,6 +3,7 @@
 import { IconShare3 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 import { useState } from "react";
+import { toast } from "sonner";
 import { ShareToChatDialog } from "@/components/chat/share-to-chat-dialog";
 import {
 	DetailList,
@@ -192,9 +193,22 @@ export const ActivityDetailsDrawer = ({
 										}
 							}
 							canHide
+							canAddScreenshot={!activity.hasScreenshot}
 							onCancel={() => setIsEditing(false)}
-							onSubmit={async ({ data }) => {
+							onSubmit={async ({ data, screenshot }) => {
 								await onSubmit({ id: activity.id, ...data });
+								if (screenshot) {
+									await onAddScreenshot({
+										activityId: activity.id,
+										file: screenshot,
+									}).catch((error: unknown) => {
+										toast.error(
+											error instanceof Error
+												? error.message
+												: "The screenshot couldn't be saved. Try again.",
+										);
+									});
+								}
 								setIsEditing(false);
 							}}
 							isImageFullscreen={isImageFullscreen}
@@ -318,10 +332,6 @@ export const ActivityDetailsDrawer = ({
 							<ActivityScreenshot
 								key={activity.id}
 								activity={activity}
-								canAddScreenshot={hasAthlete && activity.athlete.id === user.id}
-								onAddScreenshot={(file) =>
-									onAddScreenshot({ activityId: activity.id, file })
-								}
 								isImageFullscreen={isImageFullscreen}
 								setIsImageFullscreen={setIsImageFullscreen}
 							/>

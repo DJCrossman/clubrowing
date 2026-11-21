@@ -295,34 +295,34 @@ test("the owner adds a screenshot to an existing activity without changing it", 
 	const timeTile = details.getByText("Time", { exact: true }).locator("..");
 	const distance = (await distanceTile.textContent()) ?? "";
 	const time = (await timeTile.textContent()) ?? "";
+	const edit = details.getByRole("button", { name: "Edit", exact: true });
+	const save = details.getByRole("button", { name: "Save", exact: true });
 	const addScreenshot = details.getByRole("button", {
 		name: "Add screenshot",
 	});
 	const screenshot = details.getByAltText("Activity screenshot", {
 		exact: true,
 	});
-	await expect(addScreenshot).toBeVisible();
+	await expect(addScreenshot).toHaveCount(0);
 	await expect(screenshot).toHaveCount(0);
 
+	await edit.click();
 	await pickScreenshot({ page, button: addScreenshot });
 	await expect(
 		details.getByText("A screenshot can't be changed once it's saved."),
 	).toBeVisible();
-	await details.getByRole("button", { name: "Cancel", exact: true }).click();
+	await details.getByRole("button", { name: "Remove Image" }).click();
 	await expect(addScreenshot).toBeVisible();
-	await expect(screenshot).toHaveCount(0);
 	await page.reload();
-	await expect(addScreenshot).toBeVisible();
 	await expect(screenshot).toHaveCount(0);
 
+	await edit.click();
 	await pickScreenshot({ page, button: addScreenshot });
 	await expect(
 		details.getByText("A screenshot can't be changed once it's saved."),
 	).toBeVisible();
-	await expect(
-		details.getByRole("button", { name: "Cancel", exact: true }),
-	).toBeVisible();
-	await details.getByRole("button", { name: "Save", exact: true }).click();
+	await save.click();
+	await expect(save).toHaveCount(0);
 	await expect(screenshot).toHaveAttribute(
 		"src",
 		`/api/v1/activities/${id}/screenshot`,
@@ -332,15 +332,12 @@ test("the owner adds a screenshot to an existing activity without changing it", 
 			screenshot.evaluate((image: HTMLImageElement) => image.naturalWidth),
 		)
 		.toBeGreaterThan(0);
-	await expect(
-		details.getByText("A screenshot can't be changed once it's saved."),
-	).toHaveCount(0);
-	await expect(addScreenshot).toHaveCount(0);
 	await expect(distanceTile).toHaveText(distance);
 	await expect(timeTile).toHaveText(time);
 
-	await details.getByRole("button", { name: "Edit", exact: true }).click();
+	await edit.click();
 	await expect(details.getByRole("tab", { name: "ERG" })).toBeVisible();
+	await expect(addScreenshot).toHaveCount(0);
 	await expect(details.getByText("Upload ERG Screenshot")).toHaveCount(0);
 	await expect(details.locator('input[type="file"]')).toHaveCount(0);
 });

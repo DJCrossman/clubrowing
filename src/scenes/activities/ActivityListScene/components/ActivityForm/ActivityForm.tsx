@@ -5,7 +5,7 @@ import { MaximizeIcon } from "lucide-react";
 import { DateTime } from "luxon";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
 	type SubmitHandler,
 	type UseFormReturn,
@@ -23,6 +23,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDuration, formatMeters } from "@/lib/formatters";
@@ -57,6 +58,7 @@ interface ActivityFormProps {
 	onUploadErgActivityScreenshot?: UploadErgActivityScreenshot;
 	onCancel?: (() => void) | string;
 	canHide?: boolean;
+	canAddScreenshot?: boolean;
 	isImageFullscreen: boolean;
 	setIsImageFullscreen: (isFullscreen: boolean) => void;
 }
@@ -69,12 +71,14 @@ export function ActivityForm({
 	onUploadErgActivityScreenshot,
 	onCancel: cancelLinkOrAction,
 	canHide = false,
+	canAddScreenshot = false,
 	isImageFullscreen,
 	setIsImageFullscreen,
 }: ActivityFormProps) {
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
+	const screenshotInputRef = useRef<HTMLInputElement>(null);
 
 	const currentMonth = DateTime.now().month;
 	const form = useForm<CreateActivityFormInput>({
@@ -432,6 +436,63 @@ export function ActivityForm({
 							</FormItem>
 						)}
 					/>
+				)}
+
+				{canAddScreenshot && (
+					<div className="space-y-2">
+						<Label>Screenshot</Label>
+						{!uploadedFile && (
+							<>
+								<input
+									ref={screenshotInputRef}
+									type="file"
+									accept="image/*"
+									className="hidden"
+									onChange={(event) => {
+										const file = event.target.files?.[0];
+										event.target.value = "";
+										if (file) setUploadedFile(file);
+									}}
+								/>
+								<Button
+									type="button"
+									variant="outline"
+									className="w-full"
+									onClick={() => screenshotInputRef.current?.click()}
+								>
+									Add screenshot
+								</Button>
+							</>
+						)}
+						{!!uploadedFile && (
+							<>
+								<button
+									type="button"
+									className="relative block aspect-video w-full max-w-md overflow-hidden rounded-lg border"
+									onClick={() => setIsImageFullscreen(true)}
+								>
+									<Image
+										src={URL.createObjectURL(uploadedFile)}
+										alt="Activity screenshot"
+										fill
+										unoptimized
+										className="object-contain"
+									/>
+								</button>
+								<p className="text-sm text-muted-foreground">
+									A screenshot can't be changed once it's saved.{" "}
+									<Button
+										type="button"
+										variant="link"
+										size="sm"
+										onClick={() => setUploadedFile(null)}
+									>
+										Remove Image
+									</Button>
+								</p>
+							</>
+						)}
+					</div>
 				)}
 
 				<fieldset className="flex justify-between gap-4" disabled={isUploading}>
