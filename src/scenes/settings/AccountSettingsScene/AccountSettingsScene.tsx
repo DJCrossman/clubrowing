@@ -1,6 +1,7 @@
 "use client";
 
 import { UserProfile } from "@clerk/nextjs";
+import { useQueryClient } from "@tanstack/react-query";
 import { DateTime } from "luxon";
 import { toast } from "sonner";
 import {
@@ -11,15 +12,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { useCurrentUser } from "@/hooks/useAuth";
-import type { UpdateAthlete } from "@/schemas";
+import { trpcClient } from "@/lib/trpc/client";
 import { AccountForm } from "./components";
 
-interface IProps {
-	onUpdateProfile: (data: UpdateAthlete) => Promise<void>;
-}
-
-export const AccountSettingsScene = ({ onUpdateProfile }: IProps) => {
+export const AccountSettingsScene = () => {
 	const { user, hasAthlete } = useCurrentUser();
+	const queryClient = useQueryClient();
+	const updateUserProfile = trpcClient.users.updateUserProfile.useMutation();
 
 	if (!hasAthlete) {
 		return (
@@ -86,7 +85,8 @@ export const AccountSettingsScene = ({ onUpdateProfile }: IProps) => {
 						}}
 						onSubmit={async (data) => {
 							try {
-								await onUpdateProfile(data);
+								await updateUserProfile.mutateAsync(data);
+								await queryClient.invalidateQueries();
 								toast.success("Profile updated successfully");
 							} catch {
 								toast.error("Failed to update profile");

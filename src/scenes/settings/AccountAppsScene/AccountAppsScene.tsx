@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
@@ -47,6 +47,11 @@ export type IntegrationApplication =
 			authType: "credentials";
 			connectUrl: string;
 	  };
+
+type CredentialsApplication = Extract<
+	IntegrationApplication,
+	{ authType: "credentials" }
+>;
 
 const checkIfConnected = ({
 	user,
@@ -167,6 +172,39 @@ export const AccountAppsScene = ({
 		if (app.id === "rca") rcaSync.mutate();
 	};
 
+	const connectCredentials = useMutation({
+		mutationFn: async ({
+			app,
+			username,
+			password,
+		}: {
+			app: CredentialsApplication;
+			username: string;
+			password: string;
+		}) => {
+			const response = await fetch(app.connectUrl, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ username, password }),
+			}).catch(() => {
+				throw new Error("Network error. Please try again.");
+			});
+			if (!response.ok) {
+				throw new Error(
+					response.status === 401
+						? "Invalid username or password"
+						: "Could not reach the service. Please try again.",
+				);
+			}
+		},
+		onSuccess: (_, { app }) => {
+			toast.success(`Connected to ${app.name}`, {
+				description: "Your account has been successfully linked",
+			});
+			handleCredentialConnected(app);
+		},
+	});
+
 	if (!hasAthlete) {
 		return (
 			<div className="space-y-6">
@@ -236,7 +274,14 @@ export const AccountAppsScene = ({
 								{showCredentialForm && (
 									<CredentialsForm
 										app={app}
-										onConnected={() => handleCredentialConnected(app)}
+										isConnecting={connectCredentials.isPending}
+										error={connectCredentials.error?.message ?? null}
+										onConnect={(credentials, options) =>
+											connectCredentials.mutate(
+												{ app, ...credentials },
+												options,
+											)
+										}
 									/>
 								)}
 							</CardContent>
@@ -344,52 +389,40 @@ export const AccountAppsScene = ({
 
 const CredentialsForm = ({
 	app,
-	onConnected,
+	isConnecting,
+	error,
+	onConnect,
 }: {
-	app: Extract<IntegrationApplication, { authType: "credentials" }>;
-	onConnected: () => void;
+	app: CredentialsApplication;
+	isConnecting: boolean;
+	error: string | null;
+	onConnect: (
+		credentials: { username: string; password: string },
+		options: { onSuccess: () => void },
+	) => void;
 }) => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 
 	const inputId = `${app.id}-username`;
 	const passwordId = `${app.id}-password`;
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setSubmitting(true);
-		setError(null);
-		try {
-			const response = await fetch(app.connectUrl, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ username, password }),
-			});
-			if (!response.ok) {
-				setError(
-					response.status === 401
-						? "Invalid username or password"
-						: "Could not reach the service. Please try again.",
-				);
-				return;
-			}
-			toast.success(`Connected to ${app.name}`, {
-				description: "Your account has been successfully linked",
-			});
-			setUsername("");
-			setPassword("");
-			onConnected();
-		} catch {
-			setError("Network error. Please try again.");
-		} finally {
-			setSubmitting(false);
-		}
-	};
-
 	return (
-		<form onSubmit={handleSubmit} className="space-y-3">
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				onConnect(
+					{ username, password },
+					{
+						onSuccess: () => {
+							setUsername("");
+							setPassword("");
+						},
+					},
+				);
+			}}
+			className="space-y-3"
+		>
 			<div className="space-y-2">
 				<Label htmlFor={inputId}>Username or Member Number</Label>
 				<Input
@@ -399,7 +432,7 @@ const CredentialsForm = ({
 					required
 					value={username}
 					onChange={(e) => setUsername(e.target.value)}
-					disabled={submitting}
+					disabled={isConnecting}
 				/>
 			</div>
 			<div className="space-y-2">
@@ -411,7 +444,7 @@ const CredentialsForm = ({
 					required
 					value={password}
 					onChange={(e) => setPassword(e.target.value)}
-					disabled={submitting}
+					disabled={isConnecting}
 				/>
 			</div>
 			{error && (
@@ -419,8 +452,8 @@ const CredentialsForm = ({
 					{error}
 				</p>
 			)}
-			<Button type="submit" className="w-full" disabled={submitting}>
-				{submitting ? (
+			<Button type="submit" className="w-full" disabled={isConnecting}>
+				{isConnecting ? (
 					<>
 						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 						Connecting…
