@@ -315,6 +315,8 @@ function composeEnv(rec: InstanceRecord): Record<string, string> {
 		INSTANCE: rec.name,
 		APP_PORT: String(rec.port),
 		BLOB_PORT: String(rec.port + 10000),
+		E2E_PORT: String(rec.port + 20000),
+		...(rec.dummy && { OLLAMA_HOST: "http://127.0.0.1:11434/api" }),
 	};
 }
 
@@ -625,6 +627,103 @@ async function cmdE2e(playwrightArgs: string[]) {
 		await Bun.sleep(2000);
 	}
 
+	// The suite runs against a production build beside `next dev`, which keeps its
+	// own output in .next/dev: `next dev` compiles each route on its first hit and
+	// times out under parallel workers. The build is redone only when the app's
+	// own files changed, so editing a spec costs no rebuild.
+	const e2eUrl = `http://localhost:${rec.port + 20000}`;
+	const appState = String(
+		Bun.hash(
+			[
+				await capture(["git", "rev-parse", "HEAD"], rec.projectDir),
+				await capture(
+					[
+						"git",
+						"diff",
+						"HEAD",
+						"--",
+						".",
+						":(exclude)e2e",
+						":(exclude)scripts",
+						":(exclude)docker",
+						":(exclude)docs",
+					],
+					rec.projectDir,
+				),
+				await capture(
+					[
+						"git",
+						"ls-files",
+						"--others",
+						"--exclude-standard",
+						"--",
+						".",
+						":(exclude)e2e",
+						":(exclude)scripts",
+						":(exclude)docker",
+						":(exclude)docs",
+					],
+					rec.projectDir,
+				),
+			]
+				.map((result) => result.stdout)
+				.join("\n"),
+		),
+	);
+	const isBuildCurrent =
+		(
+			await capture([
+				"docker",
+				"exec",
+				`${project(rec.name)}-app`,
+				"cat",
+				"/tmp/next-start.state",
+			])
+		).stdout === appState &&
+		(await fetch(`${e2eUrl}/login`).then(
+			(response) => response.ok,
+			() => false,
+		));
+	if (!isBuildCurrent) {
+		const buildCode = await compose(rec, [
+			"exec",
+			"-T",
+			"app",
+			"sh",
+			"-c",
+			"kill $(cat /tmp/next-start.pid 2>/dev/null) 2>/dev/null; NODE_ENV=production node node_modules/next/dist/bin/next build",
+		]);
+		if (buildCode !== 0) {
+			console.error(
+				`❌ The production build failed in '${project(rec.name)}'; the errors are above.`,
+			);
+			process.exit(buildCode);
+		}
+		await compose(rec, [
+			"exec",
+			"-d",
+			"app",
+			"sh",
+			"-c",
+			`echo $$ > /tmp/next-start.pid; echo ${appState} > /tmp/next-start.state; NODE_ENV=production exec node node_modules/next/dist/bin/next start -p 3001`,
+		]);
+		const startDeadline = Date.now() + 60_000;
+		while (
+			!(await fetch(`${e2eUrl}/login`).then(
+				(response) => response.ok,
+				() => false,
+			))
+		) {
+			if (Date.now() > startDeadline) {
+				console.error(
+					`❌ The production build did not answer at ${e2eUrl} within a minute. Recreate the instance with: bun run instance:create --dummy`,
+				);
+				process.exit(1);
+			}
+			await Bun.sleep(500);
+		}
+	}
+
 	const { E2E_ADMIN_USER_ID, E2E_MEMBER_USER_ID, E2E_JUNIOR_USER_ID } =
 		await import("./lib/dummy-data");
 	// The emulator's signing key only lives in the container, so mint there.
@@ -670,7 +769,7 @@ async function cmdE2e(playwrightArgs: string[]) {
 		["bunx", "playwright", "test", ...playwrightArgs],
 		{
 			env: {
-				E2E_BASE_URL: `http://localhost:${rec.port}`,
+				E2E_BASE_URL: e2eUrl,
 				E2E_ADMIN_SESSION: adminSession,
 				E2E_MEMBER_SESSION: memberSession,
 				E2E_JUNIOR_SESSION: juniorSession,

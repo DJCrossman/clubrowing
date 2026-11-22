@@ -30,6 +30,12 @@ if [[ "${VERCEL_BLOB_API_URL:-}" == http://127.0.0.1:* ]]; then
 	bun scripts/blob-emulator.ts &
 fi
 
+# Dummy instances point Ollama at this container as well, so the tests get the
+# same answer every time (see scripts/ollama-emulator.ts).
+if [[ "${OLLAMA_HOST:-}" == http://127.0.0.1:* ]]; then
+	bun scripts/ollama-emulator.ts &
+fi
+
 # 3. Apply migrations to this instance's Neon branch. prisma.config.ts reads
 #    DATABASE_URL, so we override it with the UNPOOLED endpoint for this command
 #    only — Neon's pooled (PgBouncer) connection can't run DDL/advisory locks.

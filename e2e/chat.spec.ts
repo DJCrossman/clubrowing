@@ -16,7 +16,29 @@ test("a member edits their own message in the composer and it is tagged as edite
 	page,
 }) => {
 	await signInAs(page, "member");
-	await page.goto("/chat/everyone");
+	// ArrowUp opens the member's newest editable message and every test posts as
+	// that member, so each project edits in a DM that no other test writes to.
+	const [{ result: members }] = await (
+		await page.request.get("/api/v1/trpc/chat.getMembers?batch=1&input={}")
+	).json();
+	const [{ result: dm }] = await (
+		await page.request.post("/api/v1/trpc/chat.startDm?batch=1", {
+			data: {
+				0: {
+					userIds: [
+						members.data.data.find(
+							(person: { name: string }) =>
+								person.name ===
+								(test.info().project.name === "phone"
+									? "Drew Gunwale"
+									: "Quinn Portside"),
+						).id,
+					],
+				},
+			},
+		})
+	).json();
+	await page.goto(`/chat/${dm.data.channelId}`);
 
 	const original = `Boat bay opens at 6:15 ${Date.now()}`;
 	const corrected = original.replace("6:15", "6:30");
@@ -60,9 +82,11 @@ test("a member edits their thread reply in the thread composer, also inside the 
 }) => {
 	await signInAs(page, "member");
 	await page.goto("/chat/everyone");
-	const root = page
-		.getByRole("article")
-		.filter({ hasText: "Erg 3 is making that clicking noise again." });
+	const question = `Who has the erg 3 spanner ${test.info().project.name} ${Date.now()}`;
+	const composer = page.getByRole("textbox", { name: /^Message/ });
+	await composer.fill(question);
+	await composer.press("Enter");
+	const root = page.getByRole("article").filter({ hasText: question });
 	await root.click();
 	await root.getByRole("button", { name: "Reply in thread" }).click();
 	const reply = `I'll tape a note on it ${Date.now()}`;
@@ -89,13 +113,23 @@ test("a member edits their thread reply in the thread composer, also inside the 
 	await expect(page.getByRole("heading", { name: "Thread" })).toBeVisible();
 });
 
-test("someone else's message offers no edit", async ({ page }) => {
+test("someone else's message offers no edit", async ({ page, browser }) => {
+	const text = `Erg 3 is making that clicking noise again ${test.info().project.name} ${Date.now()}`;
+	const adminContext = await browser.newContext();
+	const adminPage = await adminContext.newPage();
+	await signInAs(adminPage, "admin");
+	expect(
+		(
+			await adminPage.request.post("/api/v1/trpc/chat.sendMessage?batch=1", {
+				data: { 0: { channelId: "everyone", text } },
+			})
+		).ok(),
+	).toBeTruthy();
+	await adminContext.close();
 	await signInAs(page, "member");
 	await page.goto("/chat/everyone");
 
-	const message = page
-		.getByRole("article")
-		.filter({ hasText: "Erg 3 is making that clicking noise again." });
+	const message = page.getByRole("article").filter({ hasText: text });
 	await message.click();
 	await message.getByRole("button", { name: "More actions" }).click();
 	await expect(page.getByRole("menuitem", { name: "Copy text" })).toBeVisible();
@@ -546,7 +580,7 @@ test("a photo over the size limits is made smaller and still sends", async ({
 		.getByRole("article")
 		.filter({ hasText: caption })
 		.getByRole("img", { name: "Photo from Morgan Oarsby" });
-	await expect(image).toBeVisible({ timeout: 60_000 });
+	await expect(image).toBeVisible();
 	const tileUrl = (await image.getAttribute("src")) ?? "";
 	const stored = await page.request.get(tileUrl.split("?")[0]);
 	expect(stored.status()).toBe(200);
@@ -927,7 +961,11 @@ test("the PDF engine is only downloaded when a member opens a PDF", async ({
 	requested.length = 0;
 	await page.reload();
 	await expect(chip.locator("img")).toBeVisible();
-	expect(requested.filter((url) => /pdfjs|pdf\.worker/.test(url))).toEqual([]);
+	expect(requested.filter((url) => url.includes("pdf.worker"))).toEqual([]);
+	// pdfjs names itself globalThis.pdfjsLib.
+	expect(await hasDownloaded({ page, requested, code: "pdfjsLib" })).toBe(
+		false,
+	);
 
 	await chip.click();
 	await expect(
@@ -935,7 +973,7 @@ test("the PDF engine is only downloaded when a member opens a PDF", async ({
 			.getByRole("dialog", { name: "lazy-notes.pdf" })
 			.getByRole("img", { name: "Page 1 of 2" }),
 	).toBeVisible();
-	expect(requested.some((url) => url.includes("pdfjs"))).toBe(true);
+	expect(await hasDownloaded({ page, requested, code: "pdfjsLib" })).toBe(true);
 	expect(requested.some((url) => url.includes("pdf.worker"))).toBe(true);
 });
 
@@ -1023,8 +1061,6 @@ test("a member sends a video and someone else plays it from its poster", async (
 	page,
 	browser,
 }) => {
-	// Two people, an upload and a playback: past the default 30 s on a loaded run.
-	test.slow();
 	const senderRequests: string[] = [];
 	page.on("request", (request) => senderRequests.push(request.url()));
 	await signInAs(page, "member");
@@ -1034,24 +1070,50 @@ test("a member sends a video and someone else plays it from its poster", async (
 	const composer = page.getByRole("textbox", { name: /^Message/ });
 	await expect(composer).toBeVisible();
 	expect(
-		senderRequests.filter((url) => /MessageVideos_[^/]*\._\.js$/.test(url)),
-	).toEqual([]);
+		await hasDownloaded({
+			page,
+			requested: senderRequests,
+			code: "/api/v1/uploads/video",
+		}),
+	).toBe(false);
 	await page
 		.locator('input[type="file"]')
 		.setInputFiles(join(__dirname, "fixtures", "clip.mp4"));
 	await composer.fill(caption);
 	expect(
-		senderRequests.filter((url) => /MessageVideos_[^/]*\._\.js$/.test(url)),
-	).toEqual([]);
-	await page.getByRole("button", { name: "Send message" }).click();
-	await expect(
-		page
-			.getByRole("article")
-			.filter({ hasText: caption })
-			.getByLabel("clip.mp4", { exact: true }),
-	).toBeVisible();
+		await hasDownloaded({
+			page,
+			requested: senderRequests,
+			code: "/api/v1/uploads/video",
+		}),
+	).toBe(false);
+	const adminContext = await browser.newContext();
+	const adminPage = await adminContext.newPage();
+	const requested: string[] = [];
+	adminPage.on("request", (request) => requested.push(request.url()));
+	await signInAs(adminPage, "admin");
+	await Promise.all([
+		page.waitForResponse((response) =>
+			response.url().includes("/chat.sendMessage?"),
+		),
+		page.getByRole("button", { name: "Send message" }).click(),
+	]);
+	// Once the message is saved, someone else opens the conversation while the sender's list catches up.
+	await Promise.all([
+		expect(
+			page
+				.getByRole("article")
+				.filter({ hasText: caption })
+				.getByLabel("clip.mp4", { exact: true }),
+		).toBeVisible(),
+		adminPage.goto("/chat/everyone"),
+	]);
 	expect(
-		senderRequests.some((url) => /MessageVideos_[^/]*\._\.js$/.test(url)),
+		await hasDownloaded({
+			page,
+			requested: senderRequests,
+			code: "/api/v1/uploads/video",
+		}),
 	).toBe(true);
 	expect(
 		senderRequests.filter((url) =>
@@ -1059,12 +1121,6 @@ test("a member sends a video and someone else plays it from its poster", async (
 		),
 	).toEqual([]);
 
-	const adminContext = await browser.newContext();
-	const adminPage = await adminContext.newPage();
-	const requested: string[] = [];
-	adminPage.on("request", (request) => requested.push(request.url()));
-	await signInAs(adminPage, "admin");
-	await adminPage.goto("/chat/everyone");
 	const message = adminPage.getByRole("article").filter({ hasText: caption });
 	const player = message.getByLabel("clip.mp4", { exact: true });
 	await expect(player).toBeVisible();
@@ -1290,10 +1346,7 @@ test("sending a video shows its upload progress", async ({ page }) => {
 test("a clip that was sent as a plain file shows as a player and plays", async ({
 	page,
 }) => {
-	test.slow();
 	await signInAs(page, "member");
-	await page.goto("/chat/everyone");
-	await expect(page.getByRole("textbox", { name: /^Message/ })).toBeVisible();
 
 	const upload = await page.request.post("/api/v1/uploads", {
 		multipart: {
@@ -1309,22 +1362,18 @@ test("a clip that was sent as a plain file shows as a player and plays", async (
 	const { id } = await upload.json();
 	const caption = `Old clip ${test.info().project.name} ${Date.now()}`;
 	expect(
-		await page.evaluate(
-			async (message) =>
-				(
-					await fetch("/api/v1/trpc/chat.sendMessage?batch=1", {
-						method: "POST",
-						headers: { "content-type": "application/json" },
-						body: JSON.stringify({ 0: message }),
-					})
-				).status,
-			{ channelId: "everyone", text: caption, attachmentIds: [id] },
-		),
+		(
+			await page.request.post("/api/v1/trpc/chat.sendMessage?batch=1", {
+				data: {
+					0: { channelId: "everyone", text: caption, attachmentIds: [id] },
+				},
+			})
+		).status(),
 	).toBe(200);
 
 	const requested: string[] = [];
 	page.on("request", (request) => requested.push(request.url()));
-	await page.reload();
+	await page.goto("/chat/everyone");
 	const message = page.getByRole("article").filter({ hasText: caption });
 	const player = message.getByLabel("old-clip.mp4", { exact: true });
 	await expect(player).toBeVisible();
@@ -1593,8 +1642,9 @@ test("a file named like a workbook that is not one can't be shown but can still 
 test("the sheet engine is only downloaded when a member opens a sheet", async ({
 	page,
 }) => {
-	const requested: string[] = [];
-	page.on("request", (request) => requested.push(request.url()));
+	// The engine runs in a worker, which a production build names by a hash.
+	const workers: string[] = [];
+	page.on("worker", (worker) => workers.push(worker.url()));
 	await signInAs(page, "member");
 	await page.goto("/chat/everyone");
 
@@ -1613,7 +1663,7 @@ test("the sheet engine is only downloaded when a member opens a sheet", async ({
 		.filter({ hasText: caption })
 		.getByRole("link", { name: "Open lazy-sheet.csv" });
 	await expect(chip).toBeVisible();
-	expect(requested.filter((url) => url.includes("sheet_worker"))).toEqual([]);
+	expect(workers).toEqual([]);
 
 	await chip.click();
 	await expect(
@@ -1621,7 +1671,7 @@ test("the sheet engine is only downloaded when a member opens a sheet", async ({
 			.getByRole("dialog", { name: "lazy-sheet.csv" })
 			.getByRole("cell", { name: "Jordan Sculler" }),
 	).toBeVisible();
-	expect(requested.some((url) => url.includes("sheet_worker"))).toBe(true);
+	expect(workers).not.toEqual([]);
 });
 
 test("a message can carry a photo and a file together", async ({ page }) => {
@@ -2336,6 +2386,35 @@ async function printedPdf(browser: Browser) {
 	const buffer = await scratch.pdf();
 	await scratch.close();
 	return buffer;
+}
+
+// A production build names its chunks by a hash, so a script is told by the code it carries.
+async function hasDownloaded({
+	page,
+	requested,
+	code,
+}: {
+	page: Page;
+	requested: string[];
+	code: string;
+}) {
+	// The chunks are cached for good, so the browser reads them back without asking the server.
+	return page.evaluate(
+		async ({ urls, code }) =>
+			(
+				await Promise.all(
+					urls.map(async (url) =>
+						(await fetch(url, { cache: "force-cache" })).text(),
+					),
+				)
+			).some((script) => script.includes(code)),
+		{
+			urls: requested.filter((url) =>
+				new URL(url).pathname.startsWith("/_next/static/chunks/"),
+			),
+			code,
+		},
+	);
 }
 
 async function expectFirstPageShown(chip: Locator) {

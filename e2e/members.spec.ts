@@ -50,6 +50,10 @@ test("an admin invites a member by email, then revokes the invitation", async ({
 	await page.getByRole("searchbox", { name: "Search members" }).fill(email);
 	// Inside main, so the "Invitation sent" toast doesn't match too.
 	const main = page.getByRole("main");
+	// Every member stays listed until the search comes back, and the row moves under the open menu when it does.
+	await expect(
+		main.getByText(/^1 member\.?$/).filter({ visible: true }),
+	).toBeVisible();
 	const row = main
 		.getByRole("row")
 		.or(main.getByRole("listitem"))

@@ -68,7 +68,7 @@ branch (sanitized), the host port is auto-allocated from 3001, and the Neon bran
 | `bun run instance:down` | Pause: stop the container but **keep** the Neon branch + volumes. |
 | `bun run instance:destroy` | Full teardown: remove container + volumes + image + **delete the Neon branch** + env file. |
 | `bun run instance:create --dummy` | Same as `create`, then replace every row with invented data and swap Clerk for a local emulator. Use it for anything you record, screenshot or browser-test. |
-| `bun run instance:e2e` | Run the headless Playwright suite in `e2e/` against this worktree's dummy instance. Refuses any other instance. Extra args go to Playwright. |
+| `bun run instance:e2e` | Run the headless Playwright suite in `e2e/` against a production build of this worktree inside its dummy instance. Refuses any other instance. Extra args go to Playwright. |
 
 ### Lifecycle rule (the Neon branch is bound to the container)
 
@@ -101,7 +101,7 @@ subscriptions. **Never record, screenshot or browser-test one.** Use a dummy ins
 
 ```bash
 bun run instance:create --dummy   # invented athletes, activities, events and chat
-bun run instance:e2e              # desktop + 390px phone, a video per test in e2e/.output/
+bun run instance:e2e              # desktop + 390px phone, in parallel, results in e2e/.output/
 ```
 
 - The data is `scripts/lib/dummy-data.ts`. The wipe only runs on an `inst/` branch whose
@@ -117,18 +117,32 @@ bun run instance:e2e              # desktop + 390px phone, a video per test in e
   app port + 10000 (loopback only), so direct uploads can be tested; it still never
   reaches Vercel. The per-member daily upload limit is raised
   there (`MEMBER_DAILY_UPLOAD_LIMIT`) so repeated e2e runs do not trip it.
+- Ollama is `scripts/ollama-emulator.ts`, started inside the container. It gives the
+  same answer every time and never calls a model.
 - `failed_to_load_clerk_js` in the browser console is expected there; pages do not need it.
 - Both commands look after themselves: `create --dummy` installs dependencies and generates
   the Prisma client when the worktree needs it, and `instance:e2e` waits until the app
   answers. Don't poll the logs or sleep first.
+- `instance:e2e` does not test `next dev`. It builds the app for production in the
+  container (about 30 seconds, skipped when no app file changed since the last build)
+  and runs against `next start` on the app port + 20000 (loopback only). `next dev` on
+  the app port keeps hot reload for looking at the app by hand. A build error stops the
+  run before any test.
+- Tests run in parallel (`fullyParallel`, half the cores). A test creates the rows it
+  reads and finds them by unique text; it never relies on another test's data or on a
+  seeded row that other tests push out of view.
+- Tests use Playwright's default timeouts. Never extend one (`test.setTimeout`,
+  `test.slow`, a raised `timeout:`); make the slow test faster instead, for example by
+  setting up its data through the API.
 - While iterating, run one file (`bun run instance:e2e e2e/members.spec.ts`); run the whole
-  suite once at the end (about 2.5 minutes). When a test fails, read the page snapshot in
+  suite once at the end (about 3 minutes for 180 tests). When a test fails, read the page snapshot in
   `e2e/.output/<test>/error-context.md` rather than a screenshot.
 - The admin is Avery Coxwell and the member is Morgan Oarsby. To stage a scenario the seed
   lacks, edit `scripts/lib/dummy-data.ts` and run `bun run instance:reset`.
 
 **Recording a flow.** Put a throwaway spec in `e2e/recordings/` (gitignored), run it before
-and after the change, and convert each run with the trim it prints:
+and after the change, and convert each run with the trim it prints. Only these specs record
+a video, in their own `desktop-recording` and `phone-recording` projects:
 
 ```ts
 import { expect, test } from "@playwright/test";
@@ -147,9 +161,9 @@ test("issue 12", async ({ page }) => {
 ```
 
 ```bash
-bun run instance:e2e e2e/recordings/issue-12.spec.ts   # prints "trim desktop 8.9" and "trim phone 8.8"
-ffmpeg -v error -y -ss 8.9 -i e2e/.output/*-desktop/video.webm -c:v libx264 -pix_fmt yuv420p e2e/recordings/issue-12-before.mp4
-ffmpeg -v error -y -ss 8.8 -i e2e/.output/*-phone/video.webm -c:v libx264 -pix_fmt yuv420p e2e/recordings/issue-12-before-phone.mp4
+bun run instance:e2e e2e/recordings/issue-12.spec.ts   # prints "trim desktop-recording 8.9" and "trim phone-recording 8.8"
+ffmpeg -v error -y -ss 8.9 -i e2e/.output/*-desktop-recording/video.webm -c:v libx264 -pix_fmt yuv420p e2e/recordings/issue-12-before.mp4
+ffmpeg -v error -y -ss 8.8 -i e2e/.output/*-phone-recording/video.webm -c:v libx264 -pix_fmt yuv420p e2e/recordings/issue-12-before-phone.mp4
 ```
 
 The trim cuts the blank lead-in exactly, so there is nothing to tune. One small frame is

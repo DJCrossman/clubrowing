@@ -94,6 +94,8 @@ test("a member marks a club erg they row on as their own", async ({
 	await drawer.getByRole("combobox", { name: "Ownership" }).click();
 	await page.getByRole("option", { name: "Club" }).click();
 	await drawer.getByRole("button", { name: "Save" }).click();
+	// The open form shows "Club" too, so wait for the saved erg in its place.
+	await expect(drawer.getByRole("button", { name: "Save" })).toHaveCount(0);
 	await expect(ownership).toContainText("Club");
 
 	await signInAs(page, "member");

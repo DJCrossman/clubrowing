@@ -317,7 +317,6 @@ test("a coach edits a session's intervals from bulk edit", async ({ page }) => {
 test("a training event saved without a workout opens for a member, and a member logs it once a coach adds one", async ({
 	page,
 }) => {
-	test.setTimeout(90_000);
 	await signInAs(page, "admin");
 	await page.goto("/schedule?action=create");
 	const drawer = page.getByRole("dialog");
@@ -359,13 +358,16 @@ test("a training event saved without a workout opens for a member, and a member 
 	).toHaveCount(3);
 	await details.getByRole("button", { name: "Intensity C3" }).click();
 	await details.getByRole("button", { name: "Save" }).click();
+	// The open form shows the intervals too, so wait for the saved workout in its place.
+	await expect(details.getByRole("button", { name: "Save" })).toHaveCount(0);
 	await expect(details.getByText("No workout planned yet.")).toHaveCount(0);
 	await expect(
 		details.getByRole("list", { name: "Intervals" }).getByRole("listitem"),
 	).toHaveCount(3);
 	await expect(details.getByText(/^R24 • /)).toBeVisible();
 
-	await signInAs(page, "member");
+	// The junior logs it, as the member's latest activity must stay the personal best that personal-best.spec.ts celebrates.
+	await signInAs(page, "junior");
 	await page.goto("/activities");
 	await page.getByRole("button", { name: "Add Activity" }).click();
 	const createDrawer = page.getByRole("dialog", { name: "Add Activity" });
@@ -388,7 +390,6 @@ test("a training event saved without a workout opens for a member, and a member 
 test("a coach creates a run of weekly training events without workouts from a prompt", async ({
 	page,
 }) => {
-	test.setTimeout(120_000);
 	await signInAs(page, "admin");
 	// Two weeks out the form reads days from that week's Monday.
 	await page.goto(
@@ -410,10 +411,7 @@ test("a coach creates a run of weekly training events without workouts from a pr
 		);
 	await drawer.getByRole("button", { name: "Preview events" }).click();
 
-	// The model behind the prompt runs locally and can take a while.
-	await expect(drawer.getByText(/^\d+ events found$/)).toBeVisible({
-		timeout: 60_000,
-	});
+	await expect(drawer.getByText(/^\d+ events found$/)).toBeVisible();
 	const checklist = drawer.getByRole("checkbox");
 	await expect(checklist).not.toHaveCount(0);
 	await expect(drawer.getByText(/^Wed \d+ \w+ · /)).toHaveCount(
@@ -444,7 +442,6 @@ test("a coach creates a run of weekly training events without workouts from a pr
 test("a coach's prompt gives its workout to an empty training event at the same time", async ({
 	page,
 }) => {
-	test.setTimeout(90_000);
 	await signInAs(page, "admin");
 	// Weeks start on Sunday, which is the day the form starts on.
 	const sunday = DateTime.now()

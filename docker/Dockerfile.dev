@@ -15,6 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		openssl ca-certificates \
 	&& rm -rf /var/lib/apt/lists/*
 
+# `instance:e2e` runs the suite against a production build, and Bun crashes while
+# that build collects page data. Node runs it; /usr/local/bin is ahead of Bun's
+# node shim on PATH.
+COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+
 WORKDIR /app
 
 # Dependency layer: only the manifests, so this rebuilds only when deps change.

@@ -7,12 +7,12 @@ if (!baseURL) {
 	);
 }
 
+const recordingSpecs = /\/e2e\/recordings\/.+\.spec\.ts$/;
+
 export default defineConfig({
 	testDir: "e2e",
 	outputDir: "e2e/.output",
-	// The instance is a dev server that compiles each route on first hit: more
-	// workers or the default 5 s only produce timeouts.
-	workers: 2,
+	fullyParallel: true,
 	expect: { timeout: 15_000 },
 	use: {
 		baseURL,
@@ -21,6 +21,24 @@ export default defineConfig({
 	projects: [
 		{
 			name: "desktop",
+			testIgnore: recordingSpecs,
+			use: {
+				...devices["Desktop Chrome"],
+				viewport: { width: 1280, height: 800 },
+			},
+		},
+		{
+			name: "phone",
+			testIgnore: recordingSpecs,
+			use: {
+				...devices["Pixel 7"],
+				viewport: { width: 390, height: 844 },
+			},
+		},
+		// Throwaway before/after specs in e2e/recordings/ record every test; the committed suite records none.
+		{
+			name: "desktop-recording",
+			testMatch: recordingSpecs,
 			use: {
 				...devices["Desktop Chrome"],
 				viewport: { width: 1280, height: 800 },
@@ -28,7 +46,8 @@ export default defineConfig({
 			},
 		},
 		{
-			name: "phone",
+			name: "phone-recording",
+			testMatch: recordingSpecs,
 			use: {
 				...devices["Pixel 7"],
 				viewport: { width: 390, height: 844 },

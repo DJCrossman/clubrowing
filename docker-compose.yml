@@ -20,9 +20,10 @@ services:
     environment:
       - INSTANCE=${INSTANCE}
       - NODE_ENV=development
-      # Reach the host's native Ollama (see extra_hosts below). Set here so it
-      # wins over anything in the env file.
-      - OLLAMA_HOST=http://host.docker.internal:11434/api
+      # Reach the host's native Ollama (see extra_hosts below), or on a dummy
+      # instance the Ollama emulator in this container. Set here so it wins over
+      # anything in the env file.
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434/api}
       # File-watch polling — FS events don't cross the macOS bind-mount boundary.
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
@@ -31,6 +32,8 @@ services:
       - "${APP_PORT}:3000"
       # The blob emulator on a dummy instance; loopback only, as it accepts any token.
       - "127.0.0.1:${BLOB_PORT}:${BLOB_PORT}"
+      # The production build `instance:e2e` starts for the tests; loopback only.
+      - "127.0.0.1:${E2E_PORT}:3001"
     extra_hosts:
       # Lets the container reach the host's native Ollama on :11434.
       - "host.docker.internal:host-gateway"

@@ -327,7 +327,6 @@ test("logging an activity from a screenshot keeps the screenshot", async ({
 test("the owner adds a screenshot to an existing activity without changing it", async ({
 	page,
 }) => {
-	test.setTimeout(60_000);
 	await signInAs(page, "member");
 	const name = `Added screenshot ${test.info().project.name} ${Date.now()}`;
 	const id = await logActivityFromScreenshot({
@@ -395,27 +394,26 @@ test("the owner adds a screenshot to an existing activity without changing it", 
 test("only someone who can see the activity can fetch its screenshot", async ({
 	page,
 }) => {
-	test.setTimeout(120_000);
 	const project = test.info().project.name;
 	await signInAs(page, "admin");
-	const adminActivityId = await logActivityFromScreenshot({
+	const adminActivityId = await logActivity({
 		page,
 		name: `Admin screenshot ${project} ${Date.now()}`,
-		shouldKeepScreenshot: true,
+		shouldAttachScreenshot: true,
 	});
 
 	await signInAs(page, "member");
 	const memberActivityName = `Member screenshot ${project} ${Date.now()}`;
-	const memberActivityId = await logActivityFromScreenshot({
+	const memberActivityId = await logActivity({
 		page,
 		name: memberActivityName,
-		shouldKeepScreenshot: true,
+		shouldAttachScreenshot: true,
 	});
 	const memberActivityWithoutScreenshotName = `Member no screenshot ${project} ${Date.now()}`;
-	const memberActivityWithoutScreenshotId = await logActivityFromScreenshot({
+	const memberActivityWithoutScreenshotId = await logActivity({
 		page,
 		name: memberActivityWithoutScreenshotName,
-		shouldKeepScreenshot: false,
+		shouldAttachScreenshot: false,
 	});
 	expect(
 		(
@@ -479,15 +477,12 @@ test("only someone who can see the activity can fetch its screenshot", async ({
 test("the owner hides an activity from coaches and can show it again", async ({
 	page,
 }) => {
-	test.setTimeout(120_000);
 	await signInAs(page, "member");
 	const name = `Hidden ${test.info().project.name} ${Date.now()}`;
-	const id = await logActivityFromScreenshot({
-		page,
-		name,
-		shouldKeepScreenshot: false,
-	});
+	const id = await logActivity({ page, name, shouldAttachScreenshot: false });
 	const details = page.getByRole("dialog");
+	await page.goto(`/activities?activityId=${id}`);
+	await expect(details.getByRole("heading", { name })).toBeVisible();
 	const edit = details.getByRole("button", { name: "Edit", exact: true });
 	const hide = details.getByRole("switch", { name: "Hide from others" });
 	await expect(hide).toHaveCount(0);
@@ -625,6 +620,61 @@ async function logActivityFromScreenshot({
 		await expect(
 			details.getByAltText("Activity screenshot", { exact: true }),
 		).toBeVisible();
+	}
+	return id;
+}
+
+// Through the API, for tests about an activity that already exists: the Add Activity drawer has its own tests above.
+async function logActivity({
+	page,
+	name,
+	shouldAttachScreenshot,
+}: {
+	page: Page;
+	name: string;
+	shouldAttachScreenshot: boolean;
+}) {
+	const created = await page.request.post(
+		"/api/v1/trpc/activities.createActivity",
+		{
+			data: {
+				type: "erg",
+				name,
+				// Years back, like the drawer's rows, so these never reach the first page of the list either.
+				startDate: "2015-06-01T13:00:00.000Z",
+				timezone: "America/Regina",
+				workoutType: "distance",
+				elapsedTime: 301_700,
+				distance: 1234,
+				athleteId: "ath_unused",
+			},
+		},
+	);
+	expect(created.ok()).toBe(true);
+	const id: string = (await created.json()).result.data.id;
+	if (shouldAttachScreenshot) {
+		const uploaded = await page.request.post("/api/v1/uploads", {
+			multipart: {
+				file: {
+					name: "pm5.png",
+					mimeType: "image/png",
+					// Shrunk as the browser does before it uploads: the route refuses anything over 4 MB.
+					buffer: await sharp(await SCREENSHOT_PNG)
+						.resize(800)
+						.toBuffer(),
+				},
+				kind: "screenshot",
+			},
+		});
+		expect(uploaded.ok()).toBe(true);
+		expect(
+			(
+				await page.request.post(
+					"/api/v1/trpc/activities.attachActivityScreenshot",
+					{ data: { id, uploadId: (await uploaded.json()).id } },
+				)
+			).ok(),
+		).toBe(true);
 	}
 	return id;
 }
