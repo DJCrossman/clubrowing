@@ -3,6 +3,7 @@
 import { keepPreviousData } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 import { routes } from "@/lib/routes";
 import { trpcClient } from "@/lib/trpc/client";
 import type { Group } from "@/lib/trpc/types";
@@ -21,6 +22,7 @@ interface GroupSceneProps {
 
 export const GroupScene = ({ group }: GroupSceneProps) => {
 	const { isAdmin } = useCurrentUser();
+	const notifications = useNotifications();
 	const [period, setPeriod] = useState<
 		"three_months" | "thirty_days" | "seven_days"
 	>("three_months");
@@ -38,7 +40,7 @@ export const GroupScene = ({ group }: GroupSceneProps) => {
 	const scheduleRoutes = routes.groups.schedule(group.id);
 
 	return (
-		<GroupShell group={group} active="overview">
+		<GroupShell group={group} active="overview" notifications={notifications}>
 			<div className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="px-4 lg:px-6">
 					<ClubWeekCards

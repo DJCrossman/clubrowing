@@ -8,6 +8,7 @@ import { NotificationsBanner } from "@/components/notifications-banner";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 import { trpcClient } from "@/lib/trpc/client";
 import {
 	ClubWeekSection,
@@ -27,6 +28,7 @@ export const DashboardScene = () => {
 	>("three_months");
 
 	const { hasAthlete } = useCurrentUser();
+	const notifications = useNotifications({ enabled: hasAthlete });
 	const analyticsQuery = trpcClient.analytics.getAnalytics.useQuery();
 	const leaderboardQuery = trpcClient.analytics.getLeaderboard.useQuery(
 		{ period },
@@ -49,7 +51,10 @@ export const DashboardScene = () => {
 					<div className="@container/main flex flex-1 flex-col gap-2">
 						<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 							<MobileHeader />
-							<NotificationsBanner className="mx-4 w-auto lg:mx-6" />
+							<NotificationsBanner
+								notifications={notifications}
+								className="mx-4 w-auto lg:mx-6"
+							/>
 							{!hasAthlete && (
 								<div className="px-4 lg:px-6">
 									<AthleteProfilePrompt />

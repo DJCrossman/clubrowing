@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useNotifications } from "@/hooks/useNotifications";
 import { getViewableKind } from "@/lib/chat/attachments";
 import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
 import { routes } from "@/lib/routes";
@@ -83,6 +84,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 		loadMembers: !!forwardingMessage || isAddingPeople,
 	});
 	const uploadAttachments = useMutation({ mutationFn: uploadFiles });
+	const notifications = useNotifications();
 	const { isAdmin } = useCurrentUser();
 	const quotedMessage = quote?.channelId === channelId ? quote : null;
 	const editingMessage = editing?.channelId === channelId ? editing : null;
@@ -116,6 +118,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 				<SiteHeader breadcrumbs={getBreadcrumbs(channel, isAdmin)} />
 				<ChatHeader
 					channel={channel}
+					notifications={notifications}
 					onAddPeople={() => {
 						setShareHistory(true);
 						setIsAddingPeople(true);
@@ -140,7 +143,10 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 						/>
 					)}
 				</ChatHeader>
-				<NotificationsBanner className="mx-4 mt-3 w-auto lg:mx-6" />
+				<NotificationsBanner
+					notifications={notifications}
+					className="mx-4 mt-3 w-auto lg:mx-6"
+				/>
 				<div className="flex min-h-0 flex-1">
 					<section
 						ref={fileDrop.targetRef}

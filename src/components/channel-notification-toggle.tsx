@@ -7,17 +7,21 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useNotifications } from "@/hooks/useNotifications";
+import type { useNotifications } from "@/hooks/useNotifications";
 import { channelNotificationScope } from "@/lib/notifications";
 
 export const ChannelNotificationToggle = ({
 	channelId,
+	notifications: { preferences, setPreference, isLoading },
 	className,
 }: {
 	channelId: string;
+	notifications: Pick<
+		ReturnType<typeof useNotifications>,
+		"preferences" | "setPreference" | "isLoading"
+	>;
 	className?: string;
 }) => {
-	const { preferences, setPreference, isLoading } = useNotifications();
 	const scope = channelNotificationScope(channelId);
 	const isMuted = preferences[scope] === false;
 	const label = isMuted

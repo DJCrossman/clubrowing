@@ -6,7 +6,7 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { ChannelNotificationToggle } from "@/components/channel-notification-toggle";
 import { ChannelIcon } from "@/components/chat/channel-icon";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,9 @@ export type ChatHeaderChannel = Pick<
 
 interface ChatHeaderProps {
 	channel: ChatHeaderChannel | undefined;
+	notifications: ComponentProps<
+		typeof ChannelNotificationToggle
+	>["notifications"];
 	/** Where the phone back chevron goes. */
 	backHref?: string;
 	children?: ReactNode;
@@ -39,6 +42,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({
 	channel,
+	notifications,
 	backHref = routes.chat.list(),
 	children,
 	onAddPeople,
@@ -132,6 +136,7 @@ export function ChatHeader({
 					)}
 					<ChannelNotificationToggle
 						channelId={channel.id}
+						notifications={notifications}
 						className="size-8 border border-input"
 					/>
 				</div>

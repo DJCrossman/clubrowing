@@ -1,5 +1,6 @@
 "use client";
 
+import { useNotifications } from "@/hooks/useNotifications";
 import { routes } from "@/lib/routes";
 import type { Group } from "@/lib/trpc/types";
 import {
@@ -15,11 +16,15 @@ interface GroupScheduleSceneProps extends ScheduleViewProps {
 export const GroupScheduleScene = ({
 	group,
 	...props
-}: GroupScheduleSceneProps) => (
-	<GroupShell group={group} active="schedule">
-		<ScheduleView
-			{...props}
-			scheduleRoutes={routes.groups.schedule(group.id)}
-		/>
-	</GroupShell>
-);
+}: GroupScheduleSceneProps) => {
+	const notifications = useNotifications();
+
+	return (
+		<GroupShell group={group} active="schedule" notifications={notifications}>
+			<ScheduleView
+				{...props}
+				scheduleRoutes={routes.groups.schedule(group.id)}
+			/>
+		</GroupShell>
+	);
+};

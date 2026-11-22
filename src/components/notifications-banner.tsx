@@ -5,14 +5,19 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { useNotifications } from "@/hooks/useNotifications";
+import type { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 
 const DISMISSED_STORAGE_KEY = "notificationsBanner.dismissed";
 
-export const NotificationsBanner = ({ className }: { className?: string }) => {
+export const NotificationsBanner = ({
+	notifications,
+	className,
+}: {
+	notifications: ReturnType<typeof useNotifications>;
+	className?: string;
+}) => {
 	const { hasAthlete } = useCurrentUser();
-	const notifications = useNotifications({ enabled: hasAthlete });
 	const [dismissed, setDismissed] = useState(true);
 
 	useEffect(() => {
