@@ -3,7 +3,7 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { useNotifications } from "@/hooks/useNotifications";
+import type { useNotifications } from "@/hooks/useNotifications";
 
 const SAMPLE_NOTIFICATIONS = [
 	{
@@ -17,17 +17,18 @@ const SAMPLE_NOTIFICATIONS = [
 ];
 
 interface NotificationsStepProps {
+	notifications: ReturnType<typeof useNotifications>;
 	onContinue: () => void;
 	onSkip: () => void;
 	onBack?: () => void;
 }
 
 export function NotificationsStep({
+	notifications,
 	onContinue,
 	onSkip,
 	onBack,
 }: NotificationsStepProps) {
-	const notifications = useNotifications();
 	const isOn =
 		notifications.permission === "granted" && notifications.subscribed;
 	const unavailableReason = notifications.isLoading

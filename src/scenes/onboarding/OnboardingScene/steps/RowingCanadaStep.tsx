@@ -9,10 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { trpcClient } from "@/lib/trpc/client";
 
 interface RowingCanadaStepProps {
 	connected: boolean;
+	isConnecting: boolean;
+	isSyncing: boolean;
+	onConnect: (credentials: {
+		username: string;
+		password: string;
+	}) => Promise<unknown>;
+	onSync: () => void;
 	onContinue: () => void;
 	onSkip: () => void;
 	onBack?: () => void;
@@ -21,6 +27,10 @@ interface RowingCanadaStepProps {
 
 export function RowingCanadaStep({
 	connected,
+	isConnecting,
+	isSyncing,
+	onConnect,
+	onSync,
 	onContinue,
 	onSkip,
 	onBack,
@@ -30,22 +40,6 @@ export function RowingCanadaStep({
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
 
-	const connectRca = trpcClient.activities.connectRca.useMutation();
-	const syncRca = trpcClient.activities.syncRca.useMutation({
-		onSuccess: (result) => {
-			const parts = [
-				`${result.programs.upserted} programs`,
-				`${result.memberships.upserted} memberships`,
-			];
-			toast.success("Synced Rowing Canada", { description: parts.join(" · ") });
-		},
-		onError: (syncError) => {
-			toast.error("Rowing Canada sync failed", {
-				description: syncError.message,
-			});
-		},
-	});
-
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
 		if (connected) {
@@ -54,11 +48,11 @@ export function RowingCanadaStep({
 		}
 		setError(null);
 		try {
-			await connectRca.mutateAsync({ username, password });
+			await onConnect({ username, password });
 			toast.success("Connected to Rowing Canada");
 			setUsername("");
 			setPassword("");
-			syncRca.mutate();
+			onSync();
 			await onConnected();
 		} catch (connectError) {
 			setError(
@@ -89,7 +83,7 @@ export function RowingCanadaStep({
 			{connected ? (
 				<p className="text-sm text-muted-foreground">
 					Your Rowing Canada account is connected
-					{syncRca.isPending ? " and syncing now." : "."}
+					{isSyncing ? " and syncing now." : "."}
 				</p>
 			) : (
 				<div className="space-y-3">
@@ -102,7 +96,7 @@ export function RowingCanadaStep({
 							required
 							value={username}
 							onChange={(event) => setUsername(event.target.value)}
-							disabled={connectRca.isPending}
+							disabled={isConnecting}
 						/>
 					</div>
 					<div className="space-y-2">
@@ -114,7 +108,7 @@ export function RowingCanadaStep({
 							required
 							value={password}
 							onChange={(event) => setPassword(event.target.value)}
-							disabled={connectRca.isPending}
+							disabled={isConnecting}
 						/>
 					</div>
 					{error && (
@@ -142,8 +136,8 @@ export function RowingCanadaStep({
 						<Button type="button" variant="outline" onClick={onSkip}>
 							Skip for now
 						</Button>
-						<Button type="submit" disabled={connectRca.isPending}>
-							{connectRca.isPending ? (
+						<Button type="submit" disabled={isConnecting}>
+							{isConnecting ? (
 								<>
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 									Connecting…

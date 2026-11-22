@@ -23,7 +23,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { formatGender } from "@/lib/formatters/formatGender";
-import { trpcClient } from "@/lib/trpc/client";
 import {
 	type CompleteOnboarding,
 	completeOnboardingSchema,
@@ -40,23 +39,20 @@ export interface DetailsStepDefaults {
 }
 
 interface DetailsStepProps {
-	mode: "create" | "update";
 	defaultValues: DetailsStepDefaults;
+	isSubmitting: boolean;
+	onSave: (data: CompleteOnboarding) => Promise<unknown>;
 	onCompleted: () => Promise<void> | void;
 	onBack?: () => void;
 }
 
 export function DetailsStep({
-	mode,
 	defaultValues,
+	isSubmitting,
+	onSave,
 	onCompleted,
 	onBack,
 }: DetailsStepProps) {
-	const completeOnboarding = trpcClient.users.completeOnboarding.useMutation();
-	const updateUserProfile = trpcClient.users.updateUserProfile.useMutation();
-	const isSubmitting =
-		completeOnboarding.isPending || updateUserProfile.isPending;
-
 	const form = useForm<CompleteOnboarding>({
 		resolver: zodResolver(completeOnboardingSchema),
 		defaultValues: {
@@ -71,11 +67,7 @@ export function DetailsStep({
 
 	const onSubmit: SubmitHandler<CompleteOnboarding> = async (data) => {
 		try {
-			if (mode === "create") {
-				await completeOnboarding.mutateAsync(data);
-			} else {
-				await updateUserProfile.mutateAsync(data);
-			}
+			await onSave(data);
 			await onCompleted();
 		} catch (error) {
 			toast.error(

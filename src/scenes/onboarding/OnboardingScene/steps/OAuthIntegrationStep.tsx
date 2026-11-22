@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { ApplicationIcon } from "@/components/integrations/application-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { trpcClient } from "@/lib/trpc/client";
 
 type OAuthProvider = "strava" | "concept2";
 
@@ -28,6 +27,11 @@ const PROVIDER_CONFIG: Record<
 interface OAuthIntegrationStepProps {
 	provider: OAuthProvider;
 	connected: boolean;
+	isSyncing: boolean;
+	onSync: (options: {
+		onSuccess: () => void;
+		onError: (error: { message: string }) => void;
+	}) => void;
 	onContinue: () => void;
 	onSkip: () => void;
 	onBack?: () => void;
@@ -36,6 +40,8 @@ interface OAuthIntegrationStepProps {
 export function OAuthIntegrationStep({
 	provider,
 	connected,
+	isSyncing,
+	onSync,
 	onContinue,
 	onSkip,
 	onBack,
@@ -44,13 +50,8 @@ export function OAuthIntegrationStep({
 	const returnTo = `/onboarding?step=${provider}`;
 	const authorizeUrl = `/api/v1/${provider}/authorize?returnTo=${encodeURIComponent(returnTo)}`;
 
-	const stravaSync = trpcClient.activities.syncStravaActivities.useMutation();
-	const concept2Sync =
-		trpcClient.activities.syncConcept2Activities.useMutation();
-	const sync = provider === "strava" ? stravaSync : concept2Sync;
-
 	const handleSync = () => {
-		sync.mutate(undefined, {
+		onSync({
 			onSuccess: () => {
 				toast.success(`Syncing ${config.name}`, {
 					description: "New activities will appear shortly.",
@@ -89,9 +90,9 @@ export function OAuthIntegrationStep({
 						type="button"
 						variant="secondary"
 						onClick={handleSync}
-						disabled={sync.isPending}
+						disabled={isSyncing}
 					>
-						{sync.isPending ? (
+						{isSyncing ? (
 							<>
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								Syncing…
