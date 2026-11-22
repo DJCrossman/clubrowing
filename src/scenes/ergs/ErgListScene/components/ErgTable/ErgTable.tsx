@@ -1,17 +1,13 @@
 "use client";
 
 import { IconCaretDown, IconCaretUp, IconPlus } from "@tabler/icons-react";
-import { keepPreviousData } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	type PaginationState,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { useState } from "react";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,18 +21,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useCurrentUser } from "@/hooks/useAuth";
+import type { TableState } from "@/hooks/useTable";
 import { formatDistance } from "@/lib/formatters";
 import { routes } from "@/lib/routes";
-import { trpcClient } from "@/lib/trpc/client";
 import type { Ergs, ErgsResult } from "@/lib/trpc/types";
-
-const DEFAULT_PAGE_SIZE = 20;
-const sortColumns = [
-	"name",
-	"manufacturer",
-	"serialNumber",
-	"firmwareVersion",
-] as const;
 
 const columns: ColumnDef<Ergs[number]>[] = [
 	{
@@ -94,28 +82,18 @@ const columns: ColumnDef<Ergs[number]>[] = [
 	},
 ];
 
-interface IErgTableProps {
-	initialData: ErgsResult;
+interface IErgTableProps extends TableState {
+	data: ErgsResult;
 }
 
-export function ErgTable({ initialData }: IErgTableProps) {
-	const [pagination, setPagination] = useState<PaginationState>({
-		pageIndex: 0,
-		pageSize: DEFAULT_PAGE_SIZE,
-	});
-	const [sorting, setSorting] = useState<SortingState>([]);
+export function ErgTable({
+	data,
+	pagination,
+	sorting,
+	onPaginationChange,
+	onSortingChange,
+}: IErgTableProps) {
 	const { isAdmin } = useCurrentUser();
-
-	const sort = sorting[0];
-	const { data } = trpcClient.ergs.getErgs.useQuery(
-		{
-			page: pagination.pageIndex + 1,
-			pageSize: pagination.pageSize,
-			sortBy: sortColumns.find((column) => column === sort?.id),
-			order: sort ? (sort.desc ? "desc" : "asc") : undefined,
-		},
-		{ initialData, placeholderData: keepPreviousData },
-	);
 
 	const table = useReactTable({
 		data: data.data,
@@ -126,8 +104,8 @@ export function ErgTable({ initialData }: IErgTableProps) {
 		manualSorting: true,
 		pageCount: data.totalPages,
 		rowCount: data.totalCount,
-		onPaginationChange: setPagination,
-		onSortingChange: setSorting,
+		onPaginationChange,
+		onSortingChange,
 		getCoreRowModel: getCoreRowModel(),
 	});
 

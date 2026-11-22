@@ -7,7 +7,7 @@ import { useState } from "react";
 
 const DEFAULT_PAGE_SIZE = 20;
 
-export interface TableState<TFilters extends object> {
+export interface TableState<TFilters extends object = Record<string, never>> {
 	pagination: PaginationState;
 	sorting: SortingState;
 	filters: Partial<TFilters>;

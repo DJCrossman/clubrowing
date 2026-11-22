@@ -1,5 +1,6 @@
 "use client";
 
+import { keepPreviousData } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import type { default as React } from "react";
 import { toast } from "sonner";
@@ -7,11 +8,19 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { Heading } from "@/components/ui/heading";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useTable } from "@/hooks/useTable";
 import { routes } from "@/lib/routes";
 import { toastError } from "@/lib/toast";
 import { trpcClient } from "@/lib/trpc/client";
 import type { Activities, Athletes, Erg, ErgsResult } from "@/lib/trpc/types";
 import { ErgCreateDrawer, ErgDetailsDrawer, ErgTable } from "./components";
+
+const sortColumns = [
+	"name",
+	"manufacturer",
+	"serialNumber",
+	"firmwareVersion",
+] as const;
 
 interface IProps {
 	initialData: ErgsResult;
@@ -30,6 +39,16 @@ export const ErgListScene = ({
 }: IProps) => {
 	const router = useRouter();
 	const utils = trpcClient.useUtils();
+	const table = useTable();
+	const { data: ergs } = trpcClient.ergs.getErgs.useQuery(
+		{
+			page: table.page,
+			pageSize: table.pageSize,
+			sortBy: sortColumns.find((column) => column === table.sortBy),
+			order: table.order,
+		},
+		{ initialData, placeholderData: keepPreviousData },
+	);
 	const createErg = trpcClient.ergs.createErg.useMutation({
 		onSuccess: async () => {
 			await utils.ergs.getErgs.invalidate();
@@ -81,7 +100,7 @@ export const ErgListScene = ({
 							<Heading as="h1">ERGs</Heading>
 						</div>
 						<div className="flex flex-col gap-4 md:gap-6">
-							<ErgTable initialData={initialData} />
+							<ErgTable data={ergs} {...table} />
 						</div>
 					</div>
 				</div>
