@@ -1,9 +1,11 @@
 "use client";
 
 import { IconMail, IconUserPlus } from "@tabler/icons-react";
+import { keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type CSSProperties, useState } from "react";
+import { toast } from "sonner";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BulkUploadDrawer } from "@/components/bulk-upload-drawer";
 import { MobilePageHeader } from "@/components/mobile-page-header";
@@ -13,7 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useTable } from "@/hooks/useTable";
 import { routes } from "@/lib/routes";
+import { toastError } from "@/lib/toast";
 import { trpcClient } from "@/lib/trpc/client";
 import type { Activities, Athlete, MembersResult } from "@/lib/trpc/types";
 import { type CreateAthlete, createAthleteSchema } from "@/schemas";
@@ -26,6 +30,8 @@ import {
 import { InviteMemberDialog } from "./components/InviteMemberDialog/InviteMemberDialog";
 import { useAthleteBulkColumns } from "./components/useAthleteBulkColumns";
 import { useMemberInvites } from "./components/useMemberInvites";
+
+const sortColumns = ["name", "dateJoined"] as const;
 
 interface IProps {
 	initialData: MembersResult;
@@ -52,6 +58,31 @@ export const AthleteListScene = ({
 	const athleteBulkColumns = useAthleteBulkColumns();
 	const [isInviteOpen, setIsInviteOpen] = useState(false);
 	const { invite } = useMemberInvites();
+	const table = useTable<{ programIds: string[]; isActive: boolean }>();
+	const { data: members } = trpcClient.members.getMembers.useQuery(
+		{
+			page: table.page,
+			pageSize: table.pageSize,
+			sortBy: sortColumns.find((column) => column === table.sortBy),
+			order: table.order,
+			programIds: table.filters.programIds?.length
+				? table.filters.programIds
+				: undefined,
+			isActive: table.filters.isActive,
+			search: table.search,
+		},
+		{ initialData, placeholderData: keepPreviousData },
+	);
+	const { data: programs } = trpcClient.programs.getPrograms.useQuery();
+	const syncRca = trpcClient.activities.syncRca.useMutation({
+		onSuccess: async (result) => {
+			toast.success("Synced from RCA", {
+				description: `${result.programs.upserted} programs · ${result.memberships.upserted} memberships`,
+			});
+			await utils.members.getMembers.invalidate();
+		},
+		onError: toastError,
+	});
 	const createAthlete = trpcClient.athletes.createAthlete.useMutation({
 		onSuccess: async () => {
 			await utils.members.getMembers.invalidate();
@@ -133,8 +164,12 @@ export const AthleteListScene = ({
 						</div>
 						<div className="flex flex-col gap-4 md:gap-6">
 							<MemberTable
-								initialData={initialData}
+								data={members}
+								programs={programs?.data}
+								isSyncing={syncRca.isPending}
+								onSync={() => syncRca.mutate()}
 								onInvite={() => setIsInviteOpen(true)}
+								{...table}
 							/>
 						</div>
 					</div>

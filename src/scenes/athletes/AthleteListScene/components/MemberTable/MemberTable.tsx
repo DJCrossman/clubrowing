@@ -9,19 +9,15 @@ import {
 	IconPlus,
 	IconSearch,
 } from "@tabler/icons-react";
-import { keepPreviousData } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	type PaginationState,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useMemo } from "react";
 import { InitialsAvatar } from "@/components/chat/initials-avatar";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
@@ -34,11 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	MultiSelect,
-	type Option,
-	useDebounce,
-} from "@/components/ui/multi-select";
+import { MultiSelect, type Option } from "@/components/ui/multi-select";
 import {
 	Select,
 	SelectContent,
@@ -55,15 +47,12 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useCurrentUser } from "@/hooks/useAuth";
+import type { TableState } from "@/hooks/useTable";
 import { routes } from "@/lib/routes";
-import { toastError } from "@/lib/toast";
-import { trpcClient } from "@/lib/trpc/client";
-import type { Member, MembersResult } from "@/lib/trpc/types";
+import type { Member, MembersResult, Programs } from "@/lib/trpc/types";
 import { FilterChip } from "@/scenes/schedule/ScheduleScene/components";
 import { MemberRowActions } from "./MemberRowActions";
 
-const DEFAULT_PAGE_SIZE = 20;
-const sortColumns = ["name", "dateJoined"] as const;
 const activeMembershipOptions = ["all", "true", "false"] as const;
 
 const columns: ColumnDef<Member>[] = [
@@ -175,59 +164,43 @@ const columns: ColumnDef<Member>[] = [
 	},
 ];
 
-interface IMemberTableProps {
-	initialData: MembersResult;
+interface IMemberTableProps
+	extends TableState<{ programIds: string[]; isActive: boolean }> {
+	data: MembersResult;
+	programs: Programs | undefined;
+	isSyncing: boolean;
+	onSync: () => void;
 	onInvite: () => void;
 }
 
-export function MemberTable({ initialData, onInvite }: IMemberTableProps) {
-	const [pagination, setPagination] = useState<PaginationState>({
-		pageIndex: 0,
-		pageSize: DEFAULT_PAGE_SIZE,
-	});
-	const [sorting, setSorting] = useState<SortingState>([]);
-	const [programIds, setProgramIds] = useState<string[]>([]);
-	const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
-	const [search, setSearch] = useState("");
-	const debouncedSearch = useDebounce(search.trim(), 300);
+export function MemberTable({
+	data,
+	programs,
+	isSyncing,
+	onSync,
+	onInvite,
+	pagination,
+	sorting,
+	filters,
+	searchInput,
+	onPaginationChange,
+	onSortingChange,
+	onFiltersChange,
+	onSearchChange,
+}: IMemberTableProps) {
 	const { isAdmin } = useCurrentUser();
-	const utils = trpcClient.useUtils();
 
-	const sort = sorting[0];
-	const { data } = trpcClient.members.getMembers.useQuery(
-		{
-			page: pagination.pageIndex + 1,
-			pageSize: pagination.pageSize,
-			sortBy: sortColumns.find((column) => column === sort?.id),
-			order: sort ? (sort.desc ? "desc" : "asc") : undefined,
-			programIds: programIds.length ? programIds : undefined,
-			isActive,
-			search: debouncedSearch || undefined,
-		},
-		{ initialData, placeholderData: keepPreviousData },
-	);
-	const syncRca = trpcClient.activities.syncRca.useMutation({
-		onSuccess: async (result) => {
-			toast.success("Synced from RCA", {
-				description: `${result.programs.upserted} programs · ${result.memberships.upserted} memberships`,
-			});
-			await utils.members.getMembers.invalidate();
-		},
-		onError: toastError,
-	});
-
-	const programsQuery = trpcClient.programs.getPrograms.useQuery();
 	const programOptions: Option[] = useMemo(
 		() =>
-			(programsQuery.data?.data ?? []).map((p) => ({
+			(programs ?? []).map((p) => ({
 				value: p.id,
 				label: p.name,
 			})),
-		[programsQuery.data],
+		[programs],
 	);
 	const selectedProgramOptions = useMemo(
-		() => programOptions.filter((o) => programIds.includes(o.value)),
-		[programOptions, programIds],
+		() => programOptions.filter((o) => filters.programIds?.includes(o.value)),
+		[programOptions, filters.programIds],
 	);
 
 	const table = useReactTable({
@@ -239,8 +212,8 @@ export function MemberTable({ initialData, onInvite }: IMemberTableProps) {
 		manualSorting: true,
 		pageCount: data.totalPages,
 		rowCount: data.totalCount,
-		onPaginationChange: setPagination,
-		onSortingChange: setSorting,
+		onPaginationChange,
+		onSortingChange,
 		getCoreRowModel: getCoreRowModel(),
 	});
 
@@ -254,11 +227,8 @@ export function MemberTable({ initialData, onInvite }: IMemberTableProps) {
 						aria-label="Search members"
 						placeholder="Search members"
 						className="h-11 rounded-xl pl-10 text-base"
-						value={search}
-						onChange={(event) => {
-							setSearch(event.target.value);
-							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-						}}
+						value={searchInput}
+						onChange={(event) => onSearchChange(event.target.value)}
 					/>
 				</div>
 				<div className="flex gap-2 overflow-x-auto">
@@ -266,15 +236,16 @@ export function MemberTable({ initialData, onInvite }: IMemberTableProps) {
 						<FilterChip
 							key={membership}
 							isActive={
-								(isActive === undefined ? "all" : String(isActive)) ===
-								membership
+								(filters.isActive === undefined
+									? "all"
+									: String(filters.isActive)) === membership
 							}
-							onClick={() => {
-								setIsActive(
-									membership === "all" ? undefined : membership === "true",
-								);
-								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-							}}
+							onClick={() =>
+								onFiltersChange({
+									isActive:
+										membership === "all" ? undefined : membership === "true",
+								})
+							}
 						>
 							{membership === "all"
 								? "All"
@@ -297,11 +268,8 @@ export function MemberTable({ initialData, onInvite }: IMemberTableProps) {
 							aria-label="Search members"
 							placeholder="Search members"
 							className="h-8 w-56 pl-8"
-							value={search}
-							onChange={(event) => {
-								setSearch(event.target.value);
-								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-							}}
+							value={searchInput}
+							onChange={(event) => onSearchChange(event.target.value)}
 						/>
 					</div>
 					<Label htmlFor="program-selector" className="sr-only">
@@ -312,10 +280,9 @@ export function MemberTable({ initialData, onInvite }: IMemberTableProps) {
 						placeholder="All Programs"
 						options={programOptions}
 						value={selectedProgramOptions}
-						onChange={(opts) => {
-							setProgramIds(opts.map((o) => o.value));
-							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-						}}
+						onChange={(opts) =>
+							onFiltersChange({ programIds: opts.map((o) => o.value) })
+						}
 					/>
 					<Label htmlFor="active-membership-selector" className="sr-only">
 						Active Membership
@@ -330,11 +297,18 @@ export function MemberTable({ initialData, onInvite }: IMemberTableProps) {
 										? "Active"
 										: "Inactive",
 						}))}
-						value={isActive === undefined ? "all" : isActive ? "true" : "false"}
-						onValueChange={(value) => {
-							setIsActive(value === "all" ? undefined : value === "true");
-							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-						}}
+						value={
+							filters.isActive === undefined
+								? "all"
+								: filters.isActive
+									? "true"
+									: "false"
+						}
+						onValueChange={(value) =>
+							onFiltersChange({
+								isActive: value === "all" ? undefined : value === "true",
+							})
+						}
 					>
 						<SelectTrigger
 							className="flex w-fit"
@@ -394,10 +368,7 @@ export function MemberTable({ initialData, onInvite }: IMemberTableProps) {
 									Bulk Add Members
 								</DropdownMenuItem>
 								{isAdmin && (
-									<DropdownMenuItem
-										disabled={syncRca.isPending}
-										onClick={() => syncRca.mutate()}
-									>
+									<DropdownMenuItem disabled={isSyncing} onClick={onSync}>
 										Sync from RCA
 									</DropdownMenuItem>
 								)}
