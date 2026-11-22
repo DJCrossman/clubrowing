@@ -49,6 +49,7 @@ export const FeedbackDrawer = () => {
 	// Read here, not in the form: a hook that mounts with the form still says
 	// desktop on its first render, which is when autoFocus acts.
 	const isMobile = useIsMobile();
+	const submit = trpcClient.feedback.submit.useMutation();
 
 	return (
 		<Drawer
@@ -74,6 +75,35 @@ export const FeedbackDrawer = () => {
 							key={request.id}
 							request={request}
 							autoFocus={!isMobile}
+							isSubmitting={submit.isPending}
+							onSubmit={(values) =>
+								submit.mutate(
+									{
+										...values,
+										pagePath: request.pagePath,
+										userAgent: navigator.userAgent,
+										error: request.error,
+									},
+									{
+										onSuccess: (issue) => {
+											toast.success("Thanks for the feedback", {
+												description: `Filed as issue #${issue.number}`,
+												action: {
+													label: "View",
+													onClick: () =>
+														window.open(
+															issue.url,
+															"_blank",
+															"noopener,noreferrer",
+														),
+												},
+											});
+											closeFeedback();
+										},
+										onError: (error) => toast.error(error.message),
+									},
+								)
+							}
 						/>
 					)}
 				</div>
@@ -91,11 +121,14 @@ const TYPE_LABELS: Record<FeedbackType, string> = {
 const FeedbackForm = ({
 	request,
 	autoFocus,
+	isSubmitting,
+	onSubmit,
 }: {
 	request: FeedbackRequest;
 	autoFocus: boolean;
+	isSubmitting: boolean;
+	onSubmit: (values: FeedbackFormValues) => void;
 }) => {
-	const submit = trpcClient.feedback.submit.useMutation();
 	const form = useForm<FeedbackFormValues>({
 		resolver: zodResolver(feedbackFormSchema),
 		defaultValues: {
@@ -107,33 +140,7 @@ const FeedbackForm = ({
 
 	return (
 		<Form {...form}>
-			<form
-				onSubmit={form.handleSubmit((values) =>
-					submit.mutate(
-						{
-							...values,
-							pagePath: request.pagePath,
-							userAgent: navigator.userAgent,
-							error: request.error,
-						},
-						{
-							onSuccess: (issue) => {
-								toast.success("Thanks for the feedback", {
-									description: `Filed as issue #${issue.number}`,
-									action: {
-										label: "View",
-										onClick: () =>
-											window.open(issue.url, "_blank", "noopener,noreferrer"),
-									},
-								});
-								closeFeedback();
-							},
-							onError: (error) => toast.error(error.message),
-						},
-					),
-				)}
-				className="space-y-6"
-			>
+			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 				<FormField
 					control={form.control}
 					name="type"
@@ -216,8 +223,8 @@ const FeedbackForm = ({
 					<Button type="button" variant="outline" onClick={closeFeedback}>
 						Cancel
 					</Button>
-					<Button type="submit" disabled={submit.isPending}>
-						{submit.isPending ? "Sending…" : "Send"}
+					<Button type="submit" disabled={isSubmitting}>
+						{isSubmitting ? "Sending…" : "Send"}
 					</Button>
 				</div>
 			</form>
