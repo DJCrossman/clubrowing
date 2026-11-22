@@ -19,9 +19,11 @@ export default defineConfig({
 		headless: true,
 	},
 	projects: [
+		// A test that needs only one width carries that project's tag (`@desktop` or `@phone`); untagged tests run on both.
 		{
 			name: "desktop",
 			testIgnore: recordingSpecs,
+			grepInvert: /@phone/,
 			use: {
 				...devices["Desktop Chrome"],
 				viewport: { width: 1280, height: 800 },
@@ -30,6 +32,7 @@ export default defineConfig({
 		{
 			name: "phone",
 			testIgnore: recordingSpecs,
+			grepInvert: /@desktop/,
 			use: {
 				...devices["Pixel 7"],
 				viewport: { width: 390, height: 844 },

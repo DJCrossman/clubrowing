@@ -84,15 +84,30 @@ describe("getActivityStrokesQuery", () => {
 
 		expect(result).toEqual(strokes);
 	});
+
+	it("refuses an admin another athlete's hidden activity", async () => {
+		const { ctx } = createContext({
+			athleteId: "ath_other",
+			isHidden: true,
+			strokes: { strokes },
+			isAdmin: true,
+		});
+
+		await expect(
+			getActivityStrokesQuery({ id: "act_1" }, ctx),
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+	});
 });
 
 function createContext({
 	athleteId = "ath_me",
+	isHidden = false,
 	conceptTwoData = { stroke_data: true },
 	strokes: stored = null,
 	isAdmin = false,
 }: {
 	athleteId?: string;
+	isHidden?: boolean;
 	conceptTwoData?: unknown;
 	strokes?: { strokes: unknown } | null;
 	isAdmin?: boolean;
@@ -102,6 +117,7 @@ function createContext({
 			findUnique: vi.fn(async () => ({
 				id: "act_1",
 				athleteId,
+				isHidden,
 				conceptTwoId: BigInt(900_001),
 				conceptTwoData,
 				strokes: stored,

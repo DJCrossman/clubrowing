@@ -131,11 +131,15 @@ bun run instance:e2e              # desktop + 390px phone, in parallel, results 
 - Tests run in parallel (`fullyParallel`, half the cores). A test creates the rows it
   reads and finds them by unique text; it never relies on another test's data or on a
   seeded row that other tests push out of view.
+- A test runs at both widths only when the width matters (layout, touch, the phone
+  drawer). Otherwise it carries one project's tag, `test("…", { tag: "@desktop" }, …)` or
+  `{ tag: "@phone" }`, picked so the two projects stay about even; never skip a project
+  inside the test body, which still pays for the page.
 - Tests use Playwright's default timeouts. Never extend one (`test.setTimeout`,
   `test.slow`, a raised `timeout:`); make the slow test faster instead, for example by
   setting up its data through the API.
 - While iterating, run one file (`bun run instance:e2e e2e/members.spec.ts`); run the whole
-  suite once at the end (about 3 minutes for 180 tests). When a test fails, read the page snapshot in
+  suite once at the end (about 90 seconds). When a test fails, read the page snapshot in
   `e2e/.output/<test>/error-context.md` rather than a screenshot.
 - The admin is Avery Coxwell and the member is Morgan Oarsby. To stage a scenario the seed
   lacks, edit `scripts/lib/dummy-data.ts` and run `bun run instance:reset`.

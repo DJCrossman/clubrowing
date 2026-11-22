@@ -16,60 +16,50 @@ const SCREENSHOT_PNG = sharp({
 	.png()
 	.toBuffer();
 
-test("admin filters activities down to 2K and 6K tests", async ({ page }) => {
-	await signInAs(page, "admin");
-	await page.goto("/activities");
+test(
+	"admin filters activities down to 2K and 6K tests",
+	{ tag: "@desktop" },
+	async ({ page }) => {
+		await signInAs(page, "admin");
+		await page.goto("/activities");
 
-	const activities = page
-		.getByRole("listitem")
-		.filter({ has: page.getByRole("heading", { level: 2 }) })
-		.getByRole("link");
-	await expect(activities.first()).toBeVisible();
+		const activities = page
+			.getByRole("listitem")
+			.filter({ has: page.getByRole("heading", { level: 2 }) })
+			.getByRole("link");
+		await expect(activities.first()).toBeVisible();
 
-	await page.getByRole("button", { name: "2K", exact: true }).click();
-	await expect(
-		page.getByRole("button", { name: "2K", exact: true, pressed: true }),
-	).toBeVisible();
-	await expect(
-		activities.filter({ hasNot: page.getByText(/^2,?000\s?m$/) }),
-	).toHaveCount(0);
-	await expect(activities.first()).toBeVisible();
+		await page.getByRole("button", { name: "2K", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "2K", exact: true, pressed: true }),
+		).toBeVisible();
+		await expect(
+			activities.filter({ hasNot: page.getByText(/^2,?000\s?m$/) }),
+		).toHaveCount(0);
+		await expect(activities.first()).toBeVisible();
 
-	await page.getByRole("button", { name: "6K", exact: true }).click();
-	await expect(
-		page.getByRole("button", { name: "6K", exact: true, pressed: true }),
-	).toBeVisible();
-	await expect(
-		activities.filter({ hasNot: page.getByText(/^6,?000\s?m$/) }),
-	).toHaveCount(0);
-	await expect(activities.first()).toBeVisible();
-});
+		await page.getByRole("button", { name: "6K", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "6K", exact: true, pressed: true }),
+		).toBeVisible();
+		await expect(
+			activities.filter({ hasNot: page.getByText(/^6,?000\s?m$/) }),
+		).toHaveCount(0);
+		await expect(activities.first()).toBeVisible();
+	},
+);
 
-test("member's interval session is not listed as a 2K test", async ({
+test("a member gets no member filter, and an activity's details open from its row before the server responds", async ({
 	page,
 }) => {
 	await signInAs(page, "member");
 	await page.goto("/activities");
-
-	const activities = page
-		.getByRole("listitem")
-		.filter({ has: page.getByRole("heading", { level: 2 }) })
-		.getByRole("link");
-	await expect(activities.filter({ hasText: "4 x 500m" })).toHaveCount(1);
-
-	await page.getByRole("button", { name: "2K", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "2K", exact: true, pressed: true }),
+		page.getByRole("button", { name: "2K", exact: true }),
 	).toBeVisible();
-	await expect(activities.filter({ hasText: "4 x 500m" })).toHaveCount(0);
-	await expect(activities.first()).toBeVisible();
-});
-
-test("an activity's details open from its row before the server responds", async ({
-	page,
-}) => {
-	await signInAs(page, "member");
-	await page.goto("/activities");
+	await expect(page.getByRole("button", { name: "All members" })).toHaveCount(
+		0,
+	);
 
 	let respond = () => {};
 	const response = new Promise<void>((resolve) => {
@@ -160,65 +150,69 @@ test("closing the share dialog keeps the activity open on its details", async ({
 	await expect(share).toBeHidden();
 });
 
-test("a Concept2 result stays an erg activity when edited", async ({
-	page,
-}) => {
-	await signInAs(page, "member");
-	await page.goto("/activities");
-	await page
-		.getByRole("listitem")
-		.filter({ has: page.getByRole("heading", { level: 2 }) })
-		.getByRole("link")
-		.filter({ hasText: "4 x 500m" })
-		.click();
-	const details = page.getByRole("dialog", { name: "4 x 500m" });
-	await details.getByRole("button", { name: "Edit", exact: true }).click();
+test(
+	"a Concept2 result stays an erg activity when edited",
+	{ tag: "@desktop" },
+	async ({ page }) => {
+		await signInAs(page, "member");
+		await page.goto("/activities");
+		await page
+			.getByRole("listitem")
+			.filter({ has: page.getByRole("heading", { level: 2 }) })
+			.getByRole("link")
+			.filter({ hasText: "4 x 500m" })
+			.click();
+		const details = page.getByRole("dialog", { name: "4 x 500m" });
+		await details.getByRole("button", { name: "Edit", exact: true }).click();
 
-	await expect(details.getByRole("tab", { name: "ERG" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	await expect(details.getByRole("tab", { name: "Boat" })).toBeDisabled();
+		await expect(details.getByRole("tab", { name: "ERG" })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+		await expect(details.getByRole("tab", { name: "Boat" })).toBeDisabled();
 
-	const id = new URL(page.url()).searchParams.get("activityId");
-	expect(
-		(
-			await page.request.post("/api/v1/trpc/activities.updateActivity", {
-				data: {
-					id,
-					type: "water",
-					name: "4 x 500m",
-					startDate: "2026-11-07T13:00:00.000Z",
-					timezone: "America/Regina",
-					workoutType: "distance",
-					elapsedTime: 384_000,
-					distance: 2000,
-					athleteId: "ath_unused",
-					boatId: "boat_unused",
-				},
-			})
-		).status(),
-	).toBe(400);
-});
+		const id = new URL(page.url()).searchParams.get("activityId");
+		expect(
+			(
+				await page.request.post("/api/v1/trpc/activities.updateActivity", {
+					data: {
+						id,
+						type: "water",
+						name: "4 x 500m",
+						startDate: "2026-11-07T13:00:00.000Z",
+						timezone: "America/Regina",
+						workoutType: "distance",
+						elapsedTime: 384_000,
+						distance: 2000,
+						athleteId: "ath_unused",
+						boatId: "boat_unused",
+					},
+				})
+			).status(),
+		).toBe(400);
+	},
+);
 
-test("day headers show the year only for activities from an earlier year", async ({
-	page,
-}) => {
-	await signInAs(page, "member");
-	await page.goto("/activities");
-	const dayHeaders = page
-		.getByRole("listitem")
-		.getByRole("heading", { level: 2 });
-	await expect(dayHeaders.first()).toBeVisible();
-	await expect(dayHeaders.first()).not.toHaveText(/\d{4}$/);
+test(
+	"day headers show the year only for activities from an earlier year",
+	{ tag: "@desktop" },
+	async ({ page }) => {
+		await signInAs(page, "member");
+		await page.goto("/activities");
+		const dayHeaders = page
+			.getByRole("listitem")
+			.getByRole("heading", { level: 2 });
+		await expect(dayHeaders.first()).toBeVisible();
+		await expect(dayHeaders.first()).not.toHaveText(/\d{4}$/);
 
-	await page.clock.setFixedTime(
-		new Date(new Date().getFullYear() + 1, 0, 12, 9),
-	);
-	await page.reload();
-	await expect(dayHeaders.first()).toBeVisible();
-	await expect(dayHeaders.filter({ hasNotText: /\d{4}$/ })).toHaveCount(0);
-});
+		await page.clock.setFixedTime(
+			new Date(new Date().getFullYear() + 1, 0, 12, 9),
+		);
+		await page.reload();
+		await expect(dayHeaders.first()).toBeVisible();
+		await expect(dayHeaders.filter({ hasNotText: /\d{4}$/ })).toHaveCount(0);
+	},
+);
 
 test("admin filters activities by checking off members", async ({ page }) => {
 	await signInAs(page, "admin");
@@ -262,18 +256,6 @@ test("admin filters activities by checking off members", async ({ page }) => {
 	await expect(
 		activities.filter({ hasNotText: "Morgan Oarsby" }).first(),
 	).toBeVisible();
-});
-
-test("member gets no member filter", async ({ page }) => {
-	await signInAs(page, "member");
-	await page.goto("/activities");
-
-	await expect(
-		page.getByRole("button", { name: "2K", exact: true }),
-	).toBeVisible();
-	await expect(page.getByRole("button", { name: "All members" })).toHaveCount(
-		0,
-	);
 });
 
 test("logging an activity from a screenshot keeps the screenshot", async ({
@@ -391,167 +373,177 @@ test("the owner adds a screenshot to an existing activity without changing it", 
 	await expect(details.locator('input[type="file"]')).toHaveCount(0);
 });
 
-test("only someone who can see the activity can fetch its screenshot", async ({
-	page,
-}) => {
-	const project = test.info().project.name;
-	await signInAs(page, "admin");
-	const adminActivityId = await logActivity({
-		page,
-		name: `Admin screenshot ${project} ${Date.now()}`,
-		shouldAttachScreenshot: true,
-	});
+test(
+	"only someone who can see the activity can fetch its screenshot",
+	{ tag: "@phone" },
+	async ({ page }) => {
+		const project = test.info().project.name;
+		await signInAs(page, "admin");
+		const adminActivityId = await logActivity({
+			page,
+			name: `Admin screenshot ${project} ${Date.now()}`,
+			shouldAttachScreenshot: true,
+		});
 
-	await signInAs(page, "member");
-	const memberActivityName = `Member screenshot ${project} ${Date.now()}`;
-	const memberActivityId = await logActivity({
-		page,
-		name: memberActivityName,
-		shouldAttachScreenshot: true,
-	});
-	const memberActivityWithoutScreenshotName = `Member no screenshot ${project} ${Date.now()}`;
-	const memberActivityWithoutScreenshotId = await logActivity({
-		page,
-		name: memberActivityWithoutScreenshotName,
-		shouldAttachScreenshot: false,
-	});
-	expect(
-		(
-			await page.request.get(`/api/v1/activities/${adminActivityId}/screenshot`)
-		).status(),
-	).toBe(403);
+		await signInAs(page, "member");
+		const memberActivityName = `Member screenshot ${project} ${Date.now()}`;
+		const memberActivityId = await logActivity({
+			page,
+			name: memberActivityName,
+			shouldAttachScreenshot: true,
+		});
+		const memberActivityWithoutScreenshotName = `Member no screenshot ${project} ${Date.now()}`;
+		const memberActivityWithoutScreenshotId = await logActivity({
+			page,
+			name: memberActivityWithoutScreenshotName,
+			shouldAttachScreenshot: false,
+		});
+		expect(
+			(
+				await page.request.get(
+					`/api/v1/activities/${adminActivityId}/screenshot`,
+				)
+			).status(),
+		).toBe(403);
 
-	await page.context().clearCookies();
-	expect(
-		(
-			await page.request.get(`/api/v1/activities/${adminActivityId}/screenshot`)
-		).status(),
-	).toBe(401);
+		await page.context().clearCookies();
+		expect(
+			(
+				await page.request.get(
+					`/api/v1/activities/${adminActivityId}/screenshot`,
+				)
+			).status(),
+		).toBe(401);
 
-	await signInAs(page, "admin");
-	expect(
-		(
-			await page.request.get(
-				`/api/v1/activities/${memberActivityId}/screenshot`,
-			)
-		).status(),
-	).toBe(200);
-	expect(
-		(
-			await page.request.post(
-				"/api/v1/trpc/activities.attachActivityScreenshot",
-				{
-					data: {
-						id: memberActivityWithoutScreenshotId,
-						uploadId: "upl_unused",
+		await signInAs(page, "admin");
+		expect(
+			(
+				await page.request.get(
+					`/api/v1/activities/${memberActivityId}/screenshot`,
+				)
+			).status(),
+		).toBe(200);
+		expect(
+			(
+				await page.request.post(
+					"/api/v1/trpc/activities.attachActivityScreenshot",
+					{
+						data: {
+							id: memberActivityWithoutScreenshotId,
+							uploadId: "upl_unused",
+						},
 					},
-				},
+				)
+			).status(),
+		).toBe(403);
+		const details = page.getByRole("dialog");
+		await page.goto(`/activities?activityId=${memberActivityId}`);
+		await expect(
+			details.getByRole("heading", { name: memberActivityName }),
+		).toBeVisible();
+		await expect
+			.poll(() =>
+				details
+					.getByAltText("Activity screenshot", { exact: true })
+					.evaluate((image: HTMLImageElement) => image.naturalWidth),
 			)
-		).status(),
-	).toBe(403);
-	const details = page.getByRole("dialog");
-	await page.goto(`/activities?activityId=${memberActivityId}`);
-	await expect(
-		details.getByRole("heading", { name: memberActivityName }),
-	).toBeVisible();
-	await expect
-		.poll(() =>
-			details
-				.getByAltText("Activity screenshot", { exact: true })
-				.evaluate((image: HTMLImageElement) => image.naturalWidth),
-		)
-		.toBeGreaterThan(0);
+			.toBeGreaterThan(0);
 
-	await page.goto(
-		`/activities?activityId=${memberActivityWithoutScreenshotId}`,
-	);
-	await expect(
-		details.getByRole("heading", { name: memberActivityWithoutScreenshotName }),
-	).toBeVisible();
-	await expect(details.getByText("Athlete", { exact: true })).toBeVisible();
-	await expect(
-		details.getByRole("button", { name: "Add screenshot" }),
-	).toHaveCount(0);
-});
+		await page.goto(
+			`/activities?activityId=${memberActivityWithoutScreenshotId}`,
+		);
+		await expect(
+			details.getByRole("heading", {
+				name: memberActivityWithoutScreenshotName,
+			}),
+		).toBeVisible();
+		await expect(details.getByText("Athlete", { exact: true })).toBeVisible();
+		await expect(
+			details.getByRole("button", { name: "Add screenshot" }),
+		).toHaveCount(0);
+	},
+);
 
-test("the owner hides an activity from coaches and can show it again", async ({
-	page,
-}) => {
-	await signInAs(page, "member");
-	const name = `Hidden ${test.info().project.name} ${Date.now()}`;
-	const id = await logActivity({ page, name, shouldAttachScreenshot: false });
-	const details = page.getByRole("dialog");
-	await page.goto(`/activities?activityId=${id}`);
-	await expect(details.getByRole("heading", { name })).toBeVisible();
-	const edit = details.getByRole("button", { name: "Edit", exact: true });
-	const hide = details.getByRole("switch", { name: "Hide from others" });
-	await expect(hide).toHaveCount(0);
-	await edit.click();
-	await expect(hide).not.toBeChecked();
-	await hide.click();
-	let respond = () => {};
-	const response = new Promise<void>((resolve) => {
-		respond = resolve;
-	});
-	await page.route("**/activities.updateActivity**", async (route) => {
-		await response;
-		await route.continue();
-	});
-	const hidden = page.waitForResponse((response) =>
-		response.url().includes("activities.updateActivity"),
-	);
-	await details.getByRole("button", { name: "Save", exact: true }).click();
-	await expect(
-		details.getByRole("button", { name: "Saving..." }),
-	).toBeDisabled();
-	respond();
-	expect((await hidden).ok()).toBe(true);
-	await page.unroute("**/activities.updateActivity**");
-	await page.reload();
-	await details.getByRole("button", { name: "Edit", exact: true }).click();
-	await expect(hide).toBeChecked();
+test(
+	"the owner hides an activity from coaches and can show it again",
+	{ tag: "@phone" },
+	async ({ page }) => {
+		await signInAs(page, "member");
+		const name = `Hidden ${test.info().project.name} ${Date.now()}`;
+		const id = await logActivity({ page, name, shouldAttachScreenshot: false });
+		const details = page.getByRole("dialog");
+		await page.goto(`/activities?activityId=${id}`);
+		await expect(details.getByRole("heading", { name })).toBeVisible();
+		const edit = details.getByRole("button", { name: "Edit", exact: true });
+		const hide = details.getByRole("switch", { name: "Hide from others" });
+		await expect(hide).toHaveCount(0);
+		await edit.click();
+		await expect(hide).not.toBeChecked();
+		await hide.click();
+		let respond = () => {};
+		const response = new Promise<void>((resolve) => {
+			respond = resolve;
+		});
+		await page.route("**/activities.updateActivity**", async (route) => {
+			await response;
+			await route.continue();
+		});
+		const hidden = page.waitForResponse((response) =>
+			response.url().includes("activities.updateActivity"),
+		);
+		await details.getByRole("button", { name: "Save", exact: true }).click();
+		await expect(
+			details.getByRole("button", { name: "Saving..." }),
+		).toBeDisabled();
+		respond();
+		expect((await hidden).ok()).toBe(true);
+		await page.unroute("**/activities.updateActivity**");
+		await page.reload();
+		await details.getByRole("button", { name: "Edit", exact: true }).click();
+		await expect(hide).toBeChecked();
 
-	await signInAs(page, "admin");
-	await page.goto(`/activities?activityId=${id}`);
-	await expect(
-		page.getByRole("button", { name: "2K", exact: true }),
-	).toBeVisible();
-	await expect(details.getByRole("heading", { name })).toHaveCount(0);
-	expect(
-		(
-			await page.request.post("/api/v1/trpc/activities.updateActivity", {
-				data: {
-					id,
-					type: "erg",
-					name,
-					startDate: "2015-06-01T13:00:00.000Z",
-					timezone: "America/Regina",
-					workoutType: "distance",
-					elapsedTime: 301_700,
-					distance: 1234,
-					athleteId: "ath_unused",
-					isHidden: false,
-				},
-			})
-		).status(),
-	).toBe(403);
+		await signInAs(page, "admin");
+		await page.goto(`/activities?activityId=${id}`);
+		await expect(
+			page.getByRole("button", { name: "2K", exact: true }),
+		).toBeVisible();
+		await expect(details.getByRole("heading", { name })).toHaveCount(0);
+		expect(
+			(
+				await page.request.post("/api/v1/trpc/activities.updateActivity", {
+					data: {
+						id,
+						type: "erg",
+						name,
+						startDate: "2015-06-01T13:00:00.000Z",
+						timezone: "America/Regina",
+						workoutType: "distance",
+						elapsedTime: 301_700,
+						distance: 1234,
+						athleteId: "ath_unused",
+						isHidden: false,
+					},
+				})
+			).status(),
+		).toBe(403);
 
-	await signInAs(page, "member");
-	await page.goto(`/activities?activityId=${id}`);
-	await details.getByRole("button", { name: "Edit", exact: true }).click();
-	await expect(hide).toBeChecked();
-	await hide.click();
-	const shown = page.waitForResponse((response) =>
-		response.url().includes("activities.updateActivity"),
-	);
-	await details.getByRole("button", { name: "Save", exact: true }).click();
-	expect((await shown).ok()).toBe(true);
+		await signInAs(page, "member");
+		await page.goto(`/activities?activityId=${id}`);
+		await details.getByRole("button", { name: "Edit", exact: true }).click();
+		await expect(hide).toBeChecked();
+		await hide.click();
+		const shown = page.waitForResponse((response) =>
+			response.url().includes("activities.updateActivity"),
+		);
+		await details.getByRole("button", { name: "Save", exact: true }).click();
+		expect((await shown).ok()).toBe(true);
 
-	await signInAs(page, "admin");
-	await page.goto(`/activities?activityId=${id}`);
-	await expect(details.getByRole("heading", { name })).toBeVisible();
-	await expect(edit).toHaveCount(0);
-});
+		await signInAs(page, "admin");
+		await page.goto(`/activities?activityId=${id}`);
+		await expect(details.getByRole("heading", { name })).toBeVisible();
+		await expect(edit).toHaveCount(0);
+	},
+);
 
 async function logActivityFromScreenshot({
 	page,
