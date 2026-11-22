@@ -5,12 +5,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatEventDay } from "@/lib/schedule/event-labels";
-import { withErrorToast } from "@/lib/toast";
-import { trpcClient } from "@/lib/trpc/client";
 import type { ScheduleEvent } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { NudgeDialog } from "@/scenes/schedule/ScheduleScene/components";
 import { formatNudgeResult } from "@/scenes/schedule/ScheduleScene/utils/formatNudgeResult";
+import type { ClubWeek } from "../../hooks/useClubWeek";
 import { ClubWeekCard } from "./ClubWeekCard";
 
 const STATS = [
@@ -25,6 +24,8 @@ interface AvailabilityCardProps {
 	today: string;
 	isAdmin: boolean;
 	responsesHref: (eventId: string) => string;
+	noReply: ClubWeek["noReply"];
+	onNudge: ClubWeek["nudge"];
 }
 
 export const AvailabilityCard = ({
@@ -32,14 +33,11 @@ export const AvailabilityCard = ({
 	today,
 	isAdmin,
 	responsesHref,
+	noReply,
+	onNudge,
 }: AvailabilityCardProps) => {
 	const [isNudging, setIsNudging] = useState(false);
-	const nudge = trpcClient.schedule.nudge.useMutation();
-	const responsesQuery = trpcClient.schedule.getResponses.useQuery(
-		{ eventId: event?.id ?? "" },
-		{ enabled: !!event?.counts.noReply },
-	);
-	const noReplyNames = (responsesQuery.data?.noReply ?? [])
+	const noReplyNames = noReply
 		.map((person) => person.name.split(" ")[0])
 		.join(", ");
 
@@ -122,9 +120,7 @@ export const AvailabilityCard = ({
 					event={event}
 					onClose={() => setIsNudging(false)}
 					onConfirm={async (eventId) => {
-						const { count, reached } = await withErrorToast(
-							nudge.mutateAsync({ eventId }),
-						);
+						const { count, reached } = await onNudge(eventId);
 						toast.success(formatNudgeResult(count, reached));
 					}}
 				/>

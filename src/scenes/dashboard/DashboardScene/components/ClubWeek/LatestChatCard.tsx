@@ -3,7 +3,6 @@ import { InitialsAvatar } from "@/components/chat/initials-avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/lib/routes";
-import { trpcClient } from "@/lib/trpc/client";
 import type { ChatMessage } from "@/lib/trpc/types";
 import {
 	formatMessageTime,
@@ -11,22 +10,18 @@ import {
 } from "@/scenes/chat/ChatScene/utils/messageFormatting";
 import { ClubWeekCard } from "./ClubWeekCard";
 
-const SHOWN_MESSAGES = 3;
-
 interface LatestChatCardProps {
 	channelId: string | undefined;
+	messages: ChatMessage[];
+	isLoading: boolean;
 }
 
-export const LatestChatCard = ({ channelId }: LatestChatCardProps) => {
-	const messagesQuery = trpcClient.chat.getMessages.useQuery(
-		{ channelId: channelId ?? "", limit: SHOWN_MESSAGES * 2 },
-		{ enabled: !!channelId },
-	);
+export const LatestChatCard = ({
+	channelId,
+	messages,
+	isLoading,
+}: LatestChatCardProps) => {
 	const chatHref = channelId ? routes.chat.channel(channelId) : undefined;
-	const messages = (messagesQuery.data?.data ?? [])
-		.filter((message) => !message.deleted)
-		.slice(0, SHOWN_MESSAGES)
-		.reverse();
 
 	return (
 		<ClubWeekCard
@@ -47,7 +42,7 @@ export const LatestChatCard = ({ channelId }: LatestChatCardProps) => {
 		>
 			<LatestMessages
 				chatHref={chatHref}
-				isLoading={messagesQuery.isPending}
+				isLoading={isLoading}
 				messages={messages}
 			/>
 		</ClubWeekCard>

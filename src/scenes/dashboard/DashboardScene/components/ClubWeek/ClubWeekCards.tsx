@@ -3,21 +3,20 @@
 import type { ReactNode } from "react";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { getClubToday } from "@/lib/schedule/week";
-import { withErrorToast } from "@/lib/toast";
-import { trpcClient } from "@/lib/trpc/client";
-import type { RsvpStatus } from "@/schemas";
+import type { ChatChannels } from "@/lib/trpc/types";
+import type { ClubWeek } from "../../hooks/useClubWeek";
 import { AvailabilityCard } from "./AvailabilityCard";
 import { LatestChatCard } from "./LatestChatCard";
 import { MessagesCard } from "./MessagesCard";
 import { NeedsReplyCard } from "./NeedsReplyCard";
 import { UpNextCard } from "./UpNextCard";
 
-// The next event plus the three "later" rows under it.
-const UPCOMING_LIMIT = 4;
-
 interface ClubWeekCardsProps {
+	clubWeek: ClubWeek;
 	/** Scope to one group; leave out for everything the viewer is in. */
 	group?: { id: string; channelId: string | undefined };
+	/** The viewer's chats, listed when the cards are not scoped to a group. */
+	myChannels?: ChatChannels;
 	scheduleHref: string;
 	/** Shows the next training's availability, linking to its responses. */
 	responsesHref?: (eventId: string) => string;
@@ -25,70 +24,49 @@ interface ClubWeekCardsProps {
 }
 
 export const ClubWeekCards = ({
+	clubWeek,
 	group,
+	myChannels,
 	scheduleHref,
 	responsesHref,
 	children,
 }: ClubWeekCardsProps) => {
 	const { isAdmin } = useCurrentUser();
-	const utils = trpcClient.useUtils();
 	const today = getClubToday();
-	const upcomingQuery = trpcClient.schedule.getUpcoming.useQuery({
-		limit: UPCOMING_LIMIT,
-		groupId: group?.id,
-	});
-	const rsvp = trpcClient.schedule.rsvp.useMutation();
-	const onRsvp = async (eventId: string, status: RsvpStatus) => {
-		const result = await withErrorToast(rsvp.mutateAsync({ eventId, status }));
-		await utils.schedule.getUpcoming.invalidate();
-		return result.status;
-	};
 
 	return (
 		<div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] items-start gap-3">
 			<UpNextCard
-				events={upcomingQuery.data?.next}
+				events={clubWeek.upcoming?.next}
 				today={today}
 				scheduleHref={scheduleHref}
-				onRsvp={onRsvp}
+				onRsvp={clubWeek.rsvp}
 			/>
 			<NeedsReplyCard
-				events={upcomingQuery.data?.pendingRsvps}
+				events={clubWeek.upcoming?.pendingRsvps}
 				today={today}
-				onRsvp={onRsvp}
+				onRsvp={clubWeek.rsvp}
 			/>
 			{group ? (
-				<LatestChatCard channelId={group.channelId} />
+				<LatestChatCard
+					channelId={group.channelId}
+					messages={clubWeek.latestMessages}
+					isLoading={clubWeek.isLoadingMessages}
+				/>
 			) : (
-				<MyMessagesCard />
+				<MessagesCard channels={myChannels} />
 			)}
 			{responsesHref && (
 				<AvailabilityCard
-					event={upcomingQuery.data?.nextTraining}
+					event={clubWeek.upcoming?.nextTraining}
 					today={today}
 					isAdmin={isAdmin}
 					responsesHref={responsesHref}
+					noReply={clubWeek.noReply}
+					onNudge={clubWeek.nudge}
 				/>
 			)}
 			{children}
 		</div>
 	);
-};
-
-// Everyone, the viewer's groups and their direct messages.
-const MyMessagesCard = () => {
-	const channelsQuery = trpcClient.chat.getChannels.useQuery();
-	const myGroupsQuery = trpcClient.groups.getMyGroups.useQuery();
-	const myGroupIds = new Set(
-		(myGroupsQuery.data?.data ?? []).map((group) => group.id),
-	);
-	const channels =
-		channelsQuery.data && myGroupsQuery.data
-			? channelsQuery.data.data.filter((channel) =>
-					channel.kind === "group"
-						? !!channel.groupId && myGroupIds.has(channel.groupId)
-						: !channel.hasOnlyFormerMembers,
-				)
-			: undefined;
-	return <MessagesCard channels={channels} />;
 };

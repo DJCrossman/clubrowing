@@ -22,6 +22,7 @@ import {
 } from "@/scenes/dashboard/DashboardScene/components";
 import { AnalyticMetricCards } from "@/scenes/dashboard/DashboardScene/components/AnalyticMetricCards/AnalyticMetricCards";
 import { AnalyticMetricCardsSkeleton } from "@/scenes/dashboard/DashboardScene/components/AnalyticMetricCards/AnalyticMetricCardsSkeleton";
+import { useClubWeek } from "./hooks/useClubWeek";
 
 export const DashboardScene = () => {
 	const [period, setPeriod] = useState<
@@ -30,6 +31,7 @@ export const DashboardScene = () => {
 
 	const { user, hasAthlete } = useCurrentUser();
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
+	const [clubWeekGroupId, setClubWeekGroupId] = useState<string | null>(null);
 	const notifications = useNotifications({ enabled: hasAthlete });
 	const analyticsQuery = trpcClient.analytics.getAnalytics.useQuery();
 	const groupsQuery = trpcClient.groups.getGroups.useQuery();
@@ -37,6 +39,29 @@ export const DashboardScene = () => {
 		{ period },
 		{ placeholderData: keepPreviousData },
 	);
+	const myGroupsQuery = trpcClient.groups.getMyGroups.useQuery();
+	const channelsQuery = trpcClient.chat.getChannels.useQuery();
+	const myGroups = myGroupsQuery.data?.data ?? [];
+	const clubWeekGroup = myGroups.find(({ id }) => id === clubWeekGroupId);
+	const clubWeekChannelId =
+		clubWeekGroup &&
+		channelsQuery.data?.data.find(
+			(channel) => channel.groupId === clubWeekGroup.id,
+		)?.id;
+	const clubWeek = useClubWeek({
+		groupId: clubWeekGroup?.id,
+		channelId: clubWeekChannelId,
+	});
+	const myGroupIds = new Set(myGroups.map((group) => group.id));
+	// Everyone, the viewer's groups and their direct messages.
+	const myChannels =
+		channelsQuery.data && myGroupsQuery.data
+			? channelsQuery.data.data.filter((channel) =>
+					channel.kind === "group"
+						? !!channel.groupId && myGroupIds.has(channel.groupId)
+						: !channel.hasOnlyFormerMembers,
+				)
+			: undefined;
 	const profileAthleteQuery = trpcClient.athletes.getCurrentAthlete.useQuery(
 		undefined,
 		{ enabled: isProfileOpen },
@@ -83,7 +108,14 @@ export const DashboardScene = () => {
 									data={analyticsQuery.data.analyticMetrics}
 								/>
 							) : null}
-							<ClubWeekSection />
+							<ClubWeekSection
+								clubWeek={clubWeek}
+								myGroups={myGroups}
+								group={clubWeekGroup}
+								channelId={clubWeekChannelId}
+								myChannels={myChannels}
+								onGroupChange={setClubWeekGroupId}
+							/>
 							{analyticsQuery.isPending ? (
 								<div className="px-4 lg:px-6">
 									<MetersTimeSeriesChartSkeleton />

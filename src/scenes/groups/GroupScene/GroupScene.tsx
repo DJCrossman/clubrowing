@@ -14,6 +14,7 @@ import {
 	MetersTimeSeriesChart,
 	MetersTimeSeriesChartSkeleton,
 } from "@/scenes/dashboard/DashboardScene/components";
+import { useClubWeek } from "@/scenes/dashboard/DashboardScene/hooks/useClubWeek";
 import { GroupMembersCard, GroupShell } from "./components";
 
 interface GroupSceneProps {
@@ -27,6 +28,11 @@ export const GroupScene = ({ group }: GroupSceneProps) => {
 		"three_months" | "thirty_days" | "seven_days"
 	>("three_months");
 	const groupsQuery = trpcClient.groups.getGroups.useQuery();
+	const clubWeek = useClubWeek({
+		groupId: group.id,
+		channelId: group.channelId,
+		isResponsesEnabled: true,
+	});
 	const metersQuery = trpcClient.analytics.getGroupMeters.useQuery({
 		id: group.id,
 	});
@@ -45,6 +51,7 @@ export const GroupScene = ({ group }: GroupSceneProps) => {
 			<div className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="px-4 lg:px-6">
 					<ClubWeekCards
+						clubWeek={clubWeek}
 						group={{ id: group.id, channelId: group.channelId }}
 						scheduleHref={scheduleRoutes.list()}
 						responsesHref={(eventId) => scheduleRoutes.view({ id: eventId })}
