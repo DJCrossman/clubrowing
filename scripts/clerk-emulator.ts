@@ -2,19 +2,42 @@
 
 /**
  * Stand-in for the Clerk backend API on a dummy instance, so it never talks to
- * a real Clerk. Serves at CLERK_API_URL with the dummy organization and every
- * dummy athlete as a member. Started by docker/dev-entrypoint.sh in the app
+ * a real Clerk. Serves at CLERK_API_URL with the dummy organization (the e2e
+ * admin its only member) and every dummy athlete tied to it by public
+ * metadata. Started by docker/dev-entrypoint.sh in the app
  * container; its signing key changes on every start, so it shares the
  * container's lifecycle with `next dev`.
  */
 
 import { clerkPlugin, getClerkStore, seedFromConfig } from "@emulators/clerk";
 import { createServer, serve } from "@emulators/core";
+import { z } from "zod";
 import {
 	ATHLETES,
 	DUMMY_ORGANIZATION_ID,
 	E2E_ADMIN_USER_ID,
 } from "./lib/dummy-data";
+
+interface ApplicationInvitation {
+	object: "invitation";
+	id: string;
+	email_address: string;
+	public_metadata: Record<string, unknown>;
+	revoked: boolean;
+	status: "pending" | "revoked";
+	url: string;
+	expires_at: number;
+	created_at: number;
+	updated_at: number;
+}
+
+const createInvitationBodySchema = z.object({
+	email_address: z.string(),
+	public_metadata: z.record(z.string(), z.unknown()).default({}),
+	expires_in_days: z.number().default(30),
+});
+
+const invitations: ApplicationInvitation[] = [];
 
 const apiUrl = process.env.CLERK_API_URL;
 if (!apiUrl) {
@@ -73,6 +96,61 @@ const { app, store } = createServer(
 					});
 				return c.json({ data, total_count: data.length });
 			});
+			// @clerk/backend's application invitations; the emulator only has organization ones.
+			app.get("/v1/invitations", (c) => {
+				const status = c.req.query("status");
+				const offset = Number(c.req.query("offset") ?? 0);
+				const limit = Number(c.req.query("limit") ?? 10);
+				const matching = invitations.filter(
+					(invitation) => !status || invitation.status === status,
+				);
+				return c.json({
+					data: matching.slice(offset, offset + limit),
+					total_count: matching.length,
+				});
+			});
+			app.post("/v1/invitations", async (c) => {
+				const body = createInvitationBodySchema.parse(await c.req.json());
+				const now = Date.now();
+				const id = `inv_${crypto.randomUUID().replaceAll("-", "")}`;
+				const invitation: ApplicationInvitation = {
+					object: "invitation",
+					id,
+					email_address: body.email_address,
+					public_metadata: body.public_metadata,
+					revoked: false,
+					status: "pending",
+					url: `${baseUrl}/v1/tickets/accept?ticket=${id}`,
+					expires_at: now + body.expires_in_days * 24 * 60 * 60 * 1000,
+					created_at: now,
+					updated_at: now,
+				};
+				invitations.push(invitation);
+				return c.json(invitation);
+			});
+			app.post("/v1/invitations/:invitationId/revoke", (c) => {
+				const invitation = invitations.find(
+					({ id }) => id === c.req.param("invitationId"),
+				);
+				if (!invitation) {
+					return c.json(
+						{
+							errors: [
+								{
+									code: "resource_not_found",
+									message: "not found",
+									long_message: "Invitation not found",
+								},
+							],
+						},
+						404,
+					);
+				}
+				invitation.revoked = true;
+				invitation.status = "revoked";
+				invitation.updated_at = Date.now();
+				return c.json(invitation);
+			});
 		},
 	},
 	{
@@ -88,15 +166,15 @@ seedFromConfig(store, baseUrl, {
 		email_addresses: [email],
 		first_name: firstName,
 		last_name: lastName,
+		public_metadata: { defaultOrganizationId: DUMMY_ORGANIZATION_ID },
 	})),
 	organizations: [
 		{
 			clerk_id: DUMMY_ORGANIZATION_ID,
 			name: "Dummy Rowing Club",
-			members: ATHLETES.map(({ userId, email }) => ({
-				email,
-				role: userId === E2E_ADMIN_USER_ID ? "admin" : "member",
-			})),
+			members: ATHLETES.filter(
+				({ userId }) => userId === E2E_ADMIN_USER_ID,
+			).map(({ email }) => ({ email, role: "admin" })),
 		},
 	],
 });

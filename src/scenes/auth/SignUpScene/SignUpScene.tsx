@@ -1,6 +1,6 @@
 "use client";
 
-import { useClerk, useSignUp } from "@clerk/nextjs";
+import { useSignUp } from "@clerk/nextjs";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -33,7 +33,6 @@ export const SignUpScene = ({
 }) => {
 	const router = useRouter();
 	const { isLoaded, signUp, setActive } = useSignUp();
-	const clerk = useClerk();
 
 	const [phase, setPhase] = useState<Phase>(
 		invitationTicket || isCodeVerified ? "account" : "code",
@@ -47,19 +46,13 @@ export const SignUpScene = ({
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 
-	// Step 3: sign in the created session, create the Regina Rowing Club
-	// membership (Clerk requires org membership), activate it, then onboard.
+	// Step 3: sign in the created session, then onboard.
 	const finishSignup = async (sessionId: string | null) => {
 		setPhase("finishing");
 		try {
 			await setActive?.({ session: sessionId });
-			await fetch("/api/v1/auth/join-default-org", { method: "POST" });
-			await clerk.session?.reload();
-			await clerk.setActive({
-				organization: envVars.NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID,
-			});
 		} catch {
-			// The onboarding page + overlay recover any incomplete step.
+			// The onboarding page sends a session that didn't start to /login.
 		}
 		router.replace("/onboarding");
 	};

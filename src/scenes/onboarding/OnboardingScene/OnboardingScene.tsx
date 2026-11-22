@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AccountSetupOverlay } from "@/components/auth/account-setup-overlay";
 import { useNotifications } from "@/hooks/useNotifications";
 import { generateQueryKey } from "@/lib/keygen";
 import { trpcClient } from "@/lib/trpc/client";
@@ -140,7 +139,6 @@ export function OnboardingScene({
 
 	return (
 		<div className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center p-6">
-			<AccountSetupOverlay />
 			<div className="mb-8">
 				<OnboardingProgress steps={steps} currentStepId={currentStepId} />
 			</div>

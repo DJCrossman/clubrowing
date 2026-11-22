@@ -33,3 +33,30 @@ test("an admin's details show an Admin badge under their name", async ({
 			.getByText("Admin", { exact: true }),
 	).toBeVisible();
 });
+
+test("an admin invites a member by email, then revokes the invitation", async ({
+	page,
+}) => {
+	await signInAs(page, "admin");
+	await page.goto("/members");
+	const email = `invitee-${test.info().project.name}-${Date.now()}@example.com`;
+
+	await page.getByRole("button", { name: /^Invite members?$/ }).click();
+	const dialog = page.getByRole("dialog", { name: "Invite members" });
+	await dialog.getByLabel("Emails").fill(email);
+	await dialog.getByRole("button", { name: "Send invitations" }).click();
+	await expect(dialog).toBeHidden();
+
+	await page.getByRole("searchbox", { name: "Search members" }).fill(email);
+	// Inside main, so the "Invitation sent" toast doesn't match too.
+	const main = page.getByRole("main");
+	const row = main
+		.getByRole("row")
+		.or(main.getByRole("listitem"))
+		.filter({ hasText: email });
+	await expect(row).toContainText("Invited");
+
+	await row.getByRole("button", { name: `More actions for ${email}` }).click();
+	await page.getByRole("menuitem", { name: "Revoke invitation" }).click();
+	await expect(row).toHaveCount(0);
+});

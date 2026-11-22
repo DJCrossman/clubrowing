@@ -1,17 +1,21 @@
 import { clerkClient } from "@clerk/nextjs/server";
+import { z } from "zod";
 import { envVars } from "@/lib/env";
 
 /** A Clerk organization role, e.g. "org:admin" | "org:member", or null when not a member. */
 export type DefaultOrgRole = string | null;
 
-/** Whether the user is in the default organization, and if not, why. */
-export type DefaultOrgJoinOutcome = "member" | "full" | "failed";
+/** The club a user or invitation belongs to, kept in Clerk's public metadata. */
+export const clubMetadataSchema = z.object({
+	defaultOrganizationId: z.string().optional().catch(undefined),
+});
 
 const ROLE_TTL_MS = 60_000;
 const roleCache = new Map<
 	string,
 	{ role: DefaultOrgRole; expiresAt: number }
 >();
+const defaultOrganizationCache = new Map<string, string>();
 
 export function getDefaultOrganizationId(): string {
 	return envVars.NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID;
@@ -55,40 +59,28 @@ export async function isDefaultOrgAdmin(userId: string): Promise<boolean> {
 }
 
 /**
- * Ensure the user is a member of the default organization. Never creates a new
- * organization — self-signups join the shared club org as a plain member.
- * Resolves to "full" when the organization has no member spots left.
+ * The user's club, from their `defaultOrganizationId` metadata, set to the
+ * default organization when missing. Only admins join the organization itself
+ * (a free one holds 20 members); this metadata ties everyone else to the club.
  */
-export async function ensureDefaultOrganizationMembership(
+export async function ensureDefaultOrganization(
 	userId: string,
-): Promise<DefaultOrgJoinOutcome> {
-	if (await getDefaultOrgRole(userId)) {
-		return "member";
+): Promise<string> {
+	const cached = defaultOrganizationCache.get(userId);
+	if (cached) {
+		return cached;
 	}
 	const client = await clerkClient();
-	try {
-		await client.organizations.createOrganizationMembership({
-			organizationId: getDefaultOrganizationId(),
-			userId,
-			role: "org:member",
+	const user = await client.users.getUser(userId);
+	const { defaultOrganizationId } = clubMetadataSchema.parse(
+		user.publicMetadata,
+	);
+	const organizationId = defaultOrganizationId ?? getDefaultOrganizationId();
+	if (!defaultOrganizationId) {
+		await client.users.updateUserMetadata(userId, {
+			publicMetadata: { defaultOrganizationId: organizationId },
 		});
-		cacheRole(userId, "org:member");
-		return "member";
-	} catch (error) {
-		// Concurrent requests may both try to add the membership; drop the cached
-		// miss so the next lookup reflects reality.
-		console.error("Failed to add default organization membership:", error);
-		roleCache.delete(userId);
-		if (await getDefaultOrgRole(userId).catch(() => null)) {
-			return "member";
-		}
-		// Clerk counts pending invitations toward the organization's member limit.
-		if (
-			(error as { errors?: { code?: string }[] })?.errors?.[0]?.code ===
-			"organization_membership_quota_exceeded"
-		) {
-			return "full";
-		}
-		return "failed";
 	}
+	defaultOrganizationCache.set(userId, organizationId);
+	return organizationId;
 }

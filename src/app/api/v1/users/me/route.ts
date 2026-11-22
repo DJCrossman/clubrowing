@@ -1,7 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createServerCaller } from "@/server/caller";
-import { ensureDefaultOrganizationMembership } from "@/server/clerk/default-organization";
+import { ensureDefaultOrganization } from "@/server/clerk/default-organization";
 
 export async function GET() {
 	try {
@@ -11,22 +11,18 @@ export async function GET() {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		await ensureDefaultOrganizationMembership(session.userId);
+		const organizationId = await ensureDefaultOrganization(session.userId);
 
 		const caller = await createServerCaller();
 		const client = await clerkClient();
 		const [result, organization] = await Promise.all([
 			caller.users.getCurrentUser(),
-			session.orgId
-				? client.organizations.getOrganization({
-						organizationId: session.orgId,
-					})
-				: null,
+			client.organizations.getOrganization({ organizationId }),
 		]);
 
 		return NextResponse.json({
 			...result,
-			organization: organization && {
+			organization: {
 				name: organization.name,
 				logoUrl: organization.hasImage ? organization.imageUrl : null,
 			},

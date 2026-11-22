@@ -1,108 +1,61 @@
-import { ClerkAPIResponseError } from "@clerk/shared/error";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const getOrganizationMembershipList = vi.fn();
-const createOrganizationMembership = vi.fn();
+const getUser = vi.fn();
+const updateUserMetadata = vi.fn();
 
 vi.mock("@/lib/env", () => ({
 	envVars: { NEXT_PUBLIC_DEFAULT_ORGANIZATION_ID: "org_club" },
 }));
 vi.mock("@clerk/nextjs/server", () => ({
 	clerkClient: async () => ({
-		users: { getOrganizationMembershipList },
-		organizations: { createOrganizationMembership },
+		users: { getUser, updateUserMetadata },
 	}),
 }));
 
-const { ensureDefaultOrganizationMembership } = await import(
-	"./default-organization"
-);
-
-const notAMember = { data: [] };
-const clubMember = {
-	data: [{ organization: { id: "org_club" }, role: "org:member" }],
-};
+const { ensureDefaultOrganization } = await import("./default-organization");
 
 beforeEach(() => {
-	getOrganizationMembershipList.mockReset();
-	createOrganizationMembership.mockReset();
-	vi.spyOn(console, "error").mockImplementation(() => {});
+	getUser.mockReset();
+	updateUserMetadata.mockReset();
 });
 
-describe("ensureDefaultOrganizationMembership", () => {
-	it("returns member without creating a membership when the user is already in the club", async () => {
-		getOrganizationMembershipList.mockResolvedValue(clubMember);
+describe("ensureDefaultOrganization", () => {
+	it("returns the user's default organization without changing it", async () => {
+		getUser.mockResolvedValue({
+			publicMetadata: { defaultOrganizationId: "org_other" },
+		});
 
-		expect(await ensureDefaultOrganizationMembership("user_existing")).toBe(
-			"member",
-		);
-		expect(createOrganizationMembership).not.toHaveBeenCalled();
+		expect(await ensureDefaultOrganization("user_tagged")).toBe("org_other");
+		expect(updateUserMetadata).not.toHaveBeenCalled();
 	});
 
-	it("returns member once the membership is created", async () => {
-		getOrganizationMembershipList.mockResolvedValue(notAMember);
-		createOrganizationMembership.mockResolvedValue({});
+	it("gives a user without one the club's organization", async () => {
+		getUser.mockResolvedValue({ publicMetadata: {} });
 
-		expect(await ensureDefaultOrganizationMembership("user_created")).toBe(
-			"member",
-		);
+		expect(await ensureDefaultOrganization("user_new")).toBe("org_club");
+		expect(updateUserMetadata).toHaveBeenCalledWith("user_new", {
+			publicMetadata: { defaultOrganizationId: "org_club" },
+		});
 	});
 
-	it("returns full when the club has reached its member limit", async () => {
-		getOrganizationMembershipList.mockResolvedValue(notAMember);
-		createOrganizationMembership.mockRejectedValue(
-			new ClerkAPIResponseError("Forbidden", {
-				status: 403,
-				data: [
-					{
-						code: "organization_membership_quota_exceeded",
-						message: "Membership quota exceeded",
-					},
-				],
-			}),
-		);
+	it("replaces a default organization that isn't a string", async () => {
+		getUser.mockResolvedValue({
+			publicMetadata: { defaultOrganizationId: 42 },
+		});
 
-		expect(await ensureDefaultOrganizationMembership("user_full")).toBe("full");
+		expect(await ensureDefaultOrganization("user_garbled")).toBe("org_club");
+		expect(updateUserMetadata).toHaveBeenCalledWith("user_garbled", {
+			publicMetadata: { defaultOrganizationId: "org_club" },
+		});
 	});
 
-	it("returns failed when the membership cannot be created for another reason", async () => {
-		getOrganizationMembershipList.mockResolvedValue(notAMember);
-		createOrganizationMembership.mockRejectedValue(
-			new ClerkAPIResponseError("Unprocessable", {
-				status: 422,
-				data: [{ code: "form_param_invalid", message: "Invalid" }],
-			}),
-		);
+	it("looks the user up once", async () => {
+		getUser.mockResolvedValue({ publicMetadata: {} });
 
-		expect(await ensureDefaultOrganizationMembership("user_failed")).toBe(
-			"failed",
-		);
-	});
+		await ensureDefaultOrganization("user_repeat");
+		await ensureDefaultOrganization("user_repeat");
 
-	it("returns failed instead of throwing when the membership cannot be looked up again", async () => {
-		getOrganizationMembershipList
-			.mockResolvedValueOnce(notAMember)
-			.mockRejectedValueOnce(new Error("unreachable"));
-		createOrganizationMembership.mockRejectedValue(new Error("unreachable"));
-
-		expect(await ensureDefaultOrganizationMembership("user_unconfirmed")).toBe(
-			"failed",
-		);
-	});
-
-	it("returns member when a concurrent request added the membership first", async () => {
-		getOrganizationMembershipList
-			.mockResolvedValueOnce(notAMember)
-			.mockResolvedValueOnce(clubMember);
-		createOrganizationMembership.mockRejectedValue(
-			new ClerkAPIResponseError("Unprocessable", {
-				status: 422,
-				data: [{ code: "already_a_member_in_organization", message: "" }],
-			}),
-		);
-
-		expect(await ensureDefaultOrganizationMembership("user_concurrent")).toBe(
-			"member",
-		);
+		expect(getUser).toHaveBeenCalledTimes(1);
+		expect(updateUserMetadata).toHaveBeenCalledTimes(1);
 	});
 });

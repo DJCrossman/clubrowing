@@ -1,6 +1,9 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import type { InviteRole } from "@/schemas";
-import { getDefaultOrganizationId } from "./default-organization";
+import {
+	clubMetadataSchema,
+	getDefaultOrganizationId,
+} from "./default-organization";
 
 export interface OrganizationMember {
 	userId: string;
@@ -31,14 +34,19 @@ export async function listOrganizationMembers(): Promise<OrganizationMember[]> {
 		return membersCache.value;
 	}
 	const client = await clerkClient();
-	const memberships = await fetchAllPages((offset) =>
-		client.organizations.getOrganizationMembershipList({
-			organizationId: getDefaultOrganizationId(),
-			limit: PAGE_SIZE,
-			offset,
-		}),
-	);
-	const value = memberships.flatMap((membership) => {
+	const [memberships, users] = await Promise.all([
+		fetchAllPages((offset) =>
+			client.organizations.getOrganizationMembershipList({
+				organizationId: getDefaultOrganizationId(),
+				limit: PAGE_SIZE,
+				offset,
+			}),
+		),
+		fetchAllPages((offset) =>
+			client.users.getUserList({ limit: PAGE_SIZE, offset }),
+		),
+	]);
+	const organizationMembers = memberships.flatMap((membership) => {
 		const user = membership.publicUserData;
 		if (!user) return [];
 		return [
@@ -52,6 +60,31 @@ export async function listOrganizationMembers(): Promise<OrganizationMember[]> {
 			},
 		];
 	});
+	const organizationMemberIds = new Set(
+		organizationMembers.map((member) => member.userId),
+	);
+	const clubUsers = users.flatMap((user) => {
+		const { defaultOrganizationId } = clubMetadataSchema.parse(
+			user.publicMetadata,
+		);
+		if (
+			organizationMemberIds.has(user.id) ||
+			defaultOrganizationId !== getDefaultOrganizationId()
+		) {
+			return [];
+		}
+		return [
+			{
+				userId: user.id,
+				isAdmin: false,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.primaryEmailAddress?.emailAddress ?? null,
+				joinedAt: new Date(user.createdAt).toISOString(),
+			},
+		];
+	});
+	const value = [...organizationMembers, ...clubUsers];
 	membersCache = { value, expiresAt: Date.now() + CACHE_TTL_MS };
 	return value;
 }
@@ -61,20 +94,47 @@ export async function listPendingInvitations(): Promise<PendingInvitation[]> {
 		return invitationsCache.value;
 	}
 	const client = await clerkClient();
-	const invitations = await fetchAllPages((offset) =>
-		client.organizations.getOrganizationInvitationList({
-			organizationId: getDefaultOrganizationId(),
-			status: ["pending"],
-			limit: PAGE_SIZE,
-			offset,
+	const [organizationInvitations, appInvitations] = await Promise.all([
+		fetchAllPages((offset) =>
+			client.organizations.getOrganizationInvitationList({
+				organizationId: getDefaultOrganizationId(),
+				status: ["pending"],
+				limit: PAGE_SIZE,
+				offset,
+			}),
+		),
+		fetchAllPages((offset) =>
+			client.invitations.getInvitationList({
+				status: "pending",
+				limit: PAGE_SIZE,
+				offset,
+			}),
+		),
+	]);
+	const value = [
+		...organizationInvitations.map((invitation) => ({
+			id: invitation.id,
+			email: invitation.emailAddress,
+			role: toInviteRole(invitation.role),
+			invitedAt: new Date(invitation.createdAt).toISOString(),
+		})),
+		...appInvitations.flatMap((invitation): PendingInvitation[] => {
+			const { defaultOrganizationId } = clubMetadataSchema.parse(
+				invitation.publicMetadata ?? {},
+			);
+			if (defaultOrganizationId !== getDefaultOrganizationId()) {
+				return [];
+			}
+			return [
+				{
+					id: invitation.id,
+					email: invitation.emailAddress,
+					role: "member",
+					invitedAt: new Date(invitation.createdAt).toISOString(),
+				},
+			];
 		}),
-	);
-	const value = invitations.map((invitation) => ({
-		id: invitation.id,
-		email: invitation.emailAddress,
-		role: toInviteRole(invitation.role),
-		invitedAt: new Date(invitation.createdAt).toISOString(),
-	}));
+	];
 	invitationsCache = { value, expiresAt: Date.now() + CACHE_TTL_MS };
 	return value;
 }
@@ -91,18 +151,33 @@ export async function inviteOrganizationMember({
 	redirectUrl: string;
 }): Promise<PendingInvitation> {
 	const client = await clerkClient();
-	const invitation = await client.organizations.createOrganizationInvitation({
-		organizationId: getDefaultOrganizationId(),
+	// Only admins join the organization; a free one holds 20 members.
+	if (role === "admin") {
+		const invitation = await client.organizations.createOrganizationInvitation({
+			organizationId: getDefaultOrganizationId(),
+			emailAddress: email,
+			role: "org:admin",
+			inviterUserId,
+			redirectUrl,
+		});
+		invitationsCache = null;
+		return {
+			id: invitation.id,
+			email: invitation.emailAddress,
+			role: toInviteRole(invitation.role),
+			invitedAt: new Date(invitation.createdAt).toISOString(),
+		};
+	}
+	const invitation = await client.invitations.createInvitation({
 		emailAddress: email,
-		role: role === "admin" ? "org:admin" : "org:member",
-		inviterUserId,
 		redirectUrl,
+		publicMetadata: { defaultOrganizationId: getDefaultOrganizationId() },
 	});
 	invitationsCache = null;
 	return {
 		id: invitation.id,
 		email: invitation.emailAddress,
-		role: toInviteRole(invitation.role),
+		role: "member",
 		invitedAt: new Date(invitation.createdAt).toISOString(),
 	};
 }
@@ -115,11 +190,23 @@ export async function revokeOrganizationInvitation({
 	requestingUserId: string;
 }): Promise<void> {
 	const client = await clerkClient();
-	await client.organizations.revokeOrganizationInvitation({
-		organizationId: getDefaultOrganizationId(),
-		invitationId,
-		requestingUserId,
-	});
+	const organizationInvitations = await fetchAllPages((offset) =>
+		client.organizations.getOrganizationInvitationList({
+			organizationId: getDefaultOrganizationId(),
+			status: ["pending"],
+			limit: PAGE_SIZE,
+			offset,
+		}),
+	);
+	if (organizationInvitations.some(({ id }) => id === invitationId)) {
+		await client.organizations.revokeOrganizationInvitation({
+			organizationId: getDefaultOrganizationId(),
+			invitationId,
+			requestingUserId,
+		});
+	} else {
+		await client.invitations.revokeInvitation(invitationId);
+	}
 	invitationsCache = null;
 }
 
