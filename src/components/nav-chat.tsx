@@ -43,6 +43,9 @@ export function NavChat() {
 	const startDm = trpcClient.chat.startDm.useMutation({
 		onError: toastError,
 	});
+	const membersQuery = trpcClient.chat.getMembers.useQuery(undefined, {
+		enabled: isNewMessageOpen,
+	});
 	const { preferences } = useNotifications();
 	const { isAdmin } = useCurrentUser();
 	const channels = (channelsQuery.data?.data ?? []).map((channel) => ({
@@ -106,6 +109,8 @@ export function NavChat() {
 				onOpenChange={setIsNewMessageOpen}
 				title="New message"
 				description={`Choose up to ${MAX_DM_MEMBERS - 1} people to message`}
+				members={membersQuery.data?.data ?? []}
+				isLoadingMembers={membersQuery.isPending}
 				maxSelectable={MAX_DM_MEMBERS - 1}
 				confirmLabel={(count) =>
 					count > 1 ? `Message ${count} people` : "Message"

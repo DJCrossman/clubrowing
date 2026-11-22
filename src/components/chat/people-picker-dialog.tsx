@@ -11,7 +11,6 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
-import { trpcClient } from "@/lib/trpc/client";
 import type { ChatMembers } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { InitialsAvatar } from "./initials-avatar";
@@ -21,6 +20,8 @@ interface PeoplePickerDialogProps {
 	onOpenChange: (open: boolean) => void;
 	title: string;
 	description: string;
+	members: ChatMembers;
+	isLoadingMembers: boolean;
 	maxSelectable: number;
 	excludeUserIds?: string[];
 	confirmLabel: (count: number) => string;
@@ -48,6 +49,8 @@ export function PeoplePickerDialog({
 }
 
 function PeoplePicker({
+	members,
+	isLoadingMembers,
 	maxSelectable,
 	excludeUserIds = [],
 	confirmLabel,
@@ -59,8 +62,7 @@ function PeoplePicker({
 >) {
 	const [selected, setSelected] = useState<ChatMembers>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const membersQuery = trpcClient.chat.getMembers.useQuery();
-	const people = (membersQuery.data?.data ?? []).filter(
+	const people = members.filter(
 		(person) => !excludeUserIds.includes(person.id),
 	);
 	const isFull = selected.length >= maxSelectable;
@@ -90,7 +92,7 @@ function PeoplePicker({
 			)}
 			<CommandList>
 				<CommandEmpty>
-					{membersQuery.isPending ? "Loading members…" : "No members found."}
+					{isLoadingMembers ? "Loading members…" : "No members found."}
 				</CommandEmpty>
 				<CommandGroup heading="Members">
 					{people.map((person) => {

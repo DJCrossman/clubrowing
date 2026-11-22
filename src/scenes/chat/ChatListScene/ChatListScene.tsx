@@ -37,6 +37,9 @@ export const ChatListScene = () => {
 	const startDm = trpcClient.chat.startDm.useMutation({
 		onError: toastError,
 	});
+	const membersQuery = trpcClient.chat.getMembers.useQuery(undefined, {
+		enabled: isNewMessageOpen,
+	});
 
 	// The page only exists for the mobile tab bar; wider screens use the sidebar channel list.
 	useEffect(() => {
@@ -122,6 +125,8 @@ export const ChatListScene = () => {
 				onOpenChange={setIsNewMessageOpen}
 				title="New message"
 				description={`Choose up to ${MAX_DM_MEMBERS - 1} people to message`}
+				members={membersQuery.data?.data ?? []}
+				isLoadingMembers={membersQuery.isPending}
 				maxSelectable={MAX_DM_MEMBERS - 1}
 				confirmLabel={(count) =>
 					count > 1 ? `Message ${count} people` : "Message"

@@ -80,7 +80,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	} = useChatChannel({
 		channelId,
 		threadMessageId,
-		loadMembers: !!forwardingMessage,
+		loadMembers: !!forwardingMessage || isAddingPeople,
 	});
 	const uploadAttachments = useMutation({ mutationFn: uploadFiles });
 	const { isAdmin } = useCurrentUser();
@@ -319,6 +319,8 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 					open={isAddingPeople}
 					onOpenChange={setIsAddingPeople}
 					title="Add people"
+					members={membersQuery.data?.data ?? []}
+					isLoadingMembers={membersQuery.isPending}
 					description="Choose people to add to this conversation"
 					maxSelectable={MAX_DM_MEMBERS - channel.memberCount}
 					excludeUserIds={channel.members.map((member) => member.id)}
