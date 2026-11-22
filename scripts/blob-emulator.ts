@@ -7,7 +7,16 @@
  * so they last only as long as the container.
  */
 
-import { createServer, serve } from "@emulators/core";
+import {
+	authMiddleware,
+	cors,
+	createApiErrorHandler,
+	createErrorHandler,
+	Hono,
+	Store,
+	serve,
+	WebhookDispatcher,
+} from "@emulators/core";
 import { vercelPlugin } from "@emulators/vercel";
 
 const apiUrl = process.env.VERCEL_BLOB_API_URL;
@@ -17,7 +26,20 @@ if (!apiUrl) {
 }
 const { origin: baseUrl, port } = new URL(apiUrl);
 
-const { app } = createServer(vercelPlugin, { port: Number(port), baseUrl });
+// createServer's app without its fixed cap of 5,000 requests an hour, which a few
+// parallel e2e runs use up; past the cap every upload is refused with a 403.
+const app = new Hono();
+app.onError(createApiErrorHandler("https://emulate.dev/vercel"));
+app.use("*", cors());
+app.use("*", createErrorHandler("https://emulate.dev/vercel"));
+app.use("*", authMiddleware(new Map()));
+vercelPlugin.register(
+	app,
+	new Store(),
+	new WebhookDispatcher(),
+	baseUrl,
+	new Map(),
+);
 
 serve({
 	// All interfaces, so the port docker-compose.yml publishes reaches it.
