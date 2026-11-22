@@ -1,6 +1,7 @@
 "use client";
 
 import { IconPlus } from "@tabler/icons-react";
+import { keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { default as React } from "react";
@@ -11,6 +12,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useTable } from "@/hooks/useTable";
 import { getSuggestedWeightRange } from "@/lib/data/boat-weight-suggestions";
 import { routes } from "@/lib/routes";
 import { trpcClient } from "@/lib/trpc/client";
@@ -24,6 +26,8 @@ import {
 } from "@/schemas";
 import { BoatCreateDrawer, BoatDetailsDrawer, BoatTable } from "./components";
 import { useBoatBulkColumns } from "./components/useBoatBulkColumns";
+
+const sortColumns = ["name", "manufacturer", "seats", "rigging"] as const;
 
 interface IProps {
 	initialData: BoatsResult;
@@ -43,6 +47,17 @@ export const BoatListScene = ({
 	const router = useRouter();
 	const utils = trpcClient.useUtils();
 	const boatBulkColumns = useBoatBulkColumns();
+	const table = useTable<{ seats: SeatType }>();
+	const { data: boats } = trpcClient.boats.getBoats.useQuery(
+		{
+			page: table.page,
+			pageSize: table.pageSize,
+			sortBy: sortColumns.find((column) => column === table.sortBy),
+			order: table.order,
+			seats: table.filters.seats,
+		},
+		{ initialData, placeholderData: keepPreviousData },
+	);
 	const createBoat = trpcClient.boats.createBoat.useMutation({
 		onSuccess: async () => {
 			await utils.boats.getBoats.invalidate();
@@ -98,7 +113,7 @@ export const BoatListScene = ({
 							<Heading as="h1">Boats</Heading>
 						</div>
 						<div className="flex flex-col gap-4 md:gap-6">
-							<BoatTable initialData={initialData} />
+							<BoatTable data={boats} {...table} />
 						</div>
 					</div>
 				</div>

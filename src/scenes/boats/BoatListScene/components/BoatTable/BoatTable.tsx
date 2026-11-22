@@ -7,17 +7,13 @@ import {
 	IconChevronRight,
 	IconPlus,
 } from "@tabler/icons-react";
-import { keepPreviousData } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	type PaginationState,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { useState } from "react";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +39,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import type { TableState } from "@/hooks/useTable";
 import {
 	formatManufacturer,
 	formatMeters,
@@ -50,14 +47,11 @@ import {
 	formatWeightRange,
 } from "@/lib/formatters";
 import { routes } from "@/lib/routes";
-import { trpcClient } from "@/lib/trpc/client";
 import type { Boat, BoatsResult } from "@/lib/trpc/types";
 import { FilterChip } from "@/scenes/schedule/ScheduleScene/components";
-import { SeatTypes } from "@/schemas";
+import { type SeatType, SeatTypes } from "@/schemas";
 
-const DEFAULT_PAGE_SIZE = 20;
 const boatSizes = ["all", ...SeatTypes] as const;
-const sortColumns = ["name", "manufacturer", "seats", "rigging"] as const;
 const SEAT_CHIP_LABELS: Record<(typeof SeatTypes)[number], string> = {
 	"1": "1x",
 	"2": "2x/2-",
@@ -116,32 +110,19 @@ const columns: ColumnDef<Boat>[] = [
 	},
 ];
 
-interface IBoatTableProps {
-	initialData: BoatsResult;
+interface IBoatTableProps extends TableState<{ seats: SeatType }> {
+	data: BoatsResult;
 }
 
-export function BoatTable({ initialData }: IBoatTableProps) {
-	const [pagination, setPagination] = useState<PaginationState>({
-		pageIndex: 0,
-		pageSize: DEFAULT_PAGE_SIZE,
-	});
-	const [sorting, setSorting] = useState<SortingState>([]);
-	const [seats, setSeats] = useState<(typeof SeatTypes)[number] | undefined>(
-		undefined,
-	);
-
-	const sort = sorting[0];
-	const { data } = trpcClient.boats.getBoats.useQuery(
-		{
-			page: pagination.pageIndex + 1,
-			pageSize: pagination.pageSize,
-			sortBy: sortColumns.find((column) => column === sort?.id),
-			order: sort ? (sort.desc ? "desc" : "asc") : undefined,
-			seats,
-		},
-		{ initialData, placeholderData: keepPreviousData },
-	);
-
+export function BoatTable({
+	data,
+	pagination,
+	sorting,
+	filters,
+	onPaginationChange,
+	onSortingChange,
+	onFiltersChange,
+}: IBoatTableProps) {
 	const table = useReactTable({
 		data: data.data,
 		columns,
@@ -151,8 +132,8 @@ export function BoatTable({ initialData }: IBoatTableProps) {
 		manualSorting: true,
 		pageCount: data.totalPages,
 		rowCount: data.totalCount,
-		onPaginationChange: setPagination,
-		onSortingChange: setSorting,
+		onPaginationChange,
+		onSortingChange,
 		getCoreRowModel: getCoreRowModel(),
 	});
 
@@ -162,11 +143,12 @@ export function BoatTable({ initialData }: IBoatTableProps) {
 				{boatSizes.map((size) => (
 					<FilterChip
 						key={size}
-						isActive={(seats ?? "all") === size}
-						onClick={() => {
-							setSeats(SeatTypes.find((seat) => seat === size));
-							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-						}}
+						isActive={(filters.seats ?? "all") === size}
+						onClick={() =>
+							onFiltersChange({
+								seats: SeatTypes.find((seat) => seat === size),
+							})
+						}
 					>
 						{size === "all" ? "All" : SEAT_CHIP_LABELS[size]}
 					</FilterChip>
@@ -182,11 +164,12 @@ export function BoatTable({ initialData }: IBoatTableProps) {
 						label:
 							size === "all" ? "All Boats" : formatSeatSetup({ seats: size }),
 					}))}
-					value={seats ?? "all"}
-					onValueChange={(value) => {
-						setSeats(SeatTypes.find((size) => size === value));
-						setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-					}}
+					value={filters.seats ?? "all"}
+					onValueChange={(value) =>
+						onFiltersChange({
+							seats: SeatTypes.find((size) => size === value),
+						})
+					}
 				>
 					<SelectTrigger className="flex w-fit" size="sm" id="view-selector">
 						<SelectValue placeholder="Select a view" />
