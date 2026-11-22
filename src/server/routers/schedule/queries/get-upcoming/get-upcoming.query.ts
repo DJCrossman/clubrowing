@@ -1,5 +1,9 @@
 import { DateTime } from "luxon";
-import { CLUB_TIMEZONE, getClubToday } from "@/lib/schedule/week";
+import {
+	CLUB_TIMEZONE,
+	getClubToday,
+	parseWeekStart,
+} from "@/lib/schedule/week";
 import type { GetUpcomingInput } from "@/schemas";
 import type { ViewerContext } from "@/server/context";
 import { getViewerGroups } from "@/server/routers/groups/common";
@@ -38,6 +42,9 @@ export async function getUpcomingQuery(
 		take: UPCOMING_SCAN_LIMIT,
 	});
 	const today = getClubToday(now);
+	const nextWeekStart = parseWeekStart(undefined, now)
+		.plus({ weeks: 1 })
+		.toISODate();
 	const events = (await mapToVisibleEventDtos(ctx, rows, viewer)).filter(
 		(event) =>
 			// On a group's page, admins outside the group still see its events.
@@ -55,7 +62,13 @@ export async function getUpcomingQuery(
 			.slice(0, limit),
 		pendingRsvps: events
 			.filter(
-				(event) => event.type !== "volunteer" && event.canRsvp && !event.myRsvp,
+				(event) =>
+					event.type !== "volunteer" &&
+					event.canRsvp &&
+					!event.myRsvp &&
+					(event.date < nextWeekStart ||
+						event.type === "regatta" ||
+						event.type === "social"),
 			)
 			.slice(0, limit),
 		volunteerShifts: events
