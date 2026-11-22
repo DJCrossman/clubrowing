@@ -46,8 +46,8 @@ export const SubscribeDialog = ({
 				<DialogHeader>
 					<DialogTitle>Subscribe to your calendar</DialogTitle>
 					<DialogDescription>
-						Training, regattas and volunteer shifts for your groups sync to your
-						calendar app automatically.
+						Training, regattas, volunteer shifts and socials for your groups
+						sync to your calendar app automatically.
 						{canReply &&
 							" Each event has links to reply with whether you're going."}
 					</DialogDescription>

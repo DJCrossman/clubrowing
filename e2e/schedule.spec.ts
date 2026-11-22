@@ -121,6 +121,60 @@ test("a coach sets an interval's goal by hand and it survives a later change to 
 	await expect(details.getByText(/^R24 • /)).toBeVisible();
 });
 
+test("a coach creates a social with no workout, and a member finds it under Socials and replies", async ({
+	page,
+}) => {
+	await signInAs(page, "admin");
+	await page.goto("/schedule?action=create");
+	const drawer = page.getByRole("dialog");
+	const title = `Boathouse barbecue ${Date.now()}`;
+	await drawer.getByRole("button", { name: "Social" }).click();
+	await drawer.getByRole("textbox", { name: "Title" }).fill(title);
+	await expect(drawer.getByRole("button", { name: "Next" })).toHaveCount(0);
+	await drawer.getByRole("button", { name: "Save" }).click();
+	await expect(drawer).toBeHidden();
+
+	const event = page.getByRole("link", { name: title, exact: true });
+	await expect(event).toBeVisible();
+	await page.getByRole("button", { name: "Socials" }).click();
+	await expect(page).toHaveURL(/type=social/);
+	await expect(event).toBeVisible();
+	await page.getByRole("button", { name: "Training", exact: true }).click();
+	await expect(page).toHaveURL(/type=training/);
+	await expect(event).toBeHidden();
+
+	await signInAs(page, "member");
+	await page.goto("/schedule?type=social");
+	const card = page
+		.locator("div")
+		.filter({ has: event })
+		.filter({ has: page.getByRole("group", { name: "RSVP" }) })
+		.last();
+	await expect(card.getByRole("button", { name: "Maybe" })).toBeVisible();
+	await expect(card.getByRole("button", { name: "Can't go" })).toBeVisible();
+	const replied = page.waitForResponse((response) =>
+		response.url().includes("schedule.rsvp"),
+	);
+	await card.getByRole("button", { name: "Going" }).click();
+	await expect(card.getByRole("button", { name: "Going" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	await replied;
+
+	await page.goto((await event.getAttribute("href")) ?? "");
+	const details = page.getByRole("dialog");
+	await expect(details.getByRole("heading", { name: title })).toBeVisible();
+	await expect(details.getByText("Social", { exact: true })).toBeVisible();
+	await expect(details.getByRole("heading", { name: "Workout" })).toHaveCount(
+		0,
+	);
+	await expect(
+		details.getByRole("heading", { name: /^Going 1$/ }),
+	).toBeVisible();
+	await expect(details.getByText("Morgan Oarsby")).toBeVisible();
+});
+
 test("a coach adds an interval, removes one, and re-reads the description to start over", async ({
 	page,
 }) => {

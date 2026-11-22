@@ -9,7 +9,7 @@ Output an "events" array with one object per distinct session. When the same ses
 OUTPUT SHAPE:
 { "events": [
   {
-    "type": "training" | "regatta" | "volunteer",
+    "type": "training" | "regatta" | "volunteer" | "social",
     "title": <string>,
     "days": [<weekday name like "Tuesday", or a date "YYYY-MM-DD">, ...],
     "until": <"YYYY-MM-DD" or a month name like "March", optional>,
@@ -28,7 +28,7 @@ OUTPUT SHAPE:
 ] }
 
 FIELD RULES:
-- type: "regatta" for races/regattas/heads, "volunteer" for shifts/helping/setup/cleanup, otherwise "training".
+- type: "regatta" for races/regattas/heads, "volunteer" for shifts/helping/setup/cleanup, "social" for parties/barbecues/banquets, otherwise "training".
 - title: short, e.g. "Morning erg", "Water session", "Wascana Regatta". Never empty. When the request says "title: X", use X exactly and nothing else.
 - days: every day the session happens. "Mon/Wed/Fri" = ["Monday", "Wednesday", "Friday"]. "Tue and Thu" = ["Tuesday", "Thursday"]. "weekdays" = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]. Use full English weekday names. Use "YYYY-MM-DD" only when the request gives a calendar date. When no day is named, use ["today"].
 - until: ONLY when the request says a weekly session keeps repeating to an end point. "until the end of March" = "March", "until Dec 18" = the date. Omit for a single week.

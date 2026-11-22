@@ -43,7 +43,7 @@ export const EventCreateDrawer = ({
 				<div>
 					<DrawerTitle>New event</DrawerTitle>
 					<DrawerDescription>
-						Add a training, regatta or volunteer shift
+						Add a training, regatta, volunteer shift or social
 					</DrawerDescription>
 				</div>
 				<DrawerCloseButton />

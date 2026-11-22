@@ -33,6 +33,19 @@ describe("formatCalendarReplyText", () => {
 			].join("\n"),
 		);
 	});
+
+	it("lists going, maybe and can't-go links for a social", () => {
+		expect(
+			formatCalendarReplyText({ replyUrl, type: "social", status: null }),
+		).toBe(
+			[
+				"Your reply: No reply yet",
+				`Going: ${replyUrl}?status=yes`,
+				`Maybe: ${replyUrl}?status=maybe`,
+				`Can't go: ${replyUrl}?status=no`,
+			].join("\n"),
+		);
+	});
 });
 
 describe("describeReply", () => {

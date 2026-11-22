@@ -35,6 +35,8 @@ const PLACEHOLDERS: Record<EventType, string> = {
 		"Saturday Wascana regatta all day\n2026-11-14 7am SRA Erg Series 6km",
 	volunteer:
 		"Sunday 9-11 dock setup, 3 volunteers\nSaturday 8am regatta marshals, 6 spots",
+	social:
+		"Saturday 5pm barbecue at the boathouse\n2026-12-12 6pm Christmas party",
 };
 
 interface PromptItem {

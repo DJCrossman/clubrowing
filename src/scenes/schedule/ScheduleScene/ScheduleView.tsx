@@ -43,6 +43,7 @@ const TYPE_FILTERS = [
 	{ value: "training", label: "Training" },
 	{ value: "regatta", label: "Regattas" },
 	{ value: "volunteer", label: "Volunteer" },
+	{ value: "social", label: "Socials" },
 ] satisfies { value: ScheduleTypeFilter; label: string }[];
 
 export interface ScheduleViewProps {
@@ -186,11 +187,12 @@ export const ScheduleView = ({
 									)
 								}
 							/>
-							<div className="flex flex-wrap gap-2">
+							<div className="flex flex-wrap gap-1.5 md:gap-2">
 								{TYPE_FILTERS.map(({ value, label }) => (
 									<FilterChip
 										key={value}
 										isActive={filters.type === value}
+										className="max-md:px-2.5"
 										onClick={() =>
 											navigate(
 												scheduleRoutes.list({ ...routeParams, type: value }),

@@ -58,6 +58,16 @@ describe("eventFormSchema", () => {
 		expect(event.endAt).toBeNull();
 	});
 
+	it("drops the workout and volunteer spots for a social", () => {
+		const event = eventFormSchema.parse({
+			...values,
+			type: "social",
+		});
+		expect(event.type).toBe("social");
+		expect(event.workout).toBeNull();
+		expect(event.volunteerSpots).toBeNull();
+	});
+
 	it("requires the measure that matches the workout type", () => {
 		const result = eventFormSchema.safeParse({
 			...values,

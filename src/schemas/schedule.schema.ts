@@ -6,7 +6,12 @@ import {
 	workoutCoreSchema,
 } from "./workouts.schema";
 
-export const EventTypes = ["training", "regatta", "volunteer"] as const;
+export const EventTypes = [
+	"training",
+	"regatta",
+	"volunteer",
+	"social",
+] as const;
 export type EventType = (typeof EventTypes)[number];
 
 export const EventAudiences = ["club", "groups"] as const;
@@ -20,6 +25,7 @@ export const ScheduleTypeFilters = [
 	"training",
 	"regatta",
 	"volunteer",
+	"social",
 ] as const;
 export type ScheduleTypeFilter = (typeof ScheduleTypeFilters)[number];
 

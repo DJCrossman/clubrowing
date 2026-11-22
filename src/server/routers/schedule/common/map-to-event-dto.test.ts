@@ -107,6 +107,15 @@ describe("mapToEventDto", () => {
 		expect(dto.volunteer).toEqual({ filled: 1, spots: 2, signedUp: false });
 	});
 
+	it("labels a social with no volunteer block", () => {
+		const dto = mapToEventDto(
+			{ ...baseEvent, type: "social", workoutId: null, workout: null },
+			{ athleteId: "ath_me", audienceIds },
+		);
+		expect(dto.typeLabel).toBe("Social");
+		expect(dto.volunteer).toBeNull();
+	});
+
 	it("names only the groups the viewer can see", () => {
 		const groupEvent: EventRow = {
 			...baseEvent,

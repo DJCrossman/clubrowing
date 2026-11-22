@@ -7,6 +7,7 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
 	training: "Training",
 	regatta: "Regatta",
 	volunteer: "Volunteer",
+	social: "Social",
 };
 
 export function formatEventTime({

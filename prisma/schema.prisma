@@ -276,6 +276,7 @@ enum EventType {
   training
   regatta
   volunteer
+  social
 }
 
 enum EventAudience {

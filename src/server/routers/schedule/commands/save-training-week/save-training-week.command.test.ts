@@ -172,6 +172,20 @@ describe("saveTrainingWeekCommand", () => {
 		expect(calls.transactions).toBe(0);
 	});
 
+	it("refuses to touch socials", async () => {
+		const { context, calls } = createContext([
+			{ id: "evt_social", type: "social", workoutId: null },
+		]);
+
+		await expect(
+			saveTrainingWeekCommand(
+				{ creates: [], updates: [], deleteIds: ["evt_social"], notify: true },
+				context,
+			),
+		).rejects.toThrow("Only training sessions can be bulk edited");
+		expect(calls.transactions).toBe(0);
+	});
+
 	it("refuses unknown events before writing anything", async () => {
 		const { context, calls } = createContext([]);
 

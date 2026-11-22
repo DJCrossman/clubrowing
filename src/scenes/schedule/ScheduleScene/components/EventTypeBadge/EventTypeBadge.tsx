@@ -20,6 +20,7 @@ export const EventTypeBadge = ({
 				training: "bg-chart-2/30",
 				regatta: "bg-chart-5/30",
 				volunteer: "bg-chart-3/30",
+				social: "bg-chart-1/30",
 			}[type],
 			className,
 		)}
