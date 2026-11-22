@@ -86,3 +86,45 @@ export async function updateEventRow(
 		include: eventInclude,
 	});
 }
+
+export async function fillEmptySession({
+	tx,
+	input,
+}: {
+	tx: Prisma.TransactionClient;
+	input: CreateEvent;
+}) {
+	if (input.type !== "training" || !input.workout) return null;
+	const session = await tx.event.findFirst({
+		where: {
+			type: "training",
+			workoutId: null,
+			startAt: new Date(input.startAt),
+		},
+		orderBy: { createdAt: "asc" },
+		select: { id: true, startAt: true },
+	});
+	if (!session) return null;
+	const workout = await tx.workout.create({
+		data: {
+			...toWorkoutData(input.workout, input.startAt),
+			fragments: {
+				create: (input.workout.fragments ?? []).map((fragment, position) => ({
+					...fragment,
+					position,
+				})),
+			},
+			zoneMinutes: { create: toZoneRows(input.workout.zoneMinutes) },
+		},
+	});
+	// Another session in the same batch may have filled it since it was found.
+	const { count } = await tx.event.updateMany({
+		where: { id: session.id, workoutId: null },
+		data: { workoutId: workout.id },
+	});
+	if (count === 0) {
+		await tx.workout.delete({ where: { id: workout.id } });
+		return null;
+	}
+	return session;
+}

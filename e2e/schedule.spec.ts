@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { DateTime } from "luxon";
 import { signInAs } from "./sign-in";
 
 test("a training event's details list its workout's intervals in order", async ({
@@ -257,4 +258,210 @@ test("a coach edits a session's intervals from bulk edit", async ({ page }) => {
 	await expect(intervals.getByRole("listitem")).toHaveCount(3);
 	await editor.getByRole("button", { name: "Save" }).click();
 	await expect(row.getByRole("button", { name: "3 intervals" })).toBeVisible();
+});
+
+test("a training event saved without a workout opens for a member, and a member logs it once a coach adds one", async ({
+	page,
+}) => {
+	test.setTimeout(90_000);
+	await signInAs(page, "admin");
+	await page.goto("/schedule?action=create");
+	const drawer = page.getByRole("dialog");
+	const title = `Placeholder ${Date.now()}`;
+	await drawer.getByRole("button", { name: "Training" }).click();
+	await drawer.getByRole("textbox", { name: "Title" }).fill(title);
+	await drawer.getByRole("button", { name: "Next" }).click();
+	await drawer.getByRole("button", { name: "Skip for now" }).click();
+	await expect(drawer).toBeHidden();
+	const event = page.getByRole("link", {
+		name: title,
+		exact: true,
+		includeHidden: true,
+	});
+	const href = (await event.getAttribute("href")) ?? "";
+
+	await signInAs(page, "member");
+	await page.goto("/schedule");
+	await expect(event).toBeVisible();
+	await page.goto(href);
+	const details = page.getByRole("dialog");
+	await expect(details.getByRole("heading", { name: title })).toBeVisible();
+	await expect(details.getByRole("heading", { name: "Workout" })).toHaveCount(
+		0,
+	);
+	await expect(details.getByText("No workout planned yet.")).toHaveCount(0);
+	await expect(details.getByRole("list", { name: "Intervals" })).toHaveCount(0);
+
+	await signInAs(page, "admin");
+	await page.goto(href);
+	await expect(details.getByRole("heading", { name: title })).toBeVisible();
+	await expect(details.getByText("No workout planned yet.")).toBeVisible();
+	await details.getByRole("button", { name: "Add" }).click();
+	const workout = details.getByRole("textbox", { name: "Workout" });
+	await workout.fill("3000m\n1000m @ R20, 1000m @ R22, 1000m @ R24");
+	await workout.blur();
+	await expect(
+		details.getByRole("list", { name: "Intervals" }).getByRole("listitem"),
+	).toHaveCount(3);
+	await details.getByRole("button", { name: "Intensity C3" }).click();
+	await details.getByRole("button", { name: "Save" }).click();
+	await expect(details.getByText("No workout planned yet.")).toHaveCount(0);
+	await expect(
+		details.getByRole("list", { name: "Intervals" }).getByRole("listitem"),
+	).toHaveCount(3);
+	await expect(details.getByText(/^R24 • /)).toBeVisible();
+
+	await signInAs(page, "member");
+	await page.goto("/activities");
+	await page.getByRole("button", { name: "Add Activity" }).click();
+	const createDrawer = page.getByRole("dialog", { name: "Add Activity" });
+	await createDrawer.getByRole("tab", { name: "ERG" }).click();
+	await createDrawer.getByRole("combobox").click();
+	await page.getByRole("option", { name: new RegExp(`^${title} — `) }).click();
+	const created = page.waitForResponse((response) =>
+		response.url().includes("activities.createActivity"),
+	);
+	await createDrawer.getByRole("button", { name: "Save", exact: true }).click();
+	const [{ result }] = await (await created).json();
+	await expect(createDrawer).toBeHidden();
+
+	await page.goto(`/activities?activityId=${result.data.id}`);
+	const activity = page.getByRole("dialog");
+	await expect(activity.getByRole("heading", { name: title })).toBeVisible();
+	await expect(activity.getByText(/^3000m/)).toBeVisible();
+});
+
+test("a coach creates a run of weekly training events without workouts from a prompt", async ({
+	page,
+}) => {
+	test.setTimeout(120_000);
+	await signInAs(page, "admin");
+	// Two weeks out the form reads days from that week's Monday.
+	await page.goto(
+		`/schedule?week=${new Intl.DateTimeFormat("en-CA", { timeZone: "America/Regina" }).format(Date.now() + 14 * 24 * 60 * 60 * 1000)}&action=create`,
+	);
+	const drawer = page.getByRole("dialog");
+	await drawer
+		.getByRole("button", { name: "Create several events from a prompt" })
+		.click();
+	await drawer
+		.getByRole("textbox", { name: "Describe the events" })
+		.fill("Placeholder session every Wednesday at 6:00 am");
+	await drawer
+		.getByLabel("Repeat weekly until")
+		.fill(
+			new Intl.DateTimeFormat("en-CA", { timeZone: "America/Regina" }).format(
+				Date.now() + 34 * 24 * 60 * 60 * 1000,
+			),
+		);
+	await drawer.getByRole("button", { name: "Preview events" }).click();
+
+	// The model behind the prompt runs locally and can take a while.
+	await expect(drawer.getByText(/^\d+ events found$/)).toBeVisible({
+		timeout: 60_000,
+	});
+	const checklist = drawer.getByRole("checkbox");
+	await expect(checklist).not.toHaveCount(0);
+	await expect(drawer.getByText(/^Wed \d+ \w+ · /)).toHaveCount(
+		await checklist.count(),
+	);
+	await expect(drawer.getByText(/^C\d+ · /)).toHaveCount(0);
+	const title = (
+		(await drawer
+			.getByRole("button", { name: /^Edit / })
+			.first()
+			.getAttribute("aria-label")) ?? ""
+	).replace(/^Edit /, "");
+	await drawer.getByRole("button", { name: /^Create \d+ events$/ }).click();
+	await expect(drawer).toBeHidden();
+
+	const events = page.getByRole("link", {
+		name: title,
+		exact: true,
+		includeHidden: true,
+	});
+	await expect(events.first()).toBeAttached();
+	await page.goto((await events.first().getAttribute("href")) ?? "");
+	const details = page.getByRole("dialog");
+	await expect(details.getByRole("heading", { name: title })).toBeVisible();
+	await expect(details.getByText("No workout planned yet.")).toBeVisible();
+});
+
+test("a coach's prompt gives its workout to an empty training event at the same time", async ({
+	page,
+}) => {
+	test.setTimeout(90_000);
+	await signInAs(page, "admin");
+	// Weeks start on Sunday, which is the day the form starts on.
+	const sunday = DateTime.now()
+		.setZone("America/Regina")
+		.plus({ weeks: 6 })
+		.startOf("week")
+		.minus({ days: 1 })
+		.toISODate();
+	// The desktop and phone runs share one database, so each takes its own time.
+	const startTime = `${String(5 + Math.floor(Math.random() * 12)).padStart(2, "0")}:${String(Math.floor(Math.random() * 60)).padStart(2, "0")}`;
+	const title = `Winter session ${test.info().project.name} ${Date.now()}`;
+	await page.goto(`/schedule?week=${sunday}&action=create`);
+	const drawer = page.getByRole("dialog");
+	await drawer.getByRole("button", { name: "Training" }).click();
+	await drawer.getByRole("textbox", { name: "Title" }).fill(title);
+	await drawer
+		.getByRole("textbox", { name: "Start", exact: true })
+		.fill(startTime);
+	await drawer.getByRole("textbox", { name: "End", exact: true }).fill("");
+	await drawer.getByRole("button", { name: "Next" }).click();
+	await drawer.getByRole("button", { name: "Skip for now" }).click();
+	await expect(drawer).toBeHidden();
+
+	const promptTitle = `Prompted ${title}`;
+	await page.route("**/api/v1/events/parse-prompt", (route) =>
+		route.fulfill({
+			json: {
+				events: [
+					{
+						type: "training",
+						title: promptTitle,
+						date: sunday,
+						allDay: false,
+						startTime,
+						workout: {
+							description: "3x1000m @ R20, R22, R24",
+							activityType: "erg",
+							intensityCategory: "C4",
+						},
+					},
+				],
+			},
+		}),
+	);
+	await page.goto(`/schedule?week=${sunday}&action=create`);
+	await drawer
+		.getByRole("button", { name: "Create several events from a prompt" })
+		.click();
+	await drawer
+		.getByRole("textbox", { name: "Describe the events" })
+		.fill(`Sunday ${startTime} 3x1000m @ R20, R22, R24`);
+	await drawer.getByRole("button", { name: "Preview events" }).click();
+	await expect(drawer.getByText("1 event found")).toBeVisible();
+	await drawer.getByRole("button", { name: "Create 1 event" }).click();
+	await expect(drawer).toBeHidden();
+	await expect(
+		page.getByText("1 workout added to an existing session"),
+	).toBeVisible();
+
+	await expect(
+		page.getByRole("link", { name: promptTitle, includeHidden: true }),
+	).toHaveCount(0);
+	const event = page.getByRole("link", {
+		name: title,
+		exact: true,
+		includeHidden: true,
+	});
+	await expect(event).toHaveCount(1);
+	await page.goto((await event.getAttribute("href")) ?? "");
+	const details = page.getByRole("dialog");
+	await expect(details.getByRole("heading", { name: title })).toBeVisible();
+	await expect(details.getByText("No workout planned yet.")).toHaveCount(0);
+	await expect(details.getByText("3x1000m @ R20, R22, R24")).toBeVisible();
 });

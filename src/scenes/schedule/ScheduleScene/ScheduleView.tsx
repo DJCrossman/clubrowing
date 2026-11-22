@@ -290,18 +290,27 @@ export const ScheduleView = ({
 					router.refresh();
 				}}
 				onSubmitMany={async (events) => {
-					const { created, failed, firstStartAt } = await withErrorToast(
-						createEvents.mutateAsync({ events }),
-					);
+					const { created, filled, failed, firstStartAt } =
+						await withErrorToast(createEvents.mutateAsync({ events }));
 					if (!firstStartAt) {
 						toast.error("None of the events could be created");
 						return;
 					}
-					const createdLabel = `${created} ${created === 1 ? "event" : "events"} created`;
+					const labels = [];
+					if (created > 0 || filled === 0) {
+						labels.push(
+							`${created} ${created === 1 ? "event" : "events"} created`,
+						);
+					}
+					if (filled > 0) {
+						labels.push(
+							`${filled} ${filled === 1 ? "workout added to an existing session" : "workouts added to existing sessions"}`,
+						);
+					}
 					if (failed > 0) {
-						toast.warning(`${createdLabel}, ${failed} failed`);
+						toast.warning(`${labels.join(", ")}, ${failed} failed`);
 					} else {
-						toast.success(createdLabel);
+						toast.success(labels.join(", "));
 					}
 					navigate(
 						scheduleRoutes.list({
