@@ -26,6 +26,7 @@ export const GroupScene = ({ group }: GroupSceneProps) => {
 	const [period, setPeriod] = useState<
 		"three_months" | "thirty_days" | "seven_days"
 	>("three_months");
+	const groupsQuery = trpcClient.groups.getGroups.useQuery();
 	const metersQuery = trpcClient.analytics.getGroupMeters.useQuery({
 		id: group.id,
 	});
@@ -70,6 +71,7 @@ export const GroupScene = ({ group }: GroupSceneProps) => {
 						data={(leaderboardQuery.data?.data ?? []).filter((row) =>
 							memberIds.has(row.id),
 						)}
+						groups={groupsQuery.data?.data ?? []}
 						initialGroupIds={[group.id]}
 					/>
 				)}

@@ -30,6 +30,7 @@ export const DashboardScene = () => {
 	const { hasAthlete } = useCurrentUser();
 	const notifications = useNotifications({ enabled: hasAthlete });
 	const analyticsQuery = trpcClient.analytics.getAnalytics.useQuery();
+	const groupsQuery = trpcClient.groups.getGroups.useQuery();
 	const leaderboardQuery = trpcClient.analytics.getLeaderboard.useQuery(
 		{ period },
 		{ placeholderData: keepPreviousData },
@@ -88,7 +89,10 @@ export const DashboardScene = () => {
 							{leaderboardQuery.isPending ? (
 								<LeaderboardTableSkeleton />
 							) : (
-								<LeaderboardTable data={leaderboardQuery.data?.data ?? []} />
+								<LeaderboardTable
+									data={leaderboardQuery.data?.data ?? []}
+									groups={groupsQuery.data?.data ?? []}
+								/>
 							)}
 						</div>
 					</div>

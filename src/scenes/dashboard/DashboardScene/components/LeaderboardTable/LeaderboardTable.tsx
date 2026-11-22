@@ -41,8 +41,7 @@ import {
 	formatMeters,
 } from "@/lib/formatters";
 import { routes } from "@/lib/routes";
-import { trpcClient } from "@/lib/trpc/client";
-import type { Leaderboard } from "@/lib/trpc/types";
+import type { Groups, Leaderboard } from "@/lib/trpc/types";
 
 const columns: ColumnDef<Leaderboard[number]>[] = [
 	{
@@ -138,11 +137,13 @@ const columns: ColumnDef<Leaderboard[number]>[] = [
 
 interface ILeaderboardTableProps {
 	data: Leaderboard;
+	groups: Groups;
 	initialGroupIds?: string[];
 }
 
 export function LeaderboardTable({
 	data,
+	groups,
 	initialGroupIds = [],
 }: ILeaderboardTableProps) {
 	const [rowSelection, setRowSelection] = useState({});
@@ -155,14 +156,13 @@ export function LeaderboardTable({
 		pageSize: 10,
 	});
 
-	const groupsQuery = trpcClient.groups.getGroups.useQuery();
 	const groupOptions: Option[] = useMemo(
 		() =>
-			(groupsQuery.data?.data ?? []).map((group) => ({
+			groups.map((group) => ({
 				value: group.id,
 				label: group.name,
 			})),
-		[groupsQuery.data],
+		[groups],
 	);
 	const selectedGroupOptions = useMemo(
 		() => groupOptions.filter((o) => groupIds.includes(o.value)),
