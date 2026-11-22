@@ -10,6 +10,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { trpcClient } from "@/lib/trpc/client";
+import { AthleteDetailsDrawer } from "@/scenes/athletes/AthleteListScene/components";
 import {
 	ClubWeekSection,
 	IntegrationAlert,
@@ -27,13 +28,26 @@ export const DashboardScene = () => {
 		"three_months" | "thirty_days" | "seven_days"
 	>("three_months");
 
-	const { hasAthlete } = useCurrentUser();
+	const { user, hasAthlete } = useCurrentUser();
+	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const notifications = useNotifications({ enabled: hasAthlete });
 	const analyticsQuery = trpcClient.analytics.getAnalytics.useQuery();
 	const groupsQuery = trpcClient.groups.getGroups.useQuery();
 	const leaderboardQuery = trpcClient.analytics.getLeaderboard.useQuery(
 		{ period },
 		{ placeholderData: keepPreviousData },
+	);
+	const profileAthleteQuery = trpcClient.athletes.getCurrentAthlete.useQuery(
+		undefined,
+		{ enabled: isProfileOpen },
+	);
+	const profileStatsQuery = trpcClient.athletes.getAthleteStats.useQuery(
+		{ athleteId: user.id },
+		{ enabled: isProfileOpen },
+	);
+	const profileActivitiesQuery = trpcClient.activities.getActivities.useQuery(
+		{ athleteId: user.id },
+		{ enabled: isProfileOpen },
 	);
 
 	return (
@@ -51,7 +65,7 @@ export const DashboardScene = () => {
 				<div className="flex flex-1 flex-col">
 					<div className="@container/main flex flex-1 flex-col gap-2">
 						<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-							<MobileHeader />
+							<MobileHeader onOpenProfile={() => setIsProfileOpen(true)} />
 							<NotificationsBanner
 								notifications={notifications}
 								className="mx-4 w-auto lg:mx-6"
@@ -98,6 +112,19 @@ export const DashboardScene = () => {
 					</div>
 				</div>
 			</SidebarInset>
+			<AthleteDetailsDrawer
+				isOpen={isProfileOpen}
+				athlete={profileAthleteQuery.data ?? null}
+				activities={profileActivitiesQuery.data?.data ?? []}
+				athleteStats={profileStatsQuery.data ?? null}
+				canEdit={false}
+				startEditing={false}
+				canMessage={() => false}
+				isMessaging={() => false}
+				onMessage={() => {}}
+				onClose={() => setIsProfileOpen(false)}
+				onSubmit={() => {}}
+			/>
 		</SidebarProvider>
 	);
 };

@@ -1,26 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { routes } from "@/lib/routes";
-import { trpcClient } from "@/lib/trpc/client";
-import { AthleteDetailsDrawer } from "@/scenes/athletes/AthleteListScene/components";
 
-export const MobileHeader = () => {
+export const MobileHeader = ({
+	onOpenProfile,
+}: {
+	onOpenProfile: () => void;
+}) => {
 	const { user, hasAthlete, organization } = useCurrentUser();
-	const [isProfileOpen, setIsProfileOpen] = useState(false);
-	const athleteQuery = trpcClient.athletes.getCurrentAthlete.useQuery(
-		undefined,
-		{ enabled: isProfileOpen },
-	);
-	const statsQuery = trpcClient.athletes.getAthleteStats.useQuery(
-		{ athleteId: user.id },
-		{ enabled: isProfileOpen },
-	);
-	const activitiesQuery = trpcClient.activities.getActivities.useQuery(
-		{ athleteId: user.id },
-		{ enabled: isProfileOpen },
-	);
 	const initials = [user.firstName, user.lastName]
 		.map((part) => part.charAt(0).toUpperCase())
 		.join("");
@@ -46,7 +34,7 @@ export const MobileHeader = () => {
 				<button
 					type="button"
 					aria-label="My profile"
-					onClick={() => setIsProfileOpen(true)}
+					onClick={onOpenProfile}
 					className="flex size-11 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-[15px] font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
 				>
 					{initials}
@@ -61,19 +49,6 @@ export const MobileHeader = () => {
 					{initials}
 				</Link>
 			)}
-			<AthleteDetailsDrawer
-				isOpen={isProfileOpen}
-				athlete={athleteQuery.data ?? null}
-				activities={activitiesQuery.data?.data ?? []}
-				athleteStats={statsQuery.data ?? null}
-				canEdit={false}
-				startEditing={false}
-				canMessage={() => false}
-				isMessaging={() => false}
-				onMessage={() => {}}
-				onClose={() => setIsProfileOpen(false)}
-				onSubmit={() => {}}
-			/>
 		</header>
 	);
 };
