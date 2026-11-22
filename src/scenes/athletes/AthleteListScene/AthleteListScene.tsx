@@ -28,8 +28,10 @@ import {
 	MemberTable,
 } from "./components";
 import { InviteMemberDialog } from "./components/InviteMemberDialog/InviteMemberDialog";
+import { MemberActionsContext } from "./components/MemberTable/MemberRowActions";
 import { useAthleteBulkColumns } from "./components/useAthleteBulkColumns";
-import { useMemberInvites } from "./components/useMemberInvites";
+import { useMemberInvites } from "./hooks/useMemberInvites";
+import { useMessageMember } from "./hooks/useMessageMember";
 
 const sortColumns = ["name", "dateJoined"] as const;
 
@@ -57,7 +59,8 @@ export const AthleteListScene = ({
 	const utils = trpcClient.useUtils();
 	const athleteBulkColumns = useAthleteBulkColumns();
 	const [isInviteOpen, setIsInviteOpen] = useState(false);
-	const { invite } = useMemberInvites();
+	const { invite, resend, revoke, isInviting } = useMemberInvites();
+	const { canMessage, isMessaging, message } = useMessageMember();
 	const table = useTable<{ programIds: string[]; isActive: boolean }>();
 	const { data: members } = trpcClient.members.getMembers.useQuery(
 		{
@@ -163,14 +166,27 @@ export const AthleteListScene = ({
 							<Heading as="h1">Members</Heading>
 						</div>
 						<div className="flex flex-col gap-4 md:gap-6">
-							<MemberTable
-								data={members}
-								programs={programs?.data}
-								isSyncing={syncRca.isPending}
-								onSync={() => syncRca.mutate()}
-								onInvite={() => setIsInviteOpen(true)}
-								{...table}
-							/>
+							<MemberActionsContext
+								value={{
+									canMessage,
+									isMessaging,
+									onMessage: message,
+									isInviting,
+									onInvite: (email) =>
+										invite.mutate({ emails: [email], role: "member" }),
+									onResend: (invitationId) => resend.mutate({ invitationId }),
+									onRevoke: (invitationId) => revoke.mutate({ invitationId }),
+								}}
+							>
+								<MemberTable
+									data={members}
+									programs={programs?.data}
+									isSyncing={syncRca.isPending}
+									onSync={() => syncRca.mutate()}
+									onInvite={() => setIsInviteOpen(true)}
+									{...table}
+								/>
+							</MemberActionsContext>
 						</div>
 					</div>
 				</div>
@@ -206,6 +222,9 @@ export const AthleteListScene = ({
 				athleteStats={athleteStats}
 				canEdit={isAdmin}
 				startEditing={isEditingAthlete}
+				canMessage={canMessage}
+				isMessaging={isMessaging}
+				onMessage={message}
 				onSubmit={async (data) => {
 					await updateAthlete.mutateAsync(data);
 				}}

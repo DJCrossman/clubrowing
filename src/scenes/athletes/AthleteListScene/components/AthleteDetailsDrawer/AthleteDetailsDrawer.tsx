@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 import type { CreateAthlete, UpdateAthlete } from "@/schemas";
 import type { AthleteStats } from "@/schemas/athlete.schema";
 import { AthleteForm } from "../AthleteForm/AthleteForm";
-import { useMessageMember } from "../useMessageMember";
 import { StatCard } from "./StatCard";
 
 interface AthleteDetailsDrawerProps {
@@ -41,6 +40,9 @@ interface AthleteDetailsDrawerProps {
 	athleteStats: AthleteStats | null;
 	canEdit: boolean;
 	startEditing: boolean;
+	canMessage: (athlete: Athlete) => boolean;
+	isMessaging: (athlete: Athlete) => boolean;
+	onMessage: (athlete: Athlete) => void;
 	onClose: () => void;
 	onSubmit: (data: UpdateAthlete) => Promise<void> | void;
 }
@@ -52,6 +54,9 @@ export const AthleteDetailsDrawer = ({
 	athleteStats,
 	canEdit,
 	startEditing,
+	canMessage,
+	isMessaging,
+	onMessage,
 	onClose,
 	onSubmit,
 }: AthleteDetailsDrawerProps) => {
@@ -61,7 +66,6 @@ export const AthleteDetailsDrawer = ({
 		setLastStartEditing(startEditing);
 		setIsEditing(startEditing);
 	}
-	const { canMessage, message, isPending } = useMessageMember();
 	const { user } = useCurrentUser();
 
 	const handleClose = () => {
@@ -158,8 +162,8 @@ export const AthleteDetailsDrawer = ({
 										{canMessage(athlete) && (
 											<Button
 												className="flex-1"
-												disabled={isPending}
-												onClick={() => message(athlete)}
+												disabled={isMessaging(athlete)}
+												onClick={() => onMessage(athlete)}
 											>
 												<IconMessage />
 												Message

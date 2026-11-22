@@ -2,6 +2,7 @@
 
 import { IconDots, IconMailPlus, IconMessage } from "@tabler/icons-react";
 import Link from "next/link";
+import { createContext, use } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -12,17 +13,45 @@ import {
 import { useCurrentUser } from "@/hooks/useAuth";
 import { routes } from "@/lib/routes";
 import type { Member } from "@/lib/trpc/types";
-import { useMemberInvites } from "../useMemberInvites";
-import { useMessageMember } from "../useMessageMember";
+
+export interface MemberActions {
+	canMessage: (member: Member) => boolean;
+	isMessaging: (member: Member) => boolean;
+	onMessage: (member: Member) => void;
+	isInviting: (email: string) => boolean;
+	onInvite: (email: string) => void;
+	onResend: (invitationId: string) => void;
+	onRevoke: (invitationId: string) => void;
+}
 
 interface MemberRowActionsProps {
 	member: Member;
 }
 
+/**
+ * Feeds the row actions from the scene. A table column's cell is rendered as
+ * its own component, so a cell that closed over these callbacks would remount
+ * every row's buttons whenever they change.
+ */
+export const MemberActionsContext = createContext<MemberActions | null>(null);
+
 export function MemberRowActions({ member }: MemberRowActionsProps) {
 	const { isAdmin } = useCurrentUser();
-	const { canMessage, message, isPending } = useMessageMember();
-	const { invite, resend, revoke } = useMemberInvites();
+	const actions = use(MemberActionsContext);
+	if (!actions) {
+		throw new Error(
+			"MemberRowActions must be used within MemberActionsContext",
+		);
+	}
+	const {
+		canMessage,
+		isMessaging,
+		onMessage,
+		isInviting,
+		onInvite,
+		onResend,
+		onRevoke,
+	} = actions;
 	const { athleteId, invitationId, email } = member;
 	const showMessage = canMessage(member);
 	const canInvite = isAdmin && member.account === "none" && !!email;
@@ -37,8 +66,8 @@ export function MemberRowActions({ member }: MemberRowActionsProps) {
 					className="size-7"
 					aria-label={`Message ${member.name}`}
 					title="Message"
-					disabled={isPending}
-					onClick={() => message(member)}
+					disabled={isMessaging(member)}
+					onClick={() => onMessage(member)}
 				>
 					<IconMessage />
 				</Button>
@@ -50,8 +79,8 @@ export function MemberRowActions({ member }: MemberRowActionsProps) {
 					className="size-7"
 					aria-label={`Invite ${member.name}`}
 					title="Invite by email"
-					disabled={invite.isPending}
-					onClick={() => invite.mutate({ emails: [email], role: "member" })}
+					disabled={isInviting(email)}
+					onClick={() => onInvite(email)}
 				>
 					<IconMailPlus />
 				</Button>
@@ -79,7 +108,7 @@ export function MemberRowActions({ member }: MemberRowActionsProps) {
 							</DropdownMenuItem>
 						)}
 						{showMessage && (
-							<DropdownMenuItem onClick={() => message(member)}>
+							<DropdownMenuItem onClick={() => onMessage(member)}>
 								Send message
 							</DropdownMenuItem>
 						)}
@@ -91,24 +120,18 @@ export function MemberRowActions({ member }: MemberRowActionsProps) {
 							</DropdownMenuItem>
 						)}
 						{canInvite && email && (
-							<DropdownMenuItem
-								onClick={() =>
-									invite.mutate({ emails: [email], role: "member" })
-								}
-							>
+							<DropdownMenuItem onClick={() => onInvite(email)}>
 								Invite by email
 							</DropdownMenuItem>
 						)}
 						{isAdmin && invitationId && (
 							<>
-								<DropdownMenuItem
-									onClick={() => resend.mutate({ invitationId })}
-								>
+								<DropdownMenuItem onClick={() => onResend(invitationId)}>
 									Resend invitation
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									variant="destructive"
-									onClick={() => revoke.mutate({ invitationId })}
+									onClick={() => onRevoke(invitationId)}
 								>
 									Revoke invitation
 								</DropdownMenuItem>

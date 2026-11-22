@@ -68,6 +68,9 @@ export const MobileHeader = () => {
 				athleteStats={statsQuery.data ?? null}
 				canEdit={false}
 				startEditing={false}
+				canMessage={() => false}
+				isMessaging={() => false}
+				onMessage={() => {}}
 				onClose={() => setIsProfileOpen(false)}
 				onSubmit={() => {}}
 			/>

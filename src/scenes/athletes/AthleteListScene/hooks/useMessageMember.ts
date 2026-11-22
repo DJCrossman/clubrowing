@@ -26,6 +26,7 @@ export function useMessageMember() {
 		message: (target: MessageTarget) => {
 			if (target.userId) startDm.mutate({ userIds: [target.userId] });
 		},
-		isPending: startDm.isPending,
+		isMessaging: (target: MessageTarget) =>
+			startDm.isPending && startDm.variables?.userIds[0] === target.userId,
 	};
 }

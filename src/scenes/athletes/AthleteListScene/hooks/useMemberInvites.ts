@@ -40,5 +40,11 @@ export function useMemberInvites() {
 		onError: toastError,
 	});
 
-	return { invite, resend, revoke };
+	return {
+		invite,
+		resend,
+		revoke,
+		isInviting: (email: string) =>
+			invite.isPending && !!invite.variables?.emails.includes(email),
+	};
 }
