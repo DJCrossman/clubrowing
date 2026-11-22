@@ -23,6 +23,7 @@ interface MessageRowProps extends MessageActionHandlers {
 	compact?: boolean;
 	isHighlighted?: boolean;
 	videosPausedUntil?: string | null;
+	onVideoError: () => void;
 }
 
 export function MessageRow({
@@ -31,6 +32,7 @@ export function MessageRow({
 	compact = false,
 	isHighlighted = false,
 	videosPausedUntil = null,
+	onVideoError,
 	...handlers
 }: MessageRowProps) {
 	const { author } = message;
@@ -111,6 +113,7 @@ export function MessageRow({
 					<MessageVideos
 						videos={message.videos}
 						pausedUntil={videosPausedUntil}
+						onPlaybackError={onVideoError}
 					/>
 				)}
 				{message.files.length > 0 && <MessageFiles files={message.files} />}

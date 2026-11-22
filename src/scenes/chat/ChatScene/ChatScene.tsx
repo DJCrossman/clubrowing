@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useRef, useState } from "react";
@@ -65,6 +66,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 		messagesQuery,
 		threadQuery,
 		membersQuery,
+		refreshMessages,
 		sendMessage,
 		replyInThread,
 		toggleReaction,
@@ -80,6 +82,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 		threadMessageId,
 		loadMembers: !!forwardingMessage,
 	});
+	const uploadAttachments = useMutation({ mutationFn: uploadFiles });
 	const { isAdmin } = useCurrentUser();
 	const quotedMessage = quote?.channelId === channelId ? quote : null;
 	const editingMessage = editing?.channelId === channelId ? editing : null;
@@ -161,6 +164,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									editingMessageId={editingMessage?.id}
 									firstUnreadMessageId={firstUnreadMessageId}
 									videosPausedUntil={videosPausedUntil}
+									onVideoError={() => void refreshMessages()}
 									isKeyboardOpen={!!spaceAboveKeyboard}
 									onLoadOlder={() => messagesQuery.fetchNextPage()}
 									emptyState={
@@ -224,10 +228,11 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 										}
 										onSubmit={async ({ text, gif, files, mentions }) => {
 											const attachmentIds = files.length
-												? await uploadFiles({
-														files,
-														onVideoProgress: setVideoUploadProgress,
-													})
+												? await uploadAttachments
+														.mutateAsync({
+															files,
+															onVideoProgress: setVideoUploadProgress,
+														})
 														.catch((error: Error) => {
 															toast.error(error.message);
 															throw error;
@@ -257,6 +262,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							isUnavailable={threadQuery.isError && !threadQuery.data}
 							isMobile={isMobile}
 							videosPausedUntil={videosPausedUntil}
+							onVideoError={() => void refreshMessages()}
 							onClose={() =>
 								router.push(routes.chat.channel(channelId), { scroll: false })
 							}

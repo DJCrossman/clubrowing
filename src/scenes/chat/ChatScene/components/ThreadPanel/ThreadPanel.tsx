@@ -39,6 +39,7 @@ interface ThreadPanelProps
 		mentions: MentionRange[],
 	) => Promise<unknown>;
 	videosPausedUntil: string | null;
+	onVideoError: () => void;
 }
 
 export function ThreadPanel({ isMobile, ...props }: ThreadPanelProps) {
@@ -85,6 +86,7 @@ function ThreadContent({
 	onReply,
 	onSaveEdit,
 	videosPausedUntil,
+	onVideoError,
 	header,
 	...handlers
 }: Omit<ThreadPanelProps, "isMobile"> & { header?: ReactNode }) {
@@ -133,6 +135,7 @@ function ThreadContent({
 								compact
 								isHighlighted={thread.root.id === editingMessage?.id}
 								videosPausedUntil={videosPausedUntil}
+								onVideoError={onVideoError}
 								{...bindMessageHandlers(
 									{ ...handlers, onEdit: setEditing },
 									thread.root,
@@ -149,6 +152,7 @@ function ThreadContent({
 									showThreadSummary={false}
 									compact
 									isHighlighted={reply.id === editingMessage?.id}
+									onVideoError={onVideoError}
 									{...bindMessageHandlers(
 										{ ...handlers, onEdit: setEditing },
 										reply,

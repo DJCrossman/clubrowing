@@ -139,6 +139,8 @@ export function useChatChannel({
 		messagesQuery,
 		threadQuery,
 		membersQuery,
+		// Playback may have been paused since the page loaded.
+		refreshMessages: () => utils.chat.getMessages.invalidate(),
 		sendMessage,
 		replyInThread,
 		toggleReaction,

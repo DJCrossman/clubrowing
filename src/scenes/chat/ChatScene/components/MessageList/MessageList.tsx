@@ -24,6 +24,7 @@ interface MessageListProps extends MessageHandlers {
 	editingMessageId?: string;
 	firstUnreadMessageId?: string;
 	videosPausedUntil: string | null;
+	onVideoError: () => void;
 	isKeyboardOpen: boolean;
 }
 
@@ -38,6 +39,7 @@ export function MessageList({
 	editingMessageId,
 	firstUnreadMessageId,
 	videosPausedUntil,
+	onVideoError,
 	isKeyboardOpen,
 	...handlers
 }: MessageListProps) {
@@ -90,6 +92,7 @@ export function MessageList({
 										message.id === editingMessageId
 									}
 									videosPausedUntil={videosPausedUntil}
+									onVideoError={onVideoError}
 									{...bindMessageHandlers(handlers, message)}
 								/>
 							</Fragment>

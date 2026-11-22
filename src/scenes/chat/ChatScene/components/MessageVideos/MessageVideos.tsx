@@ -4,17 +4,20 @@ import { IconDownload } from "@tabler/icons-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { trpcClient } from "@/lib/trpc/client";
 import type { ChatMessage } from "@/lib/trpc/types";
 import { formatLastReply } from "../../utils/messageFormatting";
 
 interface MessageVideosProps {
 	videos: ChatMessage["videos"];
 	pausedUntil: string | null;
+	onPlaybackError: () => void;
 }
 
-export function MessageVideos({ videos, pausedUntil }: MessageVideosProps) {
-	const utils = trpcClient.useUtils();
+export function MessageVideos({
+	videos,
+	pausedUntil,
+	onPlaybackError,
+}: MessageVideosProps) {
 	const [failedIds, setFailedIds] = useState<string[]>([]);
 
 	return (
@@ -91,8 +94,7 @@ export function MessageVideos({ videos, pausedUntil }: MessageVideosProps) {
 									aria-label={video.name}
 									onError={() => {
 										setFailedIds((current) => [...current, video.id]);
-										// Playback may have been paused since the page loaded.
-										void utils.chat.getMessages.invalidate();
+										onPlaybackError();
 									}}
 									className="size-full object-contain"
 								/>
