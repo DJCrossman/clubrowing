@@ -1,25 +1,20 @@
 "use client";
 
 import { IconBrandStrava, IconPlus } from "@tabler/icons-react";
-import { keepPreviousData } from "@tanstack/react-query";
-import {
-	getCoreRowModel,
-	type PaginationState,
-	useReactTable,
-} from "@tanstack/react-table";
+import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/useAuth";
+import type { SyncSource } from "@/hooks/useSyncStatus";
+import type { TableState } from "@/hooks/useTable";
 import { formatDurationAsTime } from "@/lib/formatters/formatDuration";
 import { formatMeters } from "@/lib/formatters/formatMeters";
 import { formatCompactSplit } from "@/lib/formatters/formatSplit";
 import { routes } from "@/lib/routes";
-import { trpcClient } from "@/lib/trpc/client";
 import type { ActivitiesResult, Activity, Athletes } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { FilterChip } from "@/scenes/schedule/ScheduleScene/components";
@@ -28,45 +23,40 @@ import { ActivityDayHeading } from "./ActivityDayHeading";
 import { MemberFilter } from "./MemberFilter";
 import { SyncMenu } from "./SyncMenu";
 
-const DEFAULT_PAGE_SIZE = 20;
 const activityTypeOptions = ["all", ...ActivityType] as const;
 
-interface ActivityTableProps {
-	initialData: ActivitiesResult;
+interface ActivityTableProps
+	extends TableState<{
+		type: (typeof ActivityType)[number];
+		ergTest: "2k" | "6k";
+	}> {
+	data: ActivitiesResult;
+	isSyncing: (source: SyncSource) => boolean;
+	isCoolingDown: (source: SyncSource) => boolean;
+	onSync: (source: SyncSource) => void;
 	athletes?: Athletes;
 	athleteIds?: string[];
 	onOpenActivity?: (activity: Activity) => void;
 }
 
 export function ActivityTable({
-	initialData,
+	data,
+	isSyncing,
+	isCoolingDown,
+	onSync,
 	athletes,
 	athleteIds,
 	onOpenActivity,
+	pagination,
+	filters,
+	onPaginationChange,
+	onFiltersChange,
 }: ActivityTableProps) {
 	const router = useRouter();
 	const { user, isAdmin } = useCurrentUser();
 	const hasIntegration = user.stravaConnected || user.concept2Connected;
 
-	const [pagination, setPagination] = useState<PaginationState>({
-		pageIndex: 0,
-		pageSize: DEFAULT_PAGE_SIZE,
-	});
-	const [type, setType] = useState<(typeof ActivityType)[number] | undefined>(
-		undefined,
-	);
-	const [ergTest, setErgTest] = useState<"2k" | "6k" | undefined>(undefined);
-
-	const { data } = trpcClient.activities.getActivities.useQuery(
-		{
-			page: pagination.pageIndex + 1,
-			pageSize: pagination.pageSize,
-			type,
-			ergTest,
-			athleteIds,
-		},
-		{ initialData, placeholderData: keepPreviousData },
-	);
+	const { type, ergTest } = filters;
 
 	const table = useReactTable({
 		data: data.data,
@@ -74,7 +64,7 @@ export function ActivityTable({
 		state: { pagination },
 		manualPagination: true,
 		pageCount: data.totalPages,
-		onPaginationChange: setPagination,
+		onPaginationChange,
 		getCoreRowModel: getCoreRowModel(),
 	});
 
@@ -95,15 +85,14 @@ export function ActivityTable({
 								key={option}
 								isActive={!ergTest && (type ?? "all") === option}
 								className="max-md:px-2.5"
-								onClick={() => {
-									setType(
-										ActivityType.find(
+								onClick={() =>
+									onFiltersChange({
+										type: ActivityType.find(
 											(activityType) => activityType === option,
 										),
-									);
-									setErgTest(undefined);
-									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-								}}
+										ergTest: undefined,
+									})
+								}
 							>
 								{option === "all"
 									? "All"
@@ -117,11 +106,9 @@ export function ActivityTable({
 								key={option}
 								isActive={ergTest === option}
 								className="max-md:px-2.5"
-								onClick={() => {
-									setErgTest(option);
-									setType(undefined);
-									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-								}}
+								onClick={() =>
+									onFiltersChange({ ergTest: option, type: undefined })
+								}
 							>
 								{option.toUpperCase()}
 							</FilterChip>
@@ -136,7 +123,7 @@ export function ActivityTable({
 											? `${routes.activities.list()}?athleteIds=${nextIds.join(",")}`
 											: routes.activities.list(),
 									);
-									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+									onPaginationChange((prev) => ({ ...prev, pageIndex: 0 }));
 								}}
 							/>
 						)}
@@ -156,7 +143,11 @@ export function ActivityTable({
 						<IconPlus />
 						<span className="hidden lg:inline">Add Activity</span>
 					</Button>
-					<SyncMenu />
+					<SyncMenu
+						isSyncing={isSyncing}
+						isCoolingDown={isCoolingDown}
+						onSync={onSync}
+					/>
 				</div>
 			</div>
 			<div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">

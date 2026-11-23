@@ -1,6 +1,7 @@
 "use client";
 
 import { IconPlus, IconRefresh } from "@tabler/icons-react";
+import { keepPreviousData } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useTable } from "@/hooks/useTable";
 import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
 import { routes } from "@/lib/routes";
 import { trpcClient } from "@/lib/trpc/client";
@@ -27,7 +29,7 @@ import type {
 	Workouts,
 } from "@/lib/trpc/types";
 import { IntegrationAlert } from "@/scenes/dashboard/DashboardScene/components";
-import type { CreateActivity } from "@/schemas";
+import type { ActivityType, CreateActivity } from "@/schemas";
 import {
 	ActivityCreateDrawer,
 	ActivityDetailsDrawer,
@@ -35,6 +37,7 @@ import {
 } from "./components";
 import type { UploadErgActivityScreenshot } from "./components/ActivityForm/ActivityForm";
 import { SyncMenu } from "./components/ActivityTable/SyncMenu";
+import { useActivitySync } from "./hooks/useActivitySync";
 
 interface ActivityListSceneProps {
 	initialData?: ActivitiesResult;
@@ -104,6 +107,21 @@ export const ActivityListScene = ({
 				!!openActivity.conceptTwoData?.stroke_data,
 		},
 	);
+	const table = useTable<{
+		type: (typeof ActivityType)[number];
+		ergTest: "2k" | "6k";
+	}>();
+	const { data: activities } = trpcClient.activities.getActivities.useQuery(
+		{
+			page: table.page,
+			pageSize: table.pageSize,
+			type: table.filters.type,
+			ergTest: table.filters.ergTest,
+			athleteIds,
+		},
+		{ initialData, placeholderData: keepPreviousData },
+	);
+	const { isSyncing, isCoolingDown, startSync } = useActivitySync();
 	const utils = trpcClient.useUtils();
 	const createActivity = trpcClient.activities.createActivity.useMutation({
 		onSuccess: async () => {
@@ -178,6 +196,9 @@ export const ActivityListScene = ({
 							actions={
 								<>
 									<SyncMenu
+										isSyncing={isSyncing}
+										isCoolingDown={isCoolingDown}
+										onSync={startSync}
 										trigger={
 											<Button
 												variant="outline"
@@ -215,12 +236,16 @@ export const ActivityListScene = ({
 						</div>
 						<div className="flex flex-col gap-4 md:gap-6">
 							<ActivityTable
-								initialData={initialData}
+								data={activities}
+								isSyncing={isSyncing}
+								isCoolingDown={isCoolingDown}
+								onSync={startSync}
 								athletes={athletes}
 								athleteIds={athleteIds}
 								onOpenActivity={(activity) =>
 									startTransition(() => setOpenActivity(activity))
 								}
+								{...table}
 							/>
 						</div>
 					</div>

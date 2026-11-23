@@ -11,44 +11,22 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { type SyncSource, useSyncStatus } from "@/hooks/useSyncStatus";
-import { trpcClient } from "@/lib/trpc/client";
+import type { SyncSource } from "@/hooks/useSyncStatus";
 
 interface SyncMenuProps {
+	isSyncing: (source: SyncSource) => boolean;
+	isCoolingDown: (source: SyncSource) => boolean;
+	onSync: (source: SyncSource) => void;
 	trigger?: ReactElement;
 }
 
-export function SyncMenu({ trigger }: SyncMenuProps) {
+export function SyncMenu({
+	isSyncing,
+	isCoolingDown,
+	onSync,
+	trigger,
+}: SyncMenuProps) {
 	const { user } = useCurrentUser();
-	const { runningSources, cooldownSources } = useSyncStatus();
-	const utils = trpcClient.useUtils();
-
-	const onSyncSettled = () => {
-		utils.activities.getActivities.invalidate();
-		utils.activities.getPendingInboxBatches.invalidate();
-	};
-
-	const stravaSync = trpcClient.activities.syncStravaActivities.useMutation({
-		onSuccess: onSyncSettled,
-		onError: onSyncSettled,
-	});
-	const concept2Sync = trpcClient.activities.syncConcept2Activities.useMutation(
-		{ onSuccess: onSyncSettled, onError: onSyncSettled },
-	);
-
-	const isSyncing = (source: SyncSource) => {
-		if (source === "strava" && stravaSync.isPending) return true;
-		if (source === "concept2" && concept2Sync.isPending) return true;
-		return runningSources.has(source);
-	};
-	const isLocked = (source: SyncSource) =>
-		isSyncing(source) || cooldownSources.has(source);
-
-	const startSync = (source: SyncSource) => {
-		if (isLocked(source)) return;
-		if (source === "strava") stravaSync.mutate();
-		else if (source === "concept2") concept2Sync.mutate();
-	};
 
 	if (!user.stravaConnected && !user.concept2Connected) return null;
 
@@ -74,9 +52,9 @@ export function SyncMenu({ trigger }: SyncMenuProps) {
 						label="Sync Strava"
 						source="strava"
 						syncing={isSyncing("strava")}
-						coolingDown={cooldownSources.has("strava")}
-						disabled={isLocked("strava")}
-						onClick={() => startSync("strava")}
+						coolingDown={isCoolingDown("strava")}
+						disabled={isSyncing("strava") || isCoolingDown("strava")}
+						onClick={() => onSync("strava")}
 					/>
 				)}
 				{user.concept2Connected && (
@@ -84,9 +62,9 @@ export function SyncMenu({ trigger }: SyncMenuProps) {
 						label="Sync Concept2"
 						source="concept2"
 						syncing={isSyncing("concept2")}
-						coolingDown={cooldownSources.has("concept2")}
-						disabled={isLocked("concept2")}
-						onClick={() => startSync("concept2")}
+						coolingDown={isCoolingDown("concept2")}
+						disabled={isSyncing("concept2") || isCoolingDown("concept2")}
+						onClick={() => onSync("concept2")}
 					/>
 				)}
 			</DropdownMenuContent>
