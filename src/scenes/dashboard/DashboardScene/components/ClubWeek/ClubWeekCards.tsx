@@ -1,70 +1,65 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCurrentUser } from "@/hooks/useAuth";
 import { getClubToday } from "@/lib/schedule/week";
-import type { ChatChannels } from "@/lib/trpc/types";
-import type { ClubWeek } from "../../hooks/useClubWeek";
-import { AvailabilityCard } from "./AvailabilityCard";
+import type {
+	ChatChannels,
+	ChatMessage,
+	UpcomingSchedule,
+} from "@/lib/trpc/types";
+import type { RsvpStatus } from "@/schemas";
 import { LatestChatCard } from "./LatestChatCard";
 import { MessagesCard } from "./MessagesCard";
 import { NeedsReplyCard } from "./NeedsReplyCard";
 import { UpNextCard } from "./UpNextCard";
 
 interface ClubWeekCardsProps {
-	clubWeek: ClubWeek;
+	upcoming: UpcomingSchedule | undefined;
+	onRsvp: (eventId: string, status: RsvpStatus) => Promise<RsvpStatus | null>;
 	/** Scope to one group; leave out for everything the viewer is in. */
 	group?: { id: string; channelId: string | undefined };
+	/** The group chat's latest messages, shown when scoped to a group. */
+	latestMessages: ChatMessage[];
+	isLoadingMessages: boolean;
 	/** The viewer's chats, listed when the cards are not scoped to a group. */
 	myChannels?: ChatChannels;
 	scheduleHref: string;
-	/** Shows the next training's availability, linking to its responses. */
-	responsesHref?: (eventId: string) => string;
 	children?: ReactNode;
 }
 
 export const ClubWeekCards = ({
-	clubWeek,
+	upcoming,
+	onRsvp,
 	group,
+	latestMessages,
+	isLoadingMessages,
 	myChannels,
 	scheduleHref,
-	responsesHref,
 	children,
 }: ClubWeekCardsProps) => {
-	const { isAdmin } = useCurrentUser();
 	const today = getClubToday();
 
 	return (
 		<div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] items-start gap-3">
 			<UpNextCard
-				events={clubWeek.upcoming?.next}
+				events={upcoming?.next}
 				today={today}
 				scheduleHref={scheduleHref}
-				onRsvp={clubWeek.rsvp}
+				onRsvp={onRsvp}
 			/>
 			<NeedsReplyCard
-				events={clubWeek.upcoming?.pendingRsvps}
+				events={upcoming?.pendingRsvps}
 				today={today}
-				onRsvp={clubWeek.rsvp}
+				onRsvp={onRsvp}
 			/>
 			{group ? (
 				<LatestChatCard
 					channelId={group.channelId}
-					messages={clubWeek.latestMessages}
-					isLoading={clubWeek.isLoadingMessages}
+					messages={latestMessages}
+					isLoading={isLoadingMessages}
 				/>
 			) : (
 				<MessagesCard channels={myChannels} />
-			)}
-			{responsesHref && (
-				<AvailabilityCard
-					event={clubWeek.upcoming?.nextTraining}
-					today={today}
-					isAdmin={isAdmin}
-					responsesHref={responsesHref}
-					noReply={clubWeek.noReply}
-					onNudge={clubWeek.nudge}
-				/>
 			)}
 			{children}
 		</div>

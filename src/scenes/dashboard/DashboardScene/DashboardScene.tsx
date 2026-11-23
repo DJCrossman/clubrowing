@@ -109,7 +109,10 @@ export const DashboardScene = () => {
 								/>
 							) : null}
 							<ClubWeekSection
-								clubWeek={clubWeek}
+								upcoming={clubWeek.upcoming}
+								onRsvp={clubWeek.rsvp}
+								latestMessages={clubWeek.latestMessages}
+								isLoadingMessages={clubWeek.isLoadingMessages}
 								myGroups={myGroups}
 								group={clubWeekGroup}
 								channelId={clubWeekChannelId}

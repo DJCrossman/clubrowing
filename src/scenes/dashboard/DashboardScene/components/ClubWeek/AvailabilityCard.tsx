@@ -5,11 +5,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatEventDay } from "@/lib/schedule/event-labels";
-import type { ScheduleEvent } from "@/lib/trpc/types";
+import type { EventResponses, ScheduleEvent } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { NudgeDialog } from "@/scenes/schedule/ScheduleScene/components";
 import { formatNudgeResult } from "@/scenes/schedule/ScheduleScene/utils/formatNudgeResult";
-import type { ClubWeek } from "../../hooks/useClubWeek";
 import { ClubWeekCard } from "./ClubWeekCard";
 
 const STATS = [
@@ -24,8 +23,8 @@ interface AvailabilityCardProps {
 	today: string;
 	isAdmin: boolean;
 	responsesHref: (eventId: string) => string;
-	noReply: ClubWeek["noReply"];
-	onNudge: ClubWeek["nudge"];
+	noReply: EventResponses["noReply"];
+	onNudge: (eventId: string) => Promise<{ count: number; reached: number }>;
 }
 
 export const AvailabilityCard = ({

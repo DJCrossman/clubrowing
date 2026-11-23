@@ -6,8 +6,6 @@ import type { RsvpStatus } from "@/schemas";
 const UPCOMING_LIMIT = 4;
 const SHOWN_MESSAGES = 3;
 
-export type ClubWeek = ReturnType<typeof useClubWeek>;
-
 export function useClubWeek({
 	groupId,
 	channelId,

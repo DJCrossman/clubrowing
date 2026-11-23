@@ -5,9 +5,11 @@ import { useMemo, useState } from "react";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { routes } from "@/lib/routes";
+import { getClubToday } from "@/lib/schedule/week";
 import { trpcClient } from "@/lib/trpc/client";
 import type { Group } from "@/lib/trpc/types";
 import {
+	AvailabilityCard,
 	ClubWeekCards,
 	LeaderboardTable,
 	LeaderboardTableSkeleton,
@@ -51,11 +53,21 @@ export const GroupScene = ({ group }: GroupSceneProps) => {
 			<div className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="px-4 lg:px-6">
 					<ClubWeekCards
-						clubWeek={clubWeek}
+						upcoming={clubWeek.upcoming}
+						onRsvp={clubWeek.rsvp}
 						group={{ id: group.id, channelId: group.channelId }}
+						latestMessages={clubWeek.latestMessages}
+						isLoadingMessages={clubWeek.isLoadingMessages}
 						scheduleHref={scheduleRoutes.list()}
-						responsesHref={(eventId) => scheduleRoutes.view({ id: eventId })}
 					>
+						<AvailabilityCard
+							event={clubWeek.upcoming?.nextTraining}
+							today={getClubToday()}
+							isAdmin={isAdmin}
+							responsesHref={(eventId) => scheduleRoutes.view({ id: eventId })}
+							noReply={clubWeek.noReply}
+							onNudge={clubWeek.nudge}
+						/>
 						<GroupMembersCard group={group} isAdmin={isAdmin} />
 					</ClubWeekCards>
 				</div>

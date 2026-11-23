@@ -1,15 +1,22 @@
 "use client";
 
 import { routes } from "@/lib/routes";
-import type { ChatChannels } from "@/lib/trpc/types";
+import type {
+	ChatChannels,
+	ChatMessage,
+	UpcomingSchedule,
+} from "@/lib/trpc/types";
 import { FilterChip } from "@/scenes/schedule/ScheduleScene/components";
-import type { ClubWeek } from "../../hooks/useClubWeek";
+import type { RsvpStatus } from "@/schemas";
 import { ClubWeekCards } from "./ClubWeekCards";
 
 type MyGroup = { id: string; name: string };
 
 interface ClubWeekSectionProps {
-	clubWeek: ClubWeek;
+	upcoming: UpcomingSchedule | undefined;
+	onRsvp: (eventId: string, status: RsvpStatus) => Promise<RsvpStatus | null>;
+	latestMessages: ChatMessage[];
+	isLoadingMessages: boolean;
 	myGroups: MyGroup[];
 	/** The group the cards are scoped to; leave out for all the viewer's groups. */
 	group: MyGroup | undefined;
@@ -19,7 +26,10 @@ interface ClubWeekSectionProps {
 }
 
 export const ClubWeekSection = ({
-	clubWeek,
+	upcoming,
+	onRsvp,
+	latestMessages,
+	isLoadingMessages,
 	myGroups,
 	group,
 	channelId,
@@ -49,8 +59,11 @@ export const ClubWeekSection = ({
 			</div>
 			<ClubWeekCards
 				key={group?.id ?? "mine"}
-				clubWeek={clubWeek}
+				upcoming={upcoming}
+				onRsvp={onRsvp}
 				group={group && { id: group.id, channelId }}
+				latestMessages={latestMessages}
+				isLoadingMessages={isLoadingMessages}
 				myChannels={myChannels}
 				scheduleHref={routes.schedule.list({ group: group?.id })}
 			/>
