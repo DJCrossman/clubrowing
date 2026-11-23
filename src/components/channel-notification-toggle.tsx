@@ -7,19 +7,22 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { useNotifications } from "@/hooks/useNotifications";
-import { channelNotificationScope } from "@/lib/notifications";
+import {
+	channelNotificationScope,
+	type NotificationPreferences,
+} from "@/lib/notifications";
 
 export const ChannelNotificationToggle = ({
 	channelId,
-	notifications: { preferences, setPreference, isLoading },
+	preferences,
+	isLoading,
+	onPreferenceChange,
 	className,
 }: {
 	channelId: string;
-	notifications: Pick<
-		ReturnType<typeof useNotifications>,
-		"preferences" | "setPreference" | "isLoading"
-	>;
+	preferences: NotificationPreferences;
+	isLoading: boolean;
+	onPreferenceChange: (scope: string, isEnabled: boolean) => void;
 	className?: string;
 }) => {
 	const scope = channelNotificationScope(channelId);
@@ -39,7 +42,7 @@ export const ChannelNotificationToggle = ({
 						aria-label={label}
 						aria-pressed={isMuted}
 						disabled={isLoading}
-						onClick={() => setPreference(scope, isMuted)}
+						onClick={() => onPreferenceChange(scope, isMuted)}
 					/>
 				}
 			>

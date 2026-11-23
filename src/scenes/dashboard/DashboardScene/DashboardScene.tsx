@@ -92,7 +92,14 @@ export const DashboardScene = () => {
 						<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 							<MobileHeader onOpenProfile={() => setIsProfileOpen(true)} />
 							<NotificationsBanner
-								notifications={notifications}
+								isLoading={notifications.isLoading}
+								isError={notifications.isError}
+								isSupported={notifications.supported}
+								isConfigured={notifications.configured}
+								permission={notifications.permission}
+								isSubscribed={notifications.subscribed}
+								isEnabling={notifications.isPending}
+								onEnable={notifications.enable}
 								className="mx-4 w-auto lg:mx-6"
 							/>
 							{!hasAthlete && (

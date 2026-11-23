@@ -185,7 +185,14 @@ export function OnboardingScene({
 						onBack: goBack,
 					}}
 					notifications={{
-						notifications,
+						isLoading: notifications.isLoading,
+						isError: notifications.isError,
+						isSupported: notifications.supported,
+						isConfigured: notifications.configured,
+						permission: notifications.permission,
+						isSubscribed: notifications.subscribed,
+						isEnabling: notifications.isPending,
+						onEnable: notifications.enable,
 						onContinue: goNext,
 						onSkip: goNext,
 						onBack: goBack,

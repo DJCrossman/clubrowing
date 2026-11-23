@@ -6,7 +6,7 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ChannelNotificationToggle } from "@/components/channel-notification-toggle";
 import { ChannelIcon } from "@/components/chat/channel-icon";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { NotificationPreferences } from "@/lib/notifications";
 import { routes } from "@/lib/routes";
 import type { ChatChannel } from "@/lib/trpc/types";
 import { MAX_DM_MEMBERS } from "@/schemas/chat.schema";
@@ -30,9 +31,9 @@ export type ChatHeaderChannel = Pick<
 
 interface ChatHeaderProps {
 	channel: ChatHeaderChannel | undefined;
-	notifications: ComponentProps<
-		typeof ChannelNotificationToggle
-	>["notifications"];
+	notificationPreferences: NotificationPreferences;
+	isLoadingNotifications: boolean;
+	onNotificationPreferenceChange: (scope: string, isEnabled: boolean) => void;
 	/** Where the phone back chevron goes. */
 	backHref?: string;
 	children?: ReactNode;
@@ -42,7 +43,9 @@ interface ChatHeaderProps {
 
 export function ChatHeader({
 	channel,
-	notifications,
+	notificationPreferences,
+	isLoadingNotifications,
+	onNotificationPreferenceChange,
 	backHref = routes.chat.list(),
 	children,
 	onAddPeople,
@@ -136,7 +139,9 @@ export function ChatHeader({
 					)}
 					<ChannelNotificationToggle
 						channelId={channel.id}
-						notifications={notifications}
+						preferences={notificationPreferences}
+						isLoading={isLoadingNotifications}
+						onPreferenceChange={onNotificationPreferenceChange}
 						className="size-8 border border-input"
 					/>
 				</div>

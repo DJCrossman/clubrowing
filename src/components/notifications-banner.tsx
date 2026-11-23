@@ -5,16 +5,30 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/useAuth";
-import type { useNotifications } from "@/hooks/useNotifications";
+import type { NotificationPermissionState } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 
 const DISMISSED_STORAGE_KEY = "notificationsBanner.dismissed";
 
 export const NotificationsBanner = ({
-	notifications,
+	isLoading,
+	isError,
+	isSupported,
+	isConfigured,
+	permission,
+	isSubscribed,
+	isEnabling,
+	onEnable,
 	className,
 }: {
-	notifications: ReturnType<typeof useNotifications>;
+	isLoading: boolean;
+	isError: boolean;
+	isSupported: boolean;
+	isConfigured: boolean;
+	permission: NotificationPermissionState;
+	isSubscribed: boolean;
+	isEnabling: boolean;
+	onEnable: () => void;
 	className?: string;
 }) => {
 	const { hasAthlete } = useCurrentUser();
@@ -27,10 +41,10 @@ export const NotificationsBanner = ({
 	if (
 		!hasAthlete ||
 		dismissed ||
-		notifications.isLoading ||
-		notifications.isError ||
-		!notifications.supported ||
-		(notifications.permission === "granted" && notifications.subscribed)
+		isLoading ||
+		isError ||
+		!isSupported ||
+		(permission === "granted" && isSubscribed)
 	) {
 		return null;
 	}
@@ -42,9 +56,9 @@ export const NotificationsBanner = ({
 		setDismissed(true);
 	};
 
-	const variant = !notifications.configured
+	const variant = !isConfigured
 		? "unconfigured"
-		: notifications.permission === "denied"
+		: permission === "denied"
 			? "blocked"
 			: "off";
 	const { title, description } = COPY[variant];
@@ -61,12 +75,8 @@ export const NotificationsBanner = ({
 					</p>
 				</div>
 				{variant === "off" && (
-					<Button
-						size="sm"
-						onClick={() => notifications.enable()}
-						disabled={notifications.isPending}
-					>
-						{notifications.isPending && <Loader2 className="animate-spin" />}
+					<Button size="sm" onClick={() => onEnable()} disabled={isEnabling}>
+						{isEnabling && <Loader2 className="animate-spin" />}
 						Turn on notifications
 					</Button>
 				)}

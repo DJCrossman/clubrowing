@@ -3,7 +3,7 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import type { useNotifications } from "@/hooks/useNotifications";
+import type { NotificationPermissionState } from "@/hooks/useNotifications";
 
 const SAMPLE_NOTIFICATIONS = [
 	{
@@ -17,29 +17,42 @@ const SAMPLE_NOTIFICATIONS = [
 ];
 
 interface NotificationsStepProps {
-	notifications: ReturnType<typeof useNotifications>;
+	isLoading: boolean;
+	isError: boolean;
+	isSupported: boolean;
+	isConfigured: boolean;
+	permission: NotificationPermissionState;
+	isSubscribed: boolean;
+	isEnabling: boolean;
+	onEnable: () => void;
 	onContinue: () => void;
 	onSkip: () => void;
 	onBack?: () => void;
 }
 
 export function NotificationsStep({
-	notifications,
+	isLoading,
+	isError,
+	isSupported,
+	isConfigured,
+	permission,
+	isSubscribed,
+	isEnabling,
+	onEnable,
 	onContinue,
 	onSkip,
 	onBack,
 }: NotificationsStepProps) {
-	const isOn =
-		notifications.permission === "granted" && notifications.subscribed;
-	const unavailableReason = notifications.isLoading
+	const isOn = permission === "granted" && isSubscribed;
+	const unavailableReason = isLoading
 		? null
-		: notifications.isError
+		: isError
 			? "Notifications can't be turned on right now. You can turn them on later in Settings."
-			: !notifications.supported
+			: !isSupported
 				? "This browser doesn't support notifications. You can turn them on later from another device."
-				: !notifications.configured
+				: !isConfigured
 					? "Notifications haven't been set up for the club yet. You can turn them on later in Settings."
-					: notifications.permission === "denied"
+					: permission === "denied"
 						? "Notifications are blocked for this site. Allow them in your browser settings to turn them on."
 						: null;
 
@@ -104,14 +117,10 @@ export function NotificationsStep({
 						</Button>
 						<Button
 							type="button"
-							onClick={() => notifications.enable()}
-							disabled={
-								notifications.isLoading ||
-								notifications.isPending ||
-								unavailableReason !== null
-							}
+							onClick={() => onEnable()}
+							disabled={isLoading || isEnabling || unavailableReason !== null}
 						>
-							{notifications.isPending && <Loader2 className="animate-spin" />}
+							{isEnabling && <Loader2 className="animate-spin" />}
 							Turn on notifications
 						</Button>
 					</div>

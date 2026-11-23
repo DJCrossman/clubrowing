@@ -118,7 +118,9 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 				<SiteHeader breadcrumbs={getBreadcrumbs(channel, isAdmin)} />
 				<ChatHeader
 					channel={channel}
-					notifications={notifications}
+					notificationPreferences={notifications.preferences}
+					isLoadingNotifications={notifications.isLoading}
+					onNotificationPreferenceChange={notifications.setPreference}
 					onAddPeople={() => {
 						setShareHistory(true);
 						setIsAddingPeople(true);
@@ -144,7 +146,14 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 					)}
 				</ChatHeader>
 				<NotificationsBanner
-					notifications={notifications}
+					isLoading={notifications.isLoading}
+					isError={notifications.isError}
+					isSupported={notifications.supported}
+					isConfigured={notifications.configured}
+					permission={notifications.permission}
+					isSubscribed={notifications.subscribed}
+					isEnabling={notifications.isPending}
+					onEnable={notifications.enable}
 					className="mx-4 mt-3 w-auto lg:mx-6"
 				/>
 				<div className="flex min-h-0 flex-1">

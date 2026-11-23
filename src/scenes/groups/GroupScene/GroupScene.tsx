@@ -2,6 +2,7 @@
 
 import { keepPreviousData } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { NotificationsBanner } from "@/components/notifications-banner";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { routes } from "@/lib/routes";
@@ -49,7 +50,26 @@ export const GroupScene = ({ group }: GroupSceneProps) => {
 	const scheduleRoutes = routes.groups.schedule(group.id);
 
 	return (
-		<GroupShell group={group} active="overview" notifications={notifications}>
+		<GroupShell
+			group={group}
+			active="overview"
+			notificationPreferences={notifications.preferences}
+			isLoadingNotifications={notifications.isLoading}
+			onNotificationPreferenceChange={notifications.setPreference}
+			banner={
+				<NotificationsBanner
+					isLoading={notifications.isLoading}
+					isError={notifications.isError}
+					isSupported={notifications.supported}
+					isConfigured={notifications.configured}
+					permission={notifications.permission}
+					isSubscribed={notifications.subscribed}
+					isEnabling={notifications.isPending}
+					onEnable={notifications.enable}
+					className="mx-4 mt-3 w-auto lg:mx-6"
+				/>
+			}
+		>
 			<div className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="px-4 lg:px-6">
 					<ClubWeekCards
