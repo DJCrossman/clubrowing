@@ -28,7 +28,10 @@ export function buildActivityAddedMessage(
 ): PushMessage {
 	return {
 		title: "Activity added",
-		body: `${activity.name} — ${formatMeters(activity.distance)}, ${formatCompactDuration(activity.elapsedTime)}`,
+		body:
+			activity.distance > 0
+				? `${activity.name} — ${formatMeters(activity.distance)}, ${formatCompactDuration(activity.elapsedTime)}`
+				: `${activity.name} — ${formatCompactDuration(activity.elapsedTime)}`,
 		url: routes.activities.view(activity.id),
 		// Several arriving at once replace each other on the device instead of stacking.
 		tag: "activity-added",

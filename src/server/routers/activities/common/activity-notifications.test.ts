@@ -16,6 +16,13 @@ describe("buildActivityAddedMessage", () => {
 		expect(body).toContain("2,000");
 	});
 
+	it("leaves out the distance when the activity has none", () => {
+		const { body } = buildActivityAddedMessage({ ...activity, distance: 0 });
+		expect(body).toContain("Morning row");
+		expect(body).toContain("07:00.0");
+		expect(body).not.toContain("0 m");
+	});
+
 	it("opens that activity", () => {
 		expect(buildActivityAddedMessage(activity).url).toBe(
 			"/activities?activityId=act_1",
