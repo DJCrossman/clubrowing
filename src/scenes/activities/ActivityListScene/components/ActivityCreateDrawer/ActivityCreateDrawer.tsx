@@ -22,6 +22,7 @@ interface ActivityCreateDrawerProps {
 	boats: Boats;
 	ergs: Ergs;
 	workouts: Workouts;
+	isUploadingErgActivityScreenshot: boolean;
 	onSubmit: (submission: {
 		data: CreateActivity;
 		screenshot: File | null;
@@ -36,6 +37,7 @@ export const ActivityCreateDrawer = ({
 	boats,
 	ergs,
 	workouts,
+	isUploadingErgActivityScreenshot,
 	onUploadErgActivityScreenshot,
 	onClose,
 	onSubmit,
@@ -65,14 +67,15 @@ export const ActivityCreateDrawer = ({
 						boats={boats}
 						ergs={ergs}
 						workouts={workouts}
+						isUploadingErgActivityScreenshot={isUploadingErgActivityScreenshot}
+						shouldProposeWorkout
+						isImageFullscreen={isImageFullscreen}
 						onSubmit={async (submission) => {
 							await onSubmit(submission);
 							onClose();
 						}}
 						onCancel={onClose}
 						onUploadErgActivityScreenshot={onUploadErgActivityScreenshot}
-						shouldProposeWorkout
-						isImageFullscreen={isImageFullscreen}
 						setIsImageFullscreen={setIsImageFullscreen}
 					/>
 				</div>

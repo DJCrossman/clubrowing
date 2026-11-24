@@ -52,18 +52,19 @@ interface ActivityFormProps {
 	ergs: Ergs;
 	workouts: Workouts;
 	defaultValues?: Partial<CreateActivityFormInput>;
-	onSubmit: (submission: {
-		data: CreateActivity;
-		screenshot: File | null;
-	}) => void | Promise<void>;
-	onUploadErgActivityScreenshot?: UploadErgActivityScreenshot;
-	onCancel?: (() => void) | string;
+	isUploadingErgActivityScreenshot?: boolean;
 	canHide?: boolean;
 	canChangeType?: boolean;
 	canAddScreenshot?: boolean;
 	shouldProposeWorkout?: boolean;
 	shouldFillFromWorkout?: boolean;
 	isImageFullscreen: boolean;
+	onSubmit: (submission: {
+		data: CreateActivity;
+		screenshot: File | null;
+	}) => void | Promise<void>;
+	onUploadErgActivityScreenshot?: UploadErgActivityScreenshot;
+	onCancel?: (() => void) | string;
 	setIsImageFullscreen: (isFullscreen: boolean) => void;
 }
 
@@ -71,19 +72,19 @@ export function ActivityForm({
 	boats,
 	workouts,
 	defaultValues,
-	onSubmit,
-	onUploadErgActivityScreenshot,
-	onCancel: cancelLinkOrAction,
+	isUploadingErgActivityScreenshot: isUploading = false,
 	canHide = false,
 	canChangeType = true,
 	canAddScreenshot = false,
 	shouldProposeWorkout = false,
 	shouldFillFromWorkout = true,
 	isImageFullscreen,
+	onSubmit,
+	onUploadErgActivityScreenshot,
+	onCancel: cancelLinkOrAction,
 	setIsImageFullscreen,
 }: ActivityFormProps) {
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-	const [isUploading, setIsUploading] = useState(false);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 	const screenshotInputRef = useRef<HTMLInputElement>(null);
 
@@ -127,7 +128,6 @@ export function ActivityForm({
 	const handleUpload = useCallback(
 		async (file: File) => {
 			if (!onUploadErgActivityScreenshot) return;
-			setIsUploading(true);
 			setUploadError(null);
 			try {
 				const currentAthleteId = form.getValues("athleteId");
@@ -165,8 +165,6 @@ export function ActivityForm({
 				setUploadError(
 					error instanceof Error ? error.message : "Failed to parse screenshot",
 				);
-			} finally {
-				setIsUploading(false);
 			}
 		},
 		[onUploadErgActivityScreenshot, form, shouldProposeWorkout, workouts],
