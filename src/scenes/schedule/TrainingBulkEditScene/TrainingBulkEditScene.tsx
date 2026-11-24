@@ -94,6 +94,7 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 			setSaveError(error.message);
 		},
 	});
+	const createEvent = trpcClient.schedule.createEvent.useMutation();
 
 	// Validation is derived, not stashed on save, so a bad cell is flagged the
 	// moment it is typed and the coach can see why a row is missing from totals.
@@ -297,6 +298,7 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 				isLoadingShareTargets={shareToChat.isLoadingTargets}
 				isReadingWorkoutDescription={isReadingWorkoutDescription}
 				onReadWorkoutDescription={readWorkoutDescription}
+				onCreateEvent={createEvent.mutateAsync}
 				onChange={(updated) => {
 					setRows((prev) =>
 						prev.map((row) => (row.__id === updated.__id ? updated : row)),

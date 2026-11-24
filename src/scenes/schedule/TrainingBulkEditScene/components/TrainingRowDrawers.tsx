@@ -4,7 +4,6 @@ import type { DateTime } from "luxon";
 import { toast } from "sonner";
 import type { ChatTarget } from "@/lib/chat/targets";
 import { withErrorToast } from "@/lib/toast";
-import { trpcClient } from "@/lib/trpc/client";
 import type { ScheduleEvent } from "@/lib/trpc/types";
 import { type CreateEvent, trainingRowSchema } from "@/schemas";
 import {
@@ -29,6 +28,7 @@ interface TrainingRowDrawersProps {
 	isLoadingShareTargets: boolean;
 	isReadingWorkoutDescription: boolean;
 	onReadWorkoutDescription: ReadWorkoutDescription;
+	onCreateEvent: (input: CreateEvent) => Promise<unknown>;
 	onChange: (row: BulkRow) => void;
 	onRemove: () => void;
 	onClose: () => void;
@@ -47,13 +47,13 @@ export const TrainingRowDrawers = ({
 	isLoadingShareTargets,
 	isReadingWorkoutDescription,
 	onReadWorkoutDescription,
+	onCreateEvent,
 	onChange,
 	onRemove,
 	onClose,
 	onSharingChange,
 	onShare,
 }: TrainingRowDrawersProps) => {
-	const createEvent = trpcClient.schedule.createEvent.useMutation();
 	const parsed = row ? trainingRowSchema.safeParse(stripInternal(row)) : null;
 	// A saved row that's currently valid opens the full event drawer; anything
 	// else (new, or mid-edit and incomplete) opens the create form prefilled.
@@ -71,7 +71,7 @@ export const TrainingRowDrawers = ({
 				toast.error("A saved training session can't change type");
 				return;
 			}
-			await withErrorToast(createEvent.mutateAsync(input));
+			await withErrorToast(onCreateEvent(input));
 			toast.success(`${input.title} added to the schedule`);
 			onRemove();
 			return;
