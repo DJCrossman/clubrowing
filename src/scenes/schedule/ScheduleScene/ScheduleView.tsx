@@ -9,6 +9,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useShareToChat } from "@/hooks/useShareToChat";
 import { routes, type ScheduleRoutes } from "@/lib/routes";
 import { countNotifiable } from "@/lib/schedule/changes";
 import {
@@ -78,6 +79,9 @@ export const ScheduleView = ({
 	const [isNavigating, startNavigation] = useTransition();
 	const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
 	const [nudgeEvent, setNudgeEvent] = useState<ScheduleEvent | null>(null);
+	const [sharingEventId, setSharingEventId] = useState<string | null>(null);
+	const isSharingEvent = !!selectedEvent && sharingEventId === selectedEvent.id;
+	const shareToChat = useShareToChat({ isEnabled: isSharingEvent });
 	const defaultDay =
 		schedule.days.find((day) => day.isToday)?.date ?? schedule.weekStart;
 
@@ -334,6 +338,13 @@ export const ScheduleView = ({
 				analytics={analytics}
 				isAdmin={isAdmin}
 				notifyCount={selectedEvent ? countNotifiable(selectedEvent) : 0}
+				isSharing={isSharingEvent}
+				shareTargets={shareToChat.targets}
+				isLoadingShareTargets={shareToChat.isLoadingTargets}
+				onSharingChange={(isSharing) =>
+					setSharingEventId(isSharing ? (selectedEvent?.id ?? null) : null)
+				}
+				onShare={shareToChat.share}
 				onClose={closeOverlay}
 				onSubmit={async (input, { notify }) => {
 					if (!selectedEvent) return;

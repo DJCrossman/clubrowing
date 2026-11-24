@@ -2,6 +2,7 @@
 
 import type { DateTime } from "luxon";
 import { toast } from "sonner";
+import type { ChatTarget } from "@/lib/chat/targets";
 import { withErrorToast } from "@/lib/toast";
 import { trpcClient } from "@/lib/trpc/client";
 import type { ScheduleEvent } from "@/lib/trpc/types";
@@ -22,9 +23,14 @@ interface TrainingRowDrawersProps {
 	row: BulkRow | null;
 	savedEvent: ScheduleEvent | undefined;
 	weekStart: DateTime;
+	isSharing: boolean;
+	shareTargets: ChatTarget[];
+	isLoadingShareTargets: boolean;
 	onChange: (row: BulkRow) => void;
 	onRemove: () => void;
 	onClose: () => void;
+	onSharingChange: (isSharing: boolean) => void;
+	onShare: (share: { target: ChatTarget; text: string }) => Promise<string>;
 }
 
 // The drawers edit the grid row, not the database — the coach still saves the
@@ -33,9 +39,14 @@ export const TrainingRowDrawers = ({
 	row,
 	savedEvent,
 	weekStart,
+	isSharing,
+	shareTargets,
+	isLoadingShareTargets,
 	onChange,
 	onRemove,
 	onClose,
+	onSharingChange,
+	onShare,
 }: TrainingRowDrawersProps) => {
 	const createEvent = trpcClient.schedule.createEvent.useMutation();
 	const parsed = row ? trainingRowSchema.safeParse(stripInternal(row)) : null;
@@ -70,9 +81,14 @@ export const TrainingRowDrawers = ({
 				responses={null}
 				analytics={null}
 				isAdmin
+				isSharing={isSharing}
+				shareTargets={shareTargets}
+				isLoadingShareTargets={isLoadingShareTargets}
 				onClose={onClose}
 				onSubmit={applyFormResult}
 				onDelete={async () => onRemove()}
+				onSharingChange={onSharingChange}
+				onShare={onShare}
 			/>
 			<EventCreateDrawer
 				isOpen={!!row && !event}

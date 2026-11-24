@@ -23,6 +23,7 @@ import {
 	DrawerTitle,
 } from "@/components/ui/drawer";
 import { useCurrentUser } from "@/hooks/useAuth";
+import type { ChatTarget } from "@/lib/chat/targets";
 import {
 	formatCompactDuration,
 	formatCompactSplit,
@@ -49,12 +50,17 @@ interface ActivityDetailsDrawerProps {
 	boats: Boats;
 	ergs: Ergs;
 	workouts: Workouts;
+	isSharing: boolean;
+	shareTargets: ChatTarget[];
+	isLoadingShareTargets: boolean;
 	onClose: () => void;
 	onSubmit: (data: UpdateActivity) => Promise<void> | void;
 	onAddScreenshot: (params: {
 		activityId: string;
 		file: File;
 	}) => Promise<void>;
+	onSharingChange: (isSharing: boolean) => void;
+	onShare: (share: { target: ChatTarget; text: string }) => Promise<string>;
 }
 
 export const ActivityDetailsDrawer = ({
@@ -65,13 +71,17 @@ export const ActivityDetailsDrawer = ({
 	boats,
 	ergs,
 	workouts,
+	isSharing,
+	shareTargets,
+	isLoadingShareTargets,
 	onClose,
 	onSubmit,
 	onAddScreenshot,
+	onSharingChange,
+	onShare,
 }: ActivityDetailsDrawerProps) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isImageFullscreen, setIsImageFullscreen] = useState(false);
-	const [isSharing, setIsSharing] = useState(false);
 	const { user, hasAthlete } = useCurrentUser();
 
 	if (!activity) {
@@ -107,7 +117,7 @@ export const ActivityDetailsDrawer = ({
 
 	const handleClose = () => {
 		setIsEditing(false);
-		setIsSharing(false);
+		onSharingChange(false);
 		onClose();
 	};
 
@@ -152,9 +162,12 @@ export const ActivityDetailsDrawer = ({
 				</DrawerHeader>
 				<ShareToChatDialog
 					open={isSharing}
-					onOpenChange={setIsSharing}
 					title={activity.name}
 					path={routes.activities.view(activity.id)}
+					targets={shareTargets}
+					isLoadingTargets={isLoadingShareTargets}
+					onOpenChange={onSharingChange}
+					onShare={onShare}
 				/>
 				<div className="flex-1 space-y-6 overflow-y-auto p-4 md:p-6">
 					{isEditing && (
@@ -345,7 +358,7 @@ export const ActivityDetailsDrawer = ({
 						<Button
 							variant="outline"
 							className="flex-1"
-							onClick={() => setIsSharing(true)}
+							onClick={() => onSharingChange(true)}
 						>
 							<IconShare3 />
 							Share to chat

@@ -5,7 +5,7 @@ import { keepPreviousData, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
-import { startTransition, useOptimistic } from "react";
+import { startTransition, useOptimistic, useState } from "react";
 import { toast } from "sonner";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AthleteProfilePrompt } from "@/components/athlete-profile-prompt";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useShareToChat } from "@/hooks/useShareToChat";
 import { useTable } from "@/hooks/useTable";
 import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
 import { routes } from "@/lib/routes";
@@ -122,6 +123,8 @@ export const ActivityListScene = ({
 		{ initialData, placeholderData: keepPreviousData },
 	);
 	const { isSyncing, isCoolingDown, startSync } = useActivitySync();
+	const [isSharing, setIsSharing] = useState(false);
+	const shareToChat = useShareToChat({ isEnabled: isSharing });
 	const utils = trpcClient.useUtils();
 	const createActivity = trpcClient.activities.createActivity.useMutation({
 		onSuccess: async () => {
@@ -290,10 +293,15 @@ export const ActivityListScene = ({
 				boats={boats}
 				ergs={ergs}
 				workouts={workouts}
+				isSharing={isSharing}
+				shareTargets={shareToChat.targets}
+				isLoadingShareTargets={shareToChat.isLoadingTargets}
 				onSubmit={async (data) => {
 					await updateActivity.mutateAsync(data);
 				}}
 				onAddScreenshot={keepActivityScreenshot.mutateAsync}
+				onSharingChange={setIsSharing}
+				onShare={shareToChat.share}
 				onClose={() =>
 					startTransition(() => {
 						setOpenActivity(undefined);

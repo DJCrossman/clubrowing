@@ -14,9 +14,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { getChatTargets } from "@/lib/chat/targets";
+import type { ChatTarget } from "@/lib/chat/targets";
 import { routes } from "@/lib/routes";
-import { trpcClient } from "@/lib/trpc/client";
 import {
 	type ChatTargetFormValues,
 	chatTargetFormSchema,
@@ -25,16 +24,23 @@ import { ChatTargetList } from "./chat-target-list";
 
 interface ShareToChatDialogProps {
 	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	title: string;
 	path: string;
+	targets: ChatTarget[];
+	isLoadingTargets: boolean;
+	onOpenChange: (open: boolean) => void;
+	/** Sends the text and answers the chat it went to. */
+	onShare: (share: { target: ChatTarget; text: string }) => Promise<string>;
 }
 
 export function ShareToChatDialog({
 	open,
-	onOpenChange,
 	title,
 	path,
+	targets,
+	isLoadingTargets,
+	onOpenChange,
+	onShare,
 }: ShareToChatDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,6 +55,9 @@ export function ShareToChatDialog({
 					<ShareToChatForm
 						title={title}
 						path={path}
+						targets={targets}
+						isLoadingTargets={isLoadingTargets}
+						onShare={onShare}
 						onDone={() => onOpenChange(false)}
 					/>
 				)}
@@ -60,27 +69,19 @@ export function ShareToChatDialog({
 function ShareToChatForm({
 	title,
 	path,
+	targets,
+	isLoadingTargets,
+	onShare,
 	onDone,
-}: {
-	title: string;
-	path: string;
+}: Omit<ShareToChatDialogProps, "open" | "onOpenChange"> & {
 	onDone: () => void;
 }) {
 	const router = useRouter();
-	const utils = trpcClient.useUtils();
-	const channelsQuery = trpcClient.chat.getChannels.useQuery();
-	const membersQuery = trpcClient.chat.getMembers.useQuery();
-	const startDm = trpcClient.chat.startDm.useMutation();
-	const sendMessage = trpcClient.chat.sendMessage.useMutation();
 	const form = useForm<ChatTargetFormValues>({
 		resolver: zodResolver(chatTargetFormSchema),
 		defaultValues: { targetKey: "", note: "" },
 	});
 	const targetKey = useWatch({ control: form.control, name: "targetKey" });
-	const targets = getChatTargets({
-		channels: channelsQuery.data?.data ?? [],
-		members: membersQuery.data?.data ?? [],
-	});
 
 	return (
 		<form
@@ -88,20 +89,11 @@ function ShareToChatForm({
 				const target = targets.find((item) => item.key === targetKey);
 				if (!target) return;
 				try {
-					const channelId =
-						"channelId" in target
-							? target.channelId
-							: (await startDm.mutateAsync({ userIds: [target.userId] }))
-									.channelId;
 					const url = `${window.location.origin}${path}`;
-					await sendMessage.mutateAsync({
-						channelId,
+					const channelId = await onShare({
+						target,
 						text: note ? `${note}\n${url}` : url,
 					});
-					await Promise.all([
-						utils.chat.getChannels.invalidate(),
-						utils.chat.getMessages.invalidate({ channelId }),
-					]);
 					onDone();
 					toast.success(`Shared to ${target.name}`, {
 						action: {
@@ -127,7 +119,7 @@ function ShareToChatForm({
 				<ChatTargetList
 					targets={targets}
 					selectedKey={targetKey}
-					isLoading={channelsQuery.isPending || membersQuery.isPending}
+					isLoading={isLoadingTargets}
 					onSelect={(key) =>
 						form.setValue("targetKey", key, { shouldValidate: true })
 					}

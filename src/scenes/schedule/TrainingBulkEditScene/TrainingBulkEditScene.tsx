@@ -8,6 +8,7 @@ import type { z } from "zod";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useShareToChat } from "@/hooks/useShareToChat";
 import { routes } from "@/lib/routes";
 import { CLUB_TIMEZONE } from "@/lib/schedule/week";
 import { trpcClient } from "@/lib/trpc/client";
@@ -72,6 +73,8 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 	const [notify, setNotify] = useState(true);
 	const [editingRowId, setEditingRowId] = useState<string | null>(null);
 	const [fragmentsRowId, setFragmentsRowId] = useState<string | null>(null);
+	const [isSharing, setIsSharing] = useState(false);
+	const shareToChat = useShareToChat({ isEnabled: isSharing });
 	const isDirtyRef = useRef(false);
 	const seededWeekRef = useRef(currentWeekIsoDate);
 	const awaitingSavedDataRef = useRef(false);
@@ -286,6 +289,9 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 				row={editingRow}
 				savedEvent={baseline.find((event) => event.id === editingRow?.eventId)}
 				weekStart={weekStart}
+				isSharing={isSharing}
+				shareTargets={shareToChat.targets}
+				isLoadingShareTargets={shareToChat.isLoadingTargets}
 				onChange={(updated) => {
 					setRows((prev) =>
 						prev.map((row) => (row.__id === updated.__id ? updated : row)),
@@ -297,6 +303,8 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 					setEditingRowId(null);
 				}}
 				onClose={() => setEditingRowId(null)}
+				onSharingChange={setIsSharing}
+				onShare={shareToChat.share}
 			/>
 			{fragmentsRow && (
 				<TrainingFragmentsDrawer

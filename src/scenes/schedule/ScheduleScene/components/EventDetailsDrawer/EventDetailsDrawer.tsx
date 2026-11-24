@@ -21,6 +21,7 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
+import type { ChatTarget } from "@/lib/chat/targets";
 import {
 	formatActivityType,
 	formatDuration,
@@ -52,11 +53,16 @@ interface EventDetailsDrawerProps {
 	responses: EventResponses | null;
 	analytics: Pick<AnalyticMetrics, "lastTwoKm" | "lastSixKm"> | null;
 	isAdmin: boolean;
+	/** Athletes a change would reach; the notify checkbox shows only when set. */
+	notifyCount?: number;
+	isSharing: boolean;
+	shareTargets: ChatTarget[];
+	isLoadingShareTargets: boolean;
 	onClose: () => void;
 	onSubmit: (input: CreateEvent, options: { notify: boolean }) => Promise<void>;
 	onDelete: (eventId: string, options: { notify: boolean }) => Promise<void>;
-	/** Athletes a change would reach; the notify checkbox shows only when set. */
-	notifyCount?: number;
+	onSharingChange: (isSharing: boolean) => void;
+	onShare: (share: { target: ChatTarget; text: string }) => Promise<string>;
 }
 
 export const EventDetailsDrawer = ({
@@ -64,16 +70,20 @@ export const EventDetailsDrawer = ({
 	responses,
 	analytics,
 	isAdmin,
+	notifyCount = 0,
+	isSharing,
+	shareTargets,
+	isLoadingShareTargets,
 	onClose,
 	onSubmit,
 	onDelete,
-	notifyCount = 0,
+	onSharingChange,
+	onShare,
 }: EventDetailsDrawerProps) => {
 	const [editing, setEditing] = useState<"details" | "workout" | null>(null);
 	const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [notify, setNotify] = useState(true);
-	const [isSharing, setIsSharing] = useState(false);
 
 	if (!event) {
 		return null;
@@ -93,7 +103,7 @@ export const EventDetailsDrawer = ({
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={() => setIsSharing(true)}
+							onClick={() => onSharingChange(true)}
 						>
 							<IconShare3 />
 							Share to chat
@@ -103,9 +113,12 @@ export const EventDetailsDrawer = ({
 				</DrawerHeader>
 				<ShareToChatDialog
 					open={isSharing}
-					onOpenChange={setIsSharing}
 					title={event.title}
 					path={routes.schedule.view({ id: event.id })}
+					targets={shareTargets}
+					isLoadingTargets={isLoadingShareTargets}
+					onOpenChange={onSharingChange}
+					onShare={onShare}
 				/>
 				<div className="flex-1 space-y-8 overflow-y-auto p-6">
 					{isAdmin && !editing && (
