@@ -11,6 +11,11 @@ import { getErgByIdProcedure } from "@/server/infra/trpc/ergs/queries/get-erg-by
 import { getErgsProcedure } from "@/server/infra/trpc/ergs/queries/get-ergs.procedure";
 import { submitProcedure } from "@/server/infra/trpc/feedback/commands/submit.procedure";
 import { router } from "@/server/infra/trpc/init";
+import { sendTestProcedure } from "@/server/infra/trpc/notifications/commands/send-test.procedure";
+import { setPreferenceProcedure } from "@/server/infra/trpc/notifications/commands/set-preference.procedure";
+import { subscribeProcedure } from "@/server/infra/trpc/notifications/commands/subscribe.procedure";
+import { unsubscribeProcedure } from "@/server/infra/trpc/notifications/commands/unsubscribe.procedure";
+import { getStatusProcedure } from "@/server/infra/trpc/notifications/queries/get-status.procedure";
 import { getProgramsProcedure } from "@/server/infra/trpc/programs/queries/get-programs.procedure";
 import { createWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/create-workout.procedure";
 import { updateWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/update-workout.procedure";
@@ -79,11 +84,6 @@ import { inviteMembersProcedure } from "@/server/routers/members/commands/invite
 import { resendInvitationProcedure } from "@/server/routers/members/commands/resend-invitation/resend-invitation.procedure";
 import { revokeInvitationProcedure } from "@/server/routers/members/commands/revoke-invitation/revoke-invitation.procedure";
 import { getMembersProcedure } from "@/server/routers/members/queries/get-members/get-members.procedure";
-import { sendTestProcedure } from "@/server/routers/notifications/commands/send-test/send-test.procedure";
-import { setPreferenceProcedure } from "@/server/routers/notifications/commands/set-preference/set-preference.procedure";
-import { subscribeProcedure } from "@/server/routers/notifications/commands/subscribe/subscribe.procedure";
-import { unsubscribeProcedure } from "@/server/routers/notifications/commands/unsubscribe/unsubscribe.procedure";
-import { getStatusProcedure } from "@/server/routers/notifications/queries/get-status/get-status.procedure";
 import { createEventProcedure } from "@/server/routers/schedule/commands/create-event/create-event.procedure";
 import { createEventsProcedure } from "@/server/routers/schedule/commands/create-events/create-events.procedure";
 import { deleteEventProcedure } from "@/server/routers/schedule/commands/delete-event/delete-event.procedure";
