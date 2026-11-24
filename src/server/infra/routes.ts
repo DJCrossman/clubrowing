@@ -37,6 +37,19 @@ import { subscribeProcedure } from "@/server/infra/trpc/notifications/commands/s
 import { unsubscribeProcedure } from "@/server/infra/trpc/notifications/commands/unsubscribe.procedure";
 import { getStatusProcedure } from "@/server/infra/trpc/notifications/queries/get-status.procedure";
 import { getProgramsProcedure } from "@/server/infra/trpc/programs/queries/get-programs.procedure";
+import { createEventProcedure } from "@/server/infra/trpc/schedule/commands/create-event.procedure";
+import { createEventsProcedure } from "@/server/infra/trpc/schedule/commands/create-events.procedure";
+import { deleteEventProcedure } from "@/server/infra/trpc/schedule/commands/delete-event.procedure";
+import { getCalendarTokenProcedure } from "@/server/infra/trpc/schedule/commands/get-calendar-token.procedure";
+import { nudgeProcedure } from "@/server/infra/trpc/schedule/commands/nudge.procedure";
+import { rotateCalendarTokenProcedure } from "@/server/infra/trpc/schedule/commands/rotate-calendar-token.procedure";
+import { rsvpProcedure } from "@/server/infra/trpc/schedule/commands/rsvp.procedure";
+import { saveTrainingWeekProcedure } from "@/server/infra/trpc/schedule/commands/save-training-week.procedure";
+import { updateEventProcedure } from "@/server/infra/trpc/schedule/commands/update-event.procedure";
+import { getEventByIdProcedure } from "@/server/infra/trpc/schedule/queries/get-event-by-id.procedure";
+import { getResponsesProcedure } from "@/server/infra/trpc/schedule/queries/get-responses.procedure";
+import { getUpcomingProcedure } from "@/server/infra/trpc/schedule/queries/get-upcoming.procedure";
+import { getWeekProcedure } from "@/server/infra/trpc/schedule/queries/get-week.procedure";
 import { completeOnboardingProcedure } from "@/server/infra/trpc/users/commands/complete-onboarding.procedure";
 import { updateUserProfileProcedure } from "@/server/infra/trpc/users/commands/update-user-profile.procedure";
 import { getCurrentUserProcedure } from "@/server/infra/trpc/users/queries/get-current-user.procedure";
@@ -89,19 +102,6 @@ import { getChannelsProcedure } from "@/server/routers/chat/queries/get-channels
 import { getMembersProcedure as getChatMembersProcedure } from "@/server/routers/chat/queries/get-members/get-members.procedure";
 import { getMessagesProcedure } from "@/server/routers/chat/queries/get-messages/get-messages.procedure";
 import { getThreadProcedure } from "@/server/routers/chat/queries/get-thread/get-thread.procedure";
-import { createEventProcedure } from "@/server/routers/schedule/commands/create-event/create-event.procedure";
-import { createEventsProcedure } from "@/server/routers/schedule/commands/create-events/create-events.procedure";
-import { deleteEventProcedure } from "@/server/routers/schedule/commands/delete-event/delete-event.procedure";
-import { getCalendarTokenProcedure } from "@/server/routers/schedule/commands/get-calendar-token/get-calendar-token.procedure";
-import { nudgeProcedure } from "@/server/routers/schedule/commands/nudge/nudge.procedure";
-import { rotateCalendarTokenProcedure } from "@/server/routers/schedule/commands/rotate-calendar-token/rotate-calendar-token.procedure";
-import { rsvpProcedure } from "@/server/routers/schedule/commands/rsvp/rsvp.procedure";
-import { saveTrainingWeekProcedure } from "@/server/routers/schedule/commands/save-training-week/save-training-week.procedure";
-import { updateEventProcedure } from "@/server/routers/schedule/commands/update-event/update-event.procedure";
-import { getEventByIdProcedure } from "@/server/routers/schedule/queries/get-event-by-id/get-event-by-id.procedure";
-import { getResponsesProcedure } from "@/server/routers/schedule/queries/get-responses/get-responses.procedure";
-import { getUpcomingProcedure } from "@/server/routers/schedule/queries/get-upcoming/get-upcoming.procedure";
-import { getWeekProcedure } from "@/server/routers/schedule/queries/get-week/get-week.procedure";
 
 export const appRouter = router({
 	athletes: router({
