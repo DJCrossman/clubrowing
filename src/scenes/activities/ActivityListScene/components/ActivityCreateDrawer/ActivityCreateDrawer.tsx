@@ -71,6 +71,7 @@ export const ActivityCreateDrawer = ({
 						}}
 						onCancel={onClose}
 						onUploadErgActivityScreenshot={onUploadErgActivityScreenshot}
+						shouldProposeWorkout
 						isImageFullscreen={isImageFullscreen}
 						setIsImageFullscreen={setIsImageFullscreen}
 					/>

@@ -41,6 +41,7 @@ describe("processStravaInboxBatchCommand", () => {
 		const tx = {
 			$executeRaw: vi.fn(),
 			activity: { findMany: vi.fn().mockResolvedValue([]), create },
+			event: { findMany: vi.fn().mockResolvedValue([]) },
 			activity_inbox: { update: vi.fn() },
 		};
 		const db = {
@@ -127,4 +128,75 @@ describe("processStravaInboxBatchCommand", () => {
 		});
 		expect(update.mock.calls[0][0].data.screenshotId).toBe(expected);
 	});
+
+	it("attaches a new activity to the workout scheduled when it was rowed", async () => {
+		const { db, tx } = createContext({ stored: [] });
+		tx.event.findMany.mockResolvedValueOnce([
+			{
+				workoutId: "work_1",
+				startAt: new Date("2026-11-01T12:30:00Z"),
+				audience: "club",
+				groups: [],
+			},
+		]);
+
+		await processStravaInboxBatchCommand({ batchId: "batch_1" }, { db });
+
+		expect(tx.activity.create.mock.calls[0][0].data.workout).toEqual({
+			connect: { id: "work_1" },
+		});
+	});
+
+	it("leaves the workout of an activity that is already stored alone", async () => {
+		const { db, tx } = createContext({
+			stored: [
+				{
+					id: "act_1",
+					stravaId: "9007199254740993",
+					conceptTwoId: null,
+					conceptTwoData: null,
+					boatId: null,
+					ergId: null,
+					workoutId: null,
+					screenshotId: null,
+				},
+			],
+		});
+
+		await processStravaInboxBatchCommand({ batchId: "batch_1" }, { db });
+
+		expect(tx.event.findMany).not.toHaveBeenCalled();
+		expect(tx.activity.update.mock.calls[0][0].data).not.toHaveProperty(
+			"workout",
+		);
+		expect(tx.activity.update.mock.calls[0][0].data).not.toHaveProperty(
+			"workoutId",
+		);
+	});
 });
+
+function createContext({ stored }: { stored: unknown[] }) {
+	const tx = {
+		$executeRaw: vi.fn(),
+		activity: {
+			findMany: vi.fn().mockResolvedValueOnce(stored).mockResolvedValue([]),
+			create: vi.fn(),
+			update: vi.fn(),
+		},
+		event: { findMany: vi.fn().mockResolvedValue([]) },
+		activity_inbox: { update: vi.fn() },
+	};
+	const db = {
+		activity_inbox: {
+			updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+			findUniqueOrThrow: vi.fn().mockResolvedValue({
+				id: "batch_1",
+				athleteId: "ath_1",
+				payload: [activity],
+			}),
+		},
+		$transaction: (run: (client: typeof tx) => Promise<void>) => run(tx),
+	} as unknown as AuthenticatedContext["db"];
+
+	return { db, tx };
+}

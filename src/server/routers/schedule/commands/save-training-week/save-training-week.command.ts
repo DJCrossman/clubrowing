@@ -1,11 +1,14 @@
 import { TRPCError } from "@trpc/server";
+import { after } from "next/server";
 import type { SessionSnapshot } from "@/lib/schedule/changes";
 import type { SaveTrainingWeek } from "@/schemas";
 import type { AdminContext } from "@/server/context";
+import { attachLoggedActivitiesToWorkout } from "@/server/routers/activities/common/scheduled-workout";
 import {
 	createEventRow,
 	updateEventRow,
 } from "@/server/routers/schedule/common/event-writes";
+import type { EventRow } from "@/server/routers/schedule/common/map-to-event-dto";
 import {
 	notifiableEventSelect,
 	planChangeNotifications,
@@ -24,6 +27,7 @@ export async function saveTrainingWeekCommand(
 	const existingById = new Map(existing.map((event) => [event.id, event]));
 	assertTrainingOnly(input, touchedIds, existingById);
 
+	const newlyPlannedSessions: EventRow[] = [];
 	// A full week is a few dozen sequential writes over the Neon adapter, which
 	// can outlast Prisma's 5s interactive-transaction default.
 	await db.$transaction(
@@ -36,19 +40,36 @@ export async function saveTrainingWeekCommand(
 				await tx.workout.deleteMany({ where: { id: { in: workoutIds } } });
 			}
 			for (const { id, ...update } of input.updates) {
-				await updateEventRow(
+				const row = await updateEventRow(
 					tx,
 					id,
 					update,
 					existingById.get(id)?.workoutId ?? null,
 				);
+				if (!existingById.get(id)?.workoutId) newlyPlannedSessions.push(row);
 			}
 			for (const create of input.creates) {
-				await createEventRow(tx, create, athlete?.id ?? null);
+				newlyPlannedSessions.push(
+					await createEventRow(tx, create, athlete?.id ?? null),
+				);
 			}
 		},
 		{ timeout: 20_000 },
 	);
+	for (const { workout, startAt } of newlyPlannedSessions) {
+		if (workout) {
+			after(() =>
+				attachLoggedActivitiesToWorkout({
+					db,
+					event: {
+						workoutId: workout.id,
+						startAt,
+						activityType: workout.activityType,
+					},
+				}),
+			);
+		}
+	}
 
 	const afterById = new Map<string, SessionSnapshot | null>([
 		...input.updates.map(

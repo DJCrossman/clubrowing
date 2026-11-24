@@ -1,5 +1,7 @@
+import { after } from "next/server";
 import type { CreateEvents } from "@/schemas";
 import type { AdminContext } from "@/server/context";
+import { attachLoggedActivitiesToWorkout } from "@/server/routers/activities/common/scheduled-workout";
 import {
 	createEventRow,
 	fillEmptySession,
@@ -29,14 +31,42 @@ export async function createEventsCommand(
 			for (let event = queue.shift(); event; event = queue.shift()) {
 				const current = event;
 				try {
-					const { startAt, isFilled } = await db.$transaction(async (tx) => {
-						const session = await fillEmptySession({ tx, input: current });
-						if (session) return { startAt: session.startAt, isFilled: true };
-						const row = await createEventRow(tx, current, athlete?.id ?? null);
-						return { startAt: row.startAt, isFilled: false };
-					});
+					const { startAt, isFilled, workout } = await db.$transaction(
+						async (tx) => {
+							const session = await fillEmptySession({ tx, input: current });
+							if (session) {
+								return {
+									startAt: session.startAt,
+									isFilled: true,
+									workout: session.workout,
+								};
+							}
+							const row = await createEventRow(
+								tx,
+								current,
+								athlete?.id ?? null,
+							);
+							return {
+								startAt: row.startAt,
+								isFilled: false,
+								workout: row.workout,
+							};
+						},
+					);
 					startTimes.push(startAt);
 					if (isFilled) filled++;
+					if (workout) {
+						after(() =>
+							attachLoggedActivitiesToWorkout({
+								db,
+								event: {
+									workoutId: workout.id,
+									startAt,
+									activityType: workout.activityType,
+								},
+							}),
+						);
+					}
 				} catch {
 					failed++;
 				}

@@ -315,28 +315,36 @@ test(
 );
 
 test(
-	"a training event saved without a workout opens for a member, and a member logs it once a coach adds one",
+	"a training event saved without a workout opens for a member, and shows the workout a coach adds later",
 	{ tag: "@desktop" },
 	async ({ page }) => {
 		await signInAs(page, "admin");
-		await page.goto("/schedule?action=create");
-		const drawer = page.getByRole("dialog");
 		const title = `Placeholder ${Date.now()}`;
-		await drawer.getByRole("button", { name: "Training" }).click();
-		await drawer.getByRole("textbox", { name: "Title" }).fill(title);
-		await drawer.getByRole("button", { name: "Next" }).click();
-		await drawer.getByRole("button", { name: "Skip for now" }).click();
-		await expect(drawer).toBeHidden();
+		const created = await page.request.post(
+			"/api/v1/trpc/schedule.createEvent",
+			{
+				data: {
+					type: "training",
+					title,
+					startAt: DateTime.now()
+						.setZone("America/Regina")
+						.startOf("day")
+						.plus({ hours: 6 })
+						.toISO(),
+				},
+			},
+		);
+		expect(created.ok()).toBe(true);
 		const event = page.getByRole("link", {
 			name: title,
 			exact: true,
 			includeHidden: true,
 		});
-		const href = (await event.getAttribute("href")) ?? "";
 
 		await signInAs(page, "member");
 		await page.goto("/schedule");
 		await expect(event).toBeVisible();
+		const href = (await event.getAttribute("href")) ?? "";
 		await page.goto(href);
 		const details = page.getByRole("dialog");
 		await expect(details.getByRole("heading", { name: title })).toBeVisible();
@@ -368,30 +376,6 @@ test(
 			details.getByRole("list", { name: "Intervals" }).getByRole("listitem"),
 		).toHaveCount(3);
 		await expect(details.getByText(/^R24 • /)).toBeVisible();
-
-		// The junior logs it, as the member's latest activity must stay the personal best that personal-best.spec.ts celebrates.
-		await signInAs(page, "junior");
-		await page.goto("/activities");
-		await page.getByRole("button", { name: "Add Activity" }).click();
-		const createDrawer = page.getByRole("dialog", { name: "Add Activity" });
-		await createDrawer.getByRole("tab", { name: "ERG" }).click();
-		await createDrawer.getByRole("combobox").click();
-		await page
-			.getByRole("option", { name: new RegExp(`^${title} — `) })
-			.click();
-		const created = page.waitForResponse((response) =>
-			response.url().includes("activities.createActivity"),
-		);
-		await createDrawer
-			.getByRole("button", { name: "Save", exact: true })
-			.click();
-		const [{ result }] = await (await created).json();
-		await expect(createDrawer).toBeHidden();
-
-		await page.goto(`/activities?activityId=${result.data.id}`);
-		const activity = page.getByRole("dialog");
-		await expect(activity.getByRole("heading", { name: title })).toBeVisible();
-		await expect(activity.getByText(/^3000m/)).toBeVisible();
 	},
 );
 

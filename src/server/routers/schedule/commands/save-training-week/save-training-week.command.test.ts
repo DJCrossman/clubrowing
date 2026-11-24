@@ -1,13 +1,41 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreateEvent } from "@/schemas";
 import type { AdminContext } from "@/server/context";
-import { saveTrainingWeekCommand } from "./save-training-week.command";
+
+const after = vi.fn();
+
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	after,
+}));
+
+const { saveTrainingWeekCommand } = await import(
+	"./save-training-week.command"
+);
 
 // Monday Jan 7 2030, 6am in Regina — safely in the future whenever this runs.
 const UPCOMING = new Date("2030-01-07T12:00:00.000Z");
 const UPCOMING_ISO = "2030-01-07T06:00:00.000-06:00";
+// When training() starts, 6:30am Oct 19 2026 in Regina — already past.
+const PAST_SESSION_START = new Date("2026-10-19T12:30:00.000Z");
+const loggedRow = {
+	id: "act_1",
+	athleteId: "ath_a",
+	type: "water",
+	startDate: new Date("2026-10-19T12:45:00.000Z"),
+};
+const plannedSession = {
+	workoutId: "work_new",
+	startAt: PAST_SESSION_START,
+	audience: "club",
+	groups: [],
+};
 
 describe("saveTrainingWeekCommand", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	it("deletes, updates and creates inside one transaction", async () => {
 		const { context, calls } = createContext([
 			{ id: "evt_gone", type: "training", workoutId: "work_gone" },
@@ -156,6 +184,82 @@ describe("saveTrainingWeekCommand", () => {
 		);
 
 		expect(calls.args["workout.update"].data).not.toHaveProperty("zoneMinutes");
+	});
+
+	it("links logged activities to a session that gets its first workout once the week is saved", async () => {
+		const { context, tx } = createContext([
+			{ id: "evt_1", type: "training", workoutId: null },
+		]);
+		tx.event.update.mockResolvedValueOnce({
+			id: "evt_1",
+			startAt: PAST_SESSION_START,
+			workout: { id: "work_new", activityType: "water" },
+		});
+
+		await saveTrainingWeekCommand(
+			{
+				creates: [],
+				updates: [{ ...training(), id: "evt_1" }],
+				deleteIds: [],
+				notify: true,
+			},
+			context,
+		);
+		tx.activity.findMany.mockResolvedValueOnce([loggedRow]);
+		tx.event.findMany.mockResolvedValueOnce([plannedSession]);
+
+		expect(after).toHaveBeenCalledOnce();
+		await after.mock.calls[0][0]();
+		expect(tx.activity.updateMany).toHaveBeenCalledWith({
+			where: { id: { in: ["act_1"] }, workoutId: null },
+			data: { workoutId: "work_new" },
+		});
+	});
+
+	it("links logged activities to a new session that already happened once the week is saved", async () => {
+		const { context, tx } = createContext([]);
+		tx.event.create.mockResolvedValueOnce({
+			id: "evt_new",
+			startAt: PAST_SESSION_START,
+			workout: { id: "work_new", activityType: "water" },
+		});
+
+		await saveTrainingWeekCommand(
+			{ creates: [training()], updates: [], deleteIds: [], notify: true },
+			context,
+		);
+		tx.activity.findMany.mockResolvedValueOnce([loggedRow]);
+		tx.event.findMany.mockResolvedValueOnce([plannedSession]);
+
+		expect(after).toHaveBeenCalledOnce();
+		await after.mock.calls[0][0]();
+		expect(tx.activity.updateMany).toHaveBeenCalledWith({
+			where: { id: { in: ["act_1"] }, workoutId: null },
+			data: { workoutId: "work_new" },
+		});
+	});
+
+	it("schedules no linking for a session that already had its workout", async () => {
+		const { context, tx } = createContext([
+			{ id: "evt_1", type: "training", workoutId: "work_1" },
+		]);
+		tx.event.update.mockResolvedValueOnce({
+			id: "evt_1",
+			startAt: PAST_SESSION_START,
+			workout: { id: "work_1", activityType: "water" },
+		});
+
+		await saveTrainingWeekCommand(
+			{
+				creates: [],
+				updates: [{ ...training(), id: "evt_1" }],
+				deleteIds: [],
+				notify: true,
+			},
+			context,
+		);
+
+		expect(after).not.toHaveBeenCalled();
 	});
 
 	it("refuses to touch sessions that aren't training", async () => {
@@ -398,6 +502,11 @@ function createContext(existingEvents: ExistingEvent[]) {
 			create: vi.fn(record("event.create", { id: "evt_new" })),
 			update: vi.fn(record("event.update", { id: "evt_1" })),
 			deleteMany: vi.fn(record("event.deleteMany", { count: 1 })),
+			findMany: vi.fn().mockResolvedValue([]),
+		},
+		activity: {
+			findMany: vi.fn().mockResolvedValue([]),
+			updateMany: vi.fn().mockResolvedValue({ count: 1 }),
 		},
 		workout: {
 			create: vi.fn(record("workout.create", { id: "work_new" })),

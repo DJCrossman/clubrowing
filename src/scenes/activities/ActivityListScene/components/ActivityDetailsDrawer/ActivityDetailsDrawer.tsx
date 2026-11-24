@@ -195,6 +195,7 @@ export const ActivityDetailsDrawer = ({
 							canHide
 							canChangeType={!conceptTwoData}
 							canAddScreenshot={!activity.hasScreenshot}
+							shouldFillFromWorkout={!conceptTwoData && !activity.isStrava}
 							onCancel={() => setIsEditing(false)}
 							onSubmit={async ({ data, screenshot }) => {
 								await onSubmit({ id: activity.id, ...data });

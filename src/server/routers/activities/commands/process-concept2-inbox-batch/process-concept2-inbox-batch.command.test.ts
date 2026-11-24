@@ -104,6 +104,47 @@ describe("processConcept2InboxBatchCommand", () => {
 		expect(tx.erg.findFirst).not.toHaveBeenCalled();
 		expect(tx.activity.create.mock.calls[0][0].data).not.toHaveProperty("erg");
 	});
+
+	it("attaches a new result to the workout scheduled when it was rowed", async () => {
+		const { context, tx } = createContext({
+			payload: [result],
+			knownErg: null,
+		});
+		tx.event.findMany.mockResolvedValueOnce([
+			{
+				workoutId: "work_1",
+				startAt: new Date("2026-09-21T00:00:00Z"),
+				audience: "club",
+				groups: [],
+			},
+		]);
+
+		await processConcept2InboxBatchCommand({ batchId: "inbox_1" }, context);
+
+		expect(tx.activity.create.mock.calls[0][0].data.workout).toEqual({
+			connect: { id: "work_1" },
+		});
+	});
+
+	it("leaves the workout of a result that is already stored alone", async () => {
+		const { context, tx } = createContext({
+			payload: [result],
+			knownErg: null,
+		});
+		tx.activity.findMany.mockResolvedValueOnce([
+			{ id: "act_1", stravaId: null, conceptTwoId: BigInt(result.id) },
+		]);
+
+		await processConcept2InboxBatchCommand({ batchId: "inbox_1" }, context);
+
+		expect(tx.event.findMany).not.toHaveBeenCalled();
+		expect(tx.activity.update.mock.calls[0][0].data).not.toHaveProperty(
+			"workout",
+		);
+		expect(tx.activity.update.mock.calls[0][0].data).not.toHaveProperty(
+			"workoutId",
+		);
+	});
 });
 
 function createContext({
@@ -126,6 +167,7 @@ function createContext({
 			findFirst: vi.fn(async () => knownErg),
 			create: vi.fn(async () => ({ id: "erg_new" })),
 		},
+		event: { findMany: vi.fn(async (): Promise<unknown[]> => []) },
 		activity_inbox: { update: vi.fn(async () => ({})) },
 	};
 	const context = {

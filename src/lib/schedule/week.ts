@@ -2,6 +2,9 @@ import { DateTime } from "luxon";
 
 export const CLUB_TIMEZONE = "America/Regina";
 
+export const EARLIEST_START_BEFORE_EVENT_MS = 10 * 60 * 1000;
+export const LATEST_START_AFTER_EVENT_MS = 120 * 60 * 1000;
+
 const LOCALE = "en-US";
 
 // Luxon weekday the week starts on (1 = Monday … 7 = Sunday). The training plan

@@ -17,6 +17,7 @@ import {
 	parseStoredJson,
 	stravaMatchShape,
 } from "../../common/cross-source-activity";
+import { findScheduledWorkoutForActivity } from "../../common/scheduled-workout";
 
 const logger = createLogger("inbox.processor.concept2");
 
@@ -105,10 +106,16 @@ export async function processConcept2InboxBatchCommand(
 					continue;
 				}
 
+				const workoutId = await findScheduledWorkoutForActivity({
+					db: tx,
+					athleteId,
+					activity: data,
+				});
 				await tx.activity.create({
 					data: {
 						...data,
 						...ergLink,
+						workout: workoutId ? { connect: { id: workoutId } } : undefined,
 						athlete: { connect: { id: athleteId } },
 					},
 				});

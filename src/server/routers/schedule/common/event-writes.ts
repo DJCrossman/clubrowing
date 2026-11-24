@@ -126,5 +126,5 @@ export async function fillEmptySession({
 		await tx.workout.delete({ where: { id: workout.id } });
 		return null;
 	}
-	return session;
+	return { ...session, workout };
 }

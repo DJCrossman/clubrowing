@@ -71,15 +71,17 @@ export const createActivityFormSchema = z
 		createErgActivitySchema,
 	])
 	.transform((data): CreateActivity => {
+		const workoutId = data.workoutId || undefined;
 		if (data.type === "water") {
 			const { laps, courseType, ...rest } = data;
 			return {
 				...rest,
+				workoutId,
 				name: rest.name?.trim() || describeLaps(laps, courseType),
 				distance: laps * COURSE_LAP_METERS[courseType],
 			};
 		}
-		return data;
+		return { ...data, workoutId };
 	});
 
 export type CreateActivityFormInput = z.input<typeof createActivityFormSchema>;

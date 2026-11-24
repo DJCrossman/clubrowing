@@ -16,6 +16,9 @@ const SCREENSHOT_PNG = sharp({
 	.png()
 	.toBuffer();
 
+const MINUTE = 60 * 1000;
+const DAY = 24 * 60 * MINUTE;
+
 test(
 	"admin filters activities down to 2K and 6K tests",
 	{ tag: "@desktop" },
@@ -151,10 +154,19 @@ test("closing the share dialog keeps the activity open on its details", async ({
 });
 
 test(
-	"a Concept2 result stays an erg activity when edited",
+	"editing a Concept2 result keeps it an erg activity with its numbers, and shows the workout picked for it",
 	{ tag: "@desktop" },
 	async ({ page }) => {
+		const picked = `Synced pick ${Date.now()}`;
+		await signInAs(page, "admin");
+		await scheduleErgSession({
+			page,
+			title: picked,
+			startAt: new Date("2016-03-05T14:00:00.000Z"),
+		});
 		await signInAs(page, "member");
+		// Before the session, so the picker lists it by its date.
+		await page.clock.setFixedTime(new Date("2016-03-01T00:00:00.000Z"));
 		await page.goto("/activities");
 		await page
 			.getByRole("listitem")
@@ -163,7 +175,8 @@ test(
 			.filter({ hasText: "4 x 500m" })
 			.click();
 		const details = page.getByRole("dialog", { name: "4 x 500m" });
-		await details.getByRole("button", { name: "Edit", exact: true }).click();
+		const edit = details.getByRole("button", { name: "Edit", exact: true });
+		await edit.click();
 
 		await expect(details.getByRole("tab", { name: "ERG" })).toHaveAttribute(
 			"aria-selected",
@@ -190,6 +203,47 @@ test(
 				})
 			).status(),
 		).toBe(400);
+
+		const storedActivity = async () => {
+			const response = await page.request.get(
+				`/api/v1/trpc/activities.getActivityById?input=${encodeURIComponent(JSON.stringify({ id }))}`,
+			);
+			const { name, startDate, workoutType, elapsedTime, distance, workout } = (
+				await response.json()
+			).result.data;
+			return {
+				numbers: { name, startDate, workoutType, elapsedTime, distance },
+				workout: workout?.description,
+			};
+		};
+		const before = await storedActivity();
+		const save = details.getByRole("button", { name: "Save", exact: true });
+		const workout = details
+			.locator('[data-slot="form-item"]', {
+				has: page.getByText("Workout", { exact: true }),
+			})
+			.getByRole("combobox");
+		const option = page.getByRole("option", { name: picked });
+		await workout.click();
+		await option.click();
+		await save.click();
+		await expect(edit).toBeVisible();
+		await expect(details.getByText(picked, { exact: true })).toBeVisible();
+		expect(await storedActivity()).toEqual({
+			numbers: before.numbers,
+			workout: picked,
+		});
+
+		// Today the session is in the past, which the picker lists only as the chosen workout.
+		await page.clock.setFixedTime(new Date());
+		await edit.click();
+		await expect(workout).toContainText(picked);
+		await workout.click();
+		await option.click();
+		await save.click();
+		await expect(edit).toBeVisible();
+		await expect(details.getByText(picked, { exact: true })).toHaveCount(0);
+		expect(await storedActivity()).toEqual(before);
 	},
 );
 
@@ -545,6 +599,86 @@ test(
 	},
 );
 
+test(
+	"a new activity proposes the workout of the session it started during, and never replaces one the member picks",
+	{ tag: "@phone" },
+	async ({ page }) => {
+		// A January morning years back, at random: the proposal takes the closest session, so runs must not share a time.
+		const sessionStart = Date.UTC(
+			2001 + Math.floor(Math.random() * 15),
+			0,
+			1 + Math.floor(Math.random() * 28),
+			14,
+			Math.floor(Math.random() * 60),
+		);
+		const proposed = `Proposed ${Date.now()}`;
+		const picked = `Picked ${Date.now()}`;
+		await signInAs(page, "admin");
+		await Promise.all([
+			scheduleErgSession({
+				page,
+				title: proposed,
+				startAt: new Date(sessionStart),
+			}),
+			// Days later, so the picker lists it but nothing proposes it.
+			scheduleErgSession({
+				page,
+				title: picked,
+				startAt: new Date(sessionStart + 3 * DAY),
+			}),
+		]);
+
+		await signInAs(page, "member");
+		await page.clock.setFixedTime(new Date(sessionStart + 5 * MINUTE));
+		await page.route("**/api/v1/activities/screenshot", async (route) => {
+			const body = route.request().postDataBuffer()?.toString("latin1") ?? "";
+			await route.fulfill({
+				json: {
+					success: true,
+					data: {
+						type: "erg",
+						name: "Morning row",
+						startDate: new Date(sessionStart + 10 * MINUTE).toISOString(),
+						timezone: "America/Regina",
+						workoutType: "distance",
+						elapsedTime: 1_500_000,
+						distance: 7500,
+						athleteId: body.match(/name="athleteId"\r\n\r\n([^\r]+)/)?.[1],
+					},
+				},
+			});
+		});
+		const drawer = page.getByRole("dialog", { name: "Add Activity" });
+		const workout = drawer
+			.locator('[data-slot="form-item"]', {
+				has: page.getByText("Workout", { exact: true }),
+			})
+			.getByRole("combobox");
+		const parsing = drawer.getByText("Parsing...");
+
+		await page.goto("/activities");
+		await page.getByRole("button", { name: "Add Activity" }).click();
+		await expect(workout).toContainText(proposed);
+		await drawer.locator('input[type="file"]').setInputFiles({
+			name: "pm5.png",
+			mimeType: "image/png",
+			buffer: await SCREENSHOT_PNG,
+		});
+		await expect(drawer.getByText("Parsed Data")).toBeVisible();
+		await expect(parsing).toHaveCount(0);
+		await expect(workout).toContainText(proposed);
+
+		await workout.click();
+		await page.getByRole("option", { name: picked }).click();
+		await expect(workout).toContainText(picked);
+		const parsedAgain = page.waitForResponse("**/api/v1/activities/screenshot");
+		await drawer.getByRole("button", { name: "Parse Again" }).click();
+		await parsedAgain;
+		await expect(parsing).toHaveCount(0);
+		await expect(workout).toContainText(picked);
+	},
+);
+
 async function logActivityFromScreenshot({
 	page,
 	name,
@@ -685,4 +819,31 @@ async function pickScreenshot({
 		mimeType: "image/png",
 		buffer: await SCREENSHOT_PNG,
 	});
+}
+
+// Through the API, as the admin: schedule.spec.ts covers the session form.
+async function scheduleErgSession({
+	page,
+	title,
+	startAt,
+}: {
+	page: Page;
+	title: string;
+	startAt: Date;
+}): Promise<string> {
+	const created = await page.request.post("/api/v1/trpc/schedule.createEvent", {
+		data: {
+			type: "training",
+			title,
+			startAt: startAt.toISOString(),
+			workout: {
+				description: title,
+				activityType: "erg",
+				workoutType: "distance",
+				intensityCategory: "C3",
+			},
+		},
+	});
+	expect(created.ok()).toBe(true);
+	return (await created.json()).result.data.workout.id;
 }

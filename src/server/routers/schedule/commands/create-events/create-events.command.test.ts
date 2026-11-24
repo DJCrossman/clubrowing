@@ -1,10 +1,23 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreateEvent } from "@/schemas";
-import { createEventsCommand } from "./create-events.command";
+
+const after = vi.fn();
+
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	after,
+}));
+
+const { createEventsCommand } = await import("./create-events.command");
 
 const MONDAY_6AM = "2030-01-07T06:00:00.000-06:00";
+const PAST_6AM = "2026-11-02T06:00:00.000-06:00";
 
 describe("createEventsCommand", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	it("gives its workout to an empty session at the same time instead of creating an event", async () => {
 		const { context, sessions, tx } = createContext([
 			{ id: "evt_empty", workoutId: null },
@@ -81,6 +94,64 @@ describe("createEventsCommand", () => {
 		expect(tx.event.create).toHaveBeenCalledOnce();
 		expect(tx.workout.delete).toHaveBeenCalledOnce();
 	});
+
+	it("links the activities logged during a past session it fills once it is saved", async () => {
+		const { context, tx } = createContext([
+			{ id: "evt_empty", workoutId: null, startAt: new Date(PAST_6AM) },
+		]);
+		tx.activity.findMany.mockResolvedValueOnce([
+			{
+				id: "act_1",
+				athleteId: "ath_1",
+				type: "erg",
+				startDate: new Date("2026-11-02T12:15:00.000Z"),
+			},
+		]);
+		tx.event.findMany.mockResolvedValueOnce([
+			{
+				workoutId: "work_1",
+				startAt: new Date(PAST_6AM),
+				audience: "club",
+				groups: [],
+			},
+		]);
+
+		const result = await createEventsCommand(
+			{ events: [{ ...training(), startAt: PAST_6AM }] },
+			context,
+		);
+
+		expect(result).toMatchObject({ filled: 1, failed: 0 });
+		expect(after).toHaveBeenCalledOnce();
+		expect(tx.activity.findMany).not.toHaveBeenCalled();
+		await after.mock.calls[0][0]();
+		expect(tx.activity.updateMany).toHaveBeenCalledWith({
+			where: { id: { in: ["act_1"] }, workoutId: null },
+			data: { workoutId: "work_1" },
+		});
+	});
+
+	it("schedules linking for an event it creates with a workout, not one without", async () => {
+		const { context } = createContext([]);
+
+		await createEventsCommand(
+			{ events: [training(), { ...training(), workout: null }] },
+			context,
+		);
+
+		expect(after).toHaveBeenCalledOnce();
+	});
+
+	it("looks for no logged activities when it fills a future session", async () => {
+		const { context, tx } = createContext([
+			{ id: "evt_empty", workoutId: null },
+		]);
+
+		await createEventsCommand({ events: [training()] }, context);
+		await after.mock.calls[0][0]();
+
+		expect(tx.activity.findMany).not.toHaveBeenCalled();
+	});
 });
 
 function training(): CreateEvent {
@@ -152,10 +223,24 @@ function createContext(existing: Session[]) {
 					return { count: 1 };
 				},
 			),
-			create: vi.fn(async ({ data }: { data: { startAt: Date } }) => ({
-				id: "evt_new",
-				startAt: data.startAt,
-			})),
+			create: vi.fn(
+				async ({
+					data,
+				}: {
+					data: { startAt: Date; workoutId: string | null };
+				}) => ({
+					id: "evt_new",
+					startAt: data.startAt,
+					workout: data.workoutId
+						? { id: data.workoutId, activityType: "erg" }
+						: null,
+				}),
+			),
+			findMany: vi.fn().mockResolvedValue([]),
+		},
+		activity: {
+			findMany: vi.fn().mockResolvedValue([]),
+			updateMany: vi.fn().mockResolvedValue({ count: 1 }),
 		},
 		workout: {
 			create: vi.fn(async (_args: { data: Record<string, unknown> }) => ({

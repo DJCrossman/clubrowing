@@ -35,6 +35,7 @@ import {
 	type CreateActivityFormInput,
 	createActivityFormSchema,
 } from "@/schemas";
+import { findScheduledWorkoutId } from "../../utils/findScheduledWorkoutId";
 import { FullscreenImageOverlay } from "../FullscreenImageOverlay/FullscreenImageOverlay";
 
 const toCreateActivity = (input: CreateActivityFormInput): CreateActivity =>
@@ -60,6 +61,8 @@ interface ActivityFormProps {
 	canHide?: boolean;
 	canChangeType?: boolean;
 	canAddScreenshot?: boolean;
+	shouldProposeWorkout?: boolean;
+	shouldFillFromWorkout?: boolean;
 	isImageFullscreen: boolean;
 	setIsImageFullscreen: (isFullscreen: boolean) => void;
 }
@@ -74,6 +77,8 @@ export function ActivityForm({
 	canHide = false,
 	canChangeType = true,
 	canAddScreenshot = false,
+	shouldProposeWorkout = false,
+	shouldFillFromWorkout = true,
 	isImageFullscreen,
 	setIsImageFullscreen,
 }: ActivityFormProps) {
@@ -83,22 +88,23 @@ export function ActivityForm({
 	const screenshotInputRef = useRef<HTMLInputElement>(null);
 
 	const currentMonth = DateTime.now().month;
+	const defaultType = currentMonth >= 5 && currentMonth <= 9 ? "water" : "erg";
+	const startDate = DateTime.now().toISO();
 	const form = useForm<CreateActivityFormInput>({
 		resolver: zodResolver(createActivityFormSchema, undefined, { raw: true }),
 		defaultValues: {
-			type:
-				currentMonth >= 5 && currentMonth <= 9
-					? ("water" as const)
-					: ("erg" as const),
+			type: defaultType,
 			name: "",
-			startDate: DateTime.now().toISO(),
+			startDate,
 			timezone: DateTime.now().zoneName,
 			workoutType: "distance",
 			elapsedTime: 0,
 			athleteId: undefined,
 			boatId: undefined,
 			ergId: undefined,
-			workoutId: undefined,
+			workoutId: shouldProposeWorkout
+				? findScheduledWorkoutId({ workouts, type: defaultType, startDate })
+				: undefined,
 			courseType: "course",
 			...defaultValues,
 		},
@@ -107,15 +113,16 @@ export function ActivityForm({
 	const type = form.watch("type");
 	const laps = form.watch("laps");
 	const courseType = form.watch("courseType");
+	const workoutId = form.watch("workoutId");
 
 	const visibleWorkouts = useMemo(() => {
 		const startOfToday = DateTime.now().startOf("day");
 		return workouts.filter(
 			(w) =>
 				w.activityType === type &&
-				DateTime.fromISO(w.startDate) >= startOfToday,
+				(w.id === workoutId || DateTime.fromISO(w.startDate) >= startOfToday),
 		);
-	}, [workouts, type]);
+	}, [workouts, type, workoutId]);
 
 	const handleUpload = useCallback(
 		async (file: File) => {
@@ -136,7 +143,20 @@ export function ActivityForm({
 				});
 
 				if (result.success && result.data) {
-					form.reset(result.data);
+					form.reset(
+						{
+							...result.data,
+							workoutId:
+								shouldProposeWorkout && !form.getFieldState("workoutId").isDirty
+									? (findScheduledWorkoutId({
+											workouts,
+											type: result.data.type,
+											startDate: result.data.startDate,
+										}) ?? "")
+									: form.getValues("workoutId"),
+						},
+						{ keepDirty: true },
+					);
 				} else {
 					setUploadError("Failed to parse screenshot");
 				}
@@ -149,12 +169,22 @@ export function ActivityForm({
 				setIsUploading(false);
 			}
 		},
-		[onUploadErgActivityScreenshot, form],
+		[onUploadErgActivityScreenshot, form, shouldProposeWorkout, workouts],
 	);
 
 	const handleTypeChange = (newType: string) => {
 		if (newType !== "erg" && newType !== "water") return;
 		form.setValue("type", newType);
+		if (shouldProposeWorkout && !form.getFieldState("workoutId").isDirty) {
+			form.setValue(
+				"workoutId",
+				findScheduledWorkoutId({
+					workouts,
+					type: newType,
+					startDate: form.getValues("startDate"),
+				}) ?? "",
+			);
+		}
 		form.clearErrors();
 		if (newType !== "erg") {
 			setUploadedFile(null);
@@ -190,7 +220,11 @@ export function ActivityForm({
 					</TabsList>
 
 					<TabsContent value="water" className="space-y-8 pt-4">
-						<WorkoutCombobox form={form} workouts={visibleWorkouts} />
+						<WorkoutCombobox
+							form={form}
+							workouts={visibleWorkouts}
+							shouldFillFromWorkout={shouldFillFromWorkout}
+						/>
 
 						<FormField
 							control={form.control}
@@ -277,7 +311,11 @@ export function ActivityForm({
 					</TabsContent>
 
 					<TabsContent value="erg" className="space-y-8 pt-4">
-						<WorkoutCombobox form={form} workouts={visibleWorkouts} />
+						<WorkoutCombobox
+							form={form}
+							workouts={visibleWorkouts}
+							shouldFillFromWorkout={shouldFillFromWorkout}
+						/>
 
 						{!!onUploadErgActivityScreenshot && (
 							<>
@@ -523,9 +561,14 @@ export function ActivityForm({
 interface WorkoutComboboxProps {
 	form: UseFormReturn<CreateActivityFormInput>;
 	workouts: Workouts;
+	shouldFillFromWorkout: boolean;
 }
 
-function WorkoutCombobox({ form, workouts }: WorkoutComboboxProps) {
+function WorkoutCombobox({
+	form,
+	workouts,
+	shouldFillFromWorkout,
+}: WorkoutComboboxProps) {
 	return (
 		<FormField
 			control={form.control}
@@ -548,7 +591,7 @@ function WorkoutCombobox({ form, workouts }: WorkoutComboboxProps) {
 							onValueChange={(value) => {
 								field.onChange(value);
 								const workout = workouts.find((w) => w.id === value);
-								if (!workout) return;
+								if (!workout || !shouldFillFromWorkout) return;
 								form.setValue(
 									"name",
 									workout.eventTitle ?? workout.description,
