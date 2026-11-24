@@ -8,6 +8,7 @@ import {
 	getConcept2WebhookUserId,
 } from "@/schemas";
 import { createConcept2Service } from "@/server/services/concept2-service";
+import { createFileStorage } from "@/server/services/file-storage";
 import { createGitHubService } from "@/server/services/github-service";
 import { createPushService } from "@/server/services/push-service";
 import { createRcaService } from "@/server/services/rca-service";
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
 				github: createGitHubService(),
 				taskManager: createTaskManager(),
 				userService: createUserService(),
+				fileStorage: createFileStorage(),
 			};
 			await processConcept2WebhookEventCommand(event, { db, services });
 		} catch (err) {

@@ -1,6 +1,7 @@
 import type { AthleteRow } from "@/domain/athletes/common/map-to-athlete-dto";
 import type { db } from "@/lib/db";
 import type { createConcept2Service } from "@/server/services/concept2-service";
+import type { createFileStorage } from "@/server/services/file-storage";
 import type { createGitHubService } from "@/server/services/github-service";
 import type { createPushService } from "@/server/services/push-service";
 import type { createRcaService } from "@/server/services/rca-service";
@@ -18,6 +19,7 @@ type BaseContext = {
 		github: ReturnType<typeof createGitHubService>;
 		taskManager: ReturnType<typeof createTaskManager>;
 		userService: ReturnType<typeof createUserService>;
+		fileStorage: ReturnType<typeof createFileStorage>;
 	};
 	origin: string;
 };

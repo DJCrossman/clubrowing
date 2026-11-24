@@ -6,7 +6,6 @@ const findAccessibleChannel = vi.fn();
 const loadMessageDtos = vi.fn();
 const notifyChannelAfterResponse = vi.fn();
 
-vi.mock("@vercel/blob", () => ({ head }));
 vi.mock("@/domain/chat/common/chat-access", () => ({
 	findAccessibleChannel,
 }));
@@ -37,6 +36,7 @@ const db = {
 const ctx = {
 	db,
 	user: { id: "user_me", isAdmin: false },
+	services: { fileStorage: { findFile: head } },
 } as unknown as ViewerContext;
 const input = {
 	channelId: "chan_everyone",

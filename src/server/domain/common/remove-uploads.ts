@@ -1,10 +1,13 @@
-import { del } from "@vercel/blob";
 import type { Context } from "@/domain/common/context";
 
 export async function removeUploads({
 	db,
+	services,
 	uploads,
-}: Pick<Context, "db"> & { uploads: { id: string; url: string }[] }) {
+}: Pick<Context, "db"> & {
+	services: Pick<Context["services"], "fileStorage">;
+	uploads: { id: string; url: string }[];
+}) {
 	if (uploads.length === 0) return;
 	// Looked up first: once the files' rows are gone, their previews no longer point at them.
 	const removed = [
@@ -14,7 +17,7 @@ export async function removeUploads({
 			select: { id: true, url: true },
 		})),
 	];
-	await del(removed.map((upload) => upload.url));
+	await services.fileStorage.deleteFiles(removed.map((upload) => upload.url));
 	await db.upload.deleteMany({
 		where: { id: { in: removed.map((upload) => upload.id) } },
 	});

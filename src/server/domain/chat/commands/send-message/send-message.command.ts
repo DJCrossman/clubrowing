@@ -1,4 +1,3 @@
-import { head } from "@vercel/blob";
 import { findAccessibleChannel } from "@/domain/chat/common/chat-access";
 import { loadMessageDtos } from "@/domain/chat/common/load-message-dtos";
 import { messageInclude } from "@/domain/chat/common/map-to-message-dto";
@@ -19,7 +18,12 @@ export async function sendMessageCommand(
 	if (input.quotedMessageId) {
 		await assertQuotable(ctx, input.quotedMessageId, input.channelId);
 	}
-	await confirmPendingUploads({ db, user, attachmentIds: input.attachmentIds });
+	await confirmPendingUploads({
+		db,
+		user,
+		services,
+		attachmentIds: input.attachmentIds,
+	});
 	const message = await db.message
 		.create({
 			data: {
@@ -90,15 +94,20 @@ async function assertQuotable(
 async function confirmPendingUploads({
 	db,
 	user,
+	services,
 	attachmentIds,
-}: Pick<ViewerContext, "db" | "user"> & { attachmentIds?: string[] }) {
+}: Pick<ViewerContext, "db" | "user" | "services"> & {
+	attachmentIds?: string[];
+}) {
 	if (!attachmentIds?.length) return;
 	const pending = await db.upload.findMany({
 		where: { id: { in: attachmentIds }, userId: user.id, pending: true },
 		select: { id: true, url: true, size: true, contentType: true },
 	});
 	for (const upload of pending) {
-		const stored = await head(upload.url).catch(() => null);
+		const stored = await services.fileStorage
+			.findFile(upload.url)
+			.catch(() => null);
 		if (!stored || !storedFileMatches({ stored, upload })) {
 			throw new DomainError(
 				"BAD_REQUEST",

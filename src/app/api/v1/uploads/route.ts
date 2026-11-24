@@ -5,6 +5,7 @@ import { removeOrphanedUploads } from "@/domain/common/remove-orphaned-uploads";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { envVars } from "@/lib/env";
+import { createFileStorage } from "@/server/services/file-storage";
 import { findUploadRefusal } from "./upload-refusal";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
@@ -78,7 +79,10 @@ export async function POST(request: Request) {
 			// Abandoned video uploads hold space until clean-up settles them.
 			after(async () => {
 				try {
-					await removeOrphanedUploads({ db });
+					await removeOrphanedUploads({
+						db,
+						services: { fileStorage: createFileStorage() },
+					});
 				} catch (error) {
 					console.error("Error removing orphaned photos:", error);
 				}
@@ -194,7 +198,10 @@ export async function POST(request: Request) {
 
 		after(async () => {
 			try {
-				await removeOrphanedUploads({ db });
+				await removeOrphanedUploads({
+					db,
+					services: { fileStorage: createFileStorage() },
+				});
 			} catch (error) {
 				console.error("Error removing orphaned photos:", error);
 			}

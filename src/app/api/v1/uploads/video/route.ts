@@ -7,6 +7,7 @@ import { removeOrphanedUploads } from "@/domain/common/remove-orphaned-uploads";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { envVars } from "@/lib/env";
+import { createFileStorage } from "@/server/services/file-storage";
 import { findUploadRefusal } from "../upload-refusal";
 
 const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
@@ -103,7 +104,10 @@ export async function POST(request: Request) {
 		// Also when refused for space: abandoned video uploads hold it until clean-up settles them.
 		after(async () => {
 			try {
-				await removeOrphanedUploads({ db });
+				await removeOrphanedUploads({
+					db,
+					services: { fileStorage: createFileStorage() },
+				});
 			} catch (error) {
 				console.error("Error removing orphaned photos:", error);
 			}

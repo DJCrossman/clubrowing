@@ -14,7 +14,7 @@ export async function deleteMessageCommand(
 	input: DeleteMessage,
 	ctx: ViewerContext,
 ) {
-	const { db, user } = ctx;
+	const { db, user, services } = ctx;
 	const message = await findAccessibleMessage(db, input.messageId, user);
 	if (message.authorUserId !== user.id && !isChatAdmin(ctx)) {
 		throw new DomainError("FORBIDDEN", "You can only delete your own messages");
@@ -29,6 +29,7 @@ export async function deleteMessageCommand(
 	try {
 		await removeUploads({
 			db,
+			services,
 			uploads: await db.upload.findMany({
 				where: { messageId: message.id },
 				select: { id: true, url: true },

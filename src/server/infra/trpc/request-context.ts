@@ -4,6 +4,7 @@ import type { Context } from "@/domain/common/context";
 import { db } from "@/lib/db";
 import { isDefaultOrgAdmin } from "@/server/clerk/default-organization";
 import { createConcept2Service } from "@/server/services/concept2-service";
+import { createFileStorage } from "@/server/services/file-storage";
 import { createGitHubService } from "@/server/services/github-service";
 import { createPushService } from "@/server/services/push-service";
 import { createRcaService } from "@/server/services/rca-service";
@@ -24,6 +25,7 @@ export async function createRequestContext(_opts?: {
 		github: createGitHubService(),
 		taskManager: createTaskManager(),
 		userService: createUserService(),
+		fileStorage: createFileStorage(),
 	};
 
 	if (!session.userId) {

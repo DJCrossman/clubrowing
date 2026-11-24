@@ -5,7 +5,11 @@ import { deleteActivityCommand } from "./delete-activity.command";
 
 export async function deleteActivityMemberCommand(
 	input: DeleteActivityInput,
-	{ db, athlete }: Pick<AuthenticatedContext, "db" | "athlete">,
+	{
+		db,
+		athlete,
+		services,
+	}: Pick<AuthenticatedContext, "db" | "athlete" | "services">,
 ) {
 	const existing = await db.activity.findUnique({
 		where: { id: input.id },
@@ -20,5 +24,5 @@ export async function deleteActivityMemberCommand(
 			"Cannot delete another athlete's activity",
 		);
 	}
-	return deleteActivityCommand(input, { db });
+	return deleteActivityCommand(input, { db, services });
 }

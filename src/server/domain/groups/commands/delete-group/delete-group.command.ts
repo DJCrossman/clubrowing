@@ -5,11 +5,12 @@ import { findGroupOrThrow } from "../../common/find-group-or-throw";
 
 export async function deleteGroupCommand(
 	{ id }: DeleteGroupInput,
-	{ db }: Context,
+	{ db, services }: Context,
 ) {
 	await findGroupOrThrow(db, id);
 	await removeUploads({
 		db,
+		services,
 		uploads: await db.upload.findMany({
 			where: { message: { channel: { groupId: id } } },
 			select: { id: true, url: true },

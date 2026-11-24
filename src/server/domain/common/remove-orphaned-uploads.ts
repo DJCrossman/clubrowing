@@ -1,13 +1,18 @@
-import { BlobNotFoundError, del, head } from "@vercel/blob";
 import { DateTime } from "luxon";
 import type { Context } from "@/domain/common/context";
+import type { StoredFile } from "@/server/services/file-storage";
 import { removeUploads } from "./remove-uploads";
 import { storedFileMatches } from "./stored-file-matches";
 
 // Well past the 15 minutes a video's upload permission lasts.
 const UNFINISHED_UPLOAD_HOURS = 1;
 
-export async function removeOrphanedUploads({ db }: Pick<Context, "db">) {
+export async function removeOrphanedUploads({
+	db,
+	services,
+}: Pick<Context, "db"> & {
+	services: Pick<Context["services"], "fileStorage">;
+}) {
 	const uploads = await db.upload.findMany({
 		// Every feature that keeps uploads must be named in this condition, or its files are removed as orphans.
 		where: {
@@ -40,10 +45,11 @@ export async function removeOrphanedUploads({ db }: Pick<Context, "db">) {
 		},
 	});
 	for (const upload of uploads.filter((upload) => upload.pending)) {
-		await settleUnfinishedUpload({ db, upload });
+		await settleUnfinishedUpload({ db, services, upload });
 	}
 	await removeUploads({
 		db,
+		services,
 		uploads: uploads.filter((upload) => !upload.pending),
 	});
 }
@@ -51,20 +57,22 @@ export async function removeOrphanedUploads({ db }: Pick<Context, "db">) {
 // A settled upload is an ordinary unsent one: counted, sendable, and removed at 24 hours.
 async function settleUnfinishedUpload({
 	db,
+	services,
 	upload,
 }: Pick<Context, "db"> & {
+	services: Pick<Context["services"], "fileStorage">;
 	upload: { id: string; url: string; size: number; contentType: string | null };
 }) {
-	let stored: Awaited<ReturnType<typeof head>>;
+	let stored: StoredFile | null;
 	try {
-		stored = await head(upload.url);
+		stored = await services.fileStorage.findFile(upload.url);
 	} catch (error) {
-		if (error instanceof BlobNotFoundError) {
-			// A send that confirmed the row in the meantime keeps it.
-			await db.upload.deleteMany({ where: { id: upload.id, pending: true } });
-			return;
-		}
 		console.error("Error checking an unfinished upload:", error);
+		return;
+	}
+	if (!stored) {
+		// A send that confirmed the row in the meantime keeps it.
+		await db.upload.deleteMany({ where: { id: upload.id, pending: true } });
 		return;
 	}
 	if (storedFileMatches({ stored, upload })) {
@@ -75,7 +83,7 @@ async function settleUnfinishedUpload({
 		return;
 	}
 	try {
-		await del(stored.url);
+		await services.fileStorage.deleteFile(stored.url);
 	} catch (error) {
 		console.error("Error removing an unfinished upload:", error);
 		return;

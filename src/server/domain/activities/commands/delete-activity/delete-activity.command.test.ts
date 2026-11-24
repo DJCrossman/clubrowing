@@ -3,8 +3,6 @@ import type { AuthenticatedContext } from "@/domain/common/context";
 
 const del = vi.fn();
 
-vi.mock("@vercel/blob", () => ({ del }));
-
 const { deleteActivityCommand } = await import("./delete-activity.command");
 const { deleteActivityMemberCommand } = await import(
 	"./delete-activity.member.command"
@@ -114,6 +112,10 @@ function createContext({
 	};
 	return {
 		db,
-		ctx: { db, athlete: { id: "ath_me" } } as unknown as AuthenticatedContext,
+		ctx: {
+			db,
+			athlete: { id: "ath_me" },
+			services: { fileStorage: { deleteFiles: del } },
+		} as unknown as AuthenticatedContext,
 	};
 }
