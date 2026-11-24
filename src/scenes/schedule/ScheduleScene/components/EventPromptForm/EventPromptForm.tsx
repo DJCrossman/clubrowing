@@ -23,10 +23,19 @@ import {
 	eventFormSchema,
 } from "@/schemas";
 import { getPromptEventFormValues } from "../../utils/getPromptEventFormValues";
-import { parseEventsPrompt } from "../../utils/parseEventsPrompt";
-import { parseWorkoutDescription } from "../../utils/parseWorkoutDescription";
 import { EventCreateForm } from "../EventCreateForm/EventCreateForm";
 import { EventTypeBadge } from "../EventTypeBadge/EventTypeBadge";
+import { PromptSummary } from "./PromptSummary";
+
+export type ReadEventsPrompt = (input: {
+	prompt: string;
+	type: EventType;
+	startDate: string;
+	repeatUntil?: string;
+}) => Promise<{
+	events: ParsedPromptEvent[];
+	workouts: Map<string, ParseDescriptionResult>;
+}>;
 
 const PLACEHOLDERS: Record<EventType, string> = {
 	training:
@@ -46,21 +55,24 @@ interface PromptItem {
 
 interface EventPromptFormProps {
 	startDate: string;
+	afterType?: ReactNode;
+	isReadingEventsPrompt: boolean;
+	onReadEventsPrompt: ReadEventsPrompt;
 	onSubmit: (inputs: CreateEvent[]) => Promise<void>;
 	onCancel: () => void;
-	afterType?: ReactNode;
 }
 
 export function EventPromptForm({
 	startDate,
+	afterType,
+	isReadingEventsPrompt,
+	onReadEventsPrompt,
 	onSubmit,
 	onCancel,
-	afterType,
 }: EventPromptFormProps) {
 	const [type, setType] = useState<EventType>("training");
 	const [prompt, setPrompt] = useState("");
 	const [repeatUntil, setRepeatUntil] = useState("");
-	const [isParsing, setIsParsing] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [submittedPrompt, setSubmittedPrompt] = useState("");
@@ -74,19 +86,10 @@ export function EventPromptForm({
 			.map(({ event }) => event) ?? [];
 
 	if (items) {
-		const promptSummary = (
-			<div className="space-y-1">
-				<p className="text-sm font-medium">Your prompt</p>
-				<p className="whitespace-pre-wrap rounded-md border bg-muted/50 p-3 text-sm text-muted-foreground">
-					{submittedPrompt}
-				</p>
-			</div>
-		);
-
 		if (editingIndex !== null) {
 			return (
 				<div className="space-y-6">
-					{promptSummary}
+					<PromptSummary prompt={submittedPrompt} />
 					<EventCreateForm
 						key={editingIndex}
 						defaultValues={items[editingIndex].values}
@@ -106,7 +109,7 @@ export function EventPromptForm({
 
 		return (
 			<div className="space-y-6">
-				{promptSummary}
+				<PromptSummary prompt={submittedPrompt} />
 				<div className="space-y-1">
 					<p className="text-sm font-medium">
 						{items.length} {items.length === 1 ? "event" : "events"} found
@@ -214,16 +217,14 @@ export function EventPromptForm({
 			onSubmit={async (event) => {
 				event.preventDefault();
 				setError(null);
-				setIsParsing(true);
 				try {
-					const result = await parseEventsPrompt(
-						prompt.trim(),
+					const { events, workouts } = await onReadEventsPrompt({
+						prompt: prompt.trim(),
 						type,
 						startDate,
-						repeatUntil || undefined,
-					);
-					const workouts = await parseWorkoutDescriptions(result.events);
-					const parsed = result.events.flatMap((promptEvent): PromptItem[] => {
+						repeatUntil: repeatUntil || undefined,
+					});
+					const parsed = events.flatMap((promptEvent): PromptItem[] => {
 						const values = getPromptEventFormValues(
 							promptEvent,
 							promptEvent.workout &&
@@ -236,7 +237,7 @@ export function EventPromptForm({
 						setError("None of the events could be read. Try rewording it.");
 						return;
 					}
-					setSkippedCount(result.events.length - parsed.length);
+					setSkippedCount(events.length - parsed.length);
 					setExcluded(new Set());
 					setSubmittedPrompt(prompt.trim());
 					setItems(parsed);
@@ -244,8 +245,6 @@ export function EventPromptForm({
 					setError(
 						`Failed to read prompt: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
 					);
-				} finally {
-					setIsParsing(false);
 				}
 			}}
 		>
@@ -271,7 +270,7 @@ export function EventPromptForm({
 			<div className="space-y-2">
 				<Label htmlFor="events-prompt" className="flex items-center gap-2">
 					Describe the events
-					{isParsing && (
+					{isReadingEventsPrompt && (
 						<span className="text-xs font-normal text-muted-foreground">
 							Reading…
 						</span>
@@ -309,25 +308,13 @@ export function EventPromptForm({
 				<Button type="button" variant="outline" onClick={onCancel}>
 					Cancel
 				</Button>
-				<Button type="submit" disabled={isParsing || !prompt.trim()}>
-					{isParsing ? "Reading…" : "Preview events"}
+				<Button
+					type="submit"
+					disabled={isReadingEventsPrompt || !prompt.trim()}
+				>
+					{isReadingEventsPrompt ? "Reading…" : "Preview events"}
 				</Button>
 			</div>
 		</form>
 	);
-}
-
-// Repeated sessions share a description, so each is read once. One at a time,
-// since the local model handles a single request at a time anyway.
-async function parseWorkoutDescriptions(events: ParsedPromptEvent[]) {
-	const workouts = new Map<string, ParseDescriptionResult>();
-	for (const description of new Set(
-		events.flatMap((event) => event.workout?.description ?? []),
-	)) {
-		const parsed = await parseWorkoutDescription(description).catch(
-			() => undefined,
-		);
-		if (parsed) workouts.set(description, parsed);
-	}
-	return workouts;
 }

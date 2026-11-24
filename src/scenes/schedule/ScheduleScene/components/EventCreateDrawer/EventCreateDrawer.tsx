@@ -14,12 +14,17 @@ import {
 import type { CreateEvent, EventFormInput } from "@/schemas";
 import { getNewEventFormValues } from "../../utils/getEventFormValues";
 import { EventCreateForm } from "../EventCreateForm/EventCreateForm";
-import { EventPromptForm } from "../EventPromptForm/EventPromptForm";
+import {
+	EventPromptForm,
+	type ReadEventsPrompt,
+} from "../EventPromptForm/EventPromptForm";
 
 interface EventCreateDrawerProps {
 	isOpen: boolean;
 	defaultDate: string;
 	defaultValues?: EventFormInput;
+	isReadingEventsPrompt?: boolean;
+	onReadEventsPrompt?: ReadEventsPrompt;
 	onClose: () => void;
 	onSubmit: (input: CreateEvent) => Promise<void>;
 	onSubmitMany?: (inputs: CreateEvent[]) => Promise<void>;
@@ -29,6 +34,8 @@ export const EventCreateDrawer = ({
 	isOpen,
 	defaultDate,
 	defaultValues,
+	isReadingEventsPrompt,
+	onReadEventsPrompt,
 	onClose,
 	onSubmit,
 	onSubmitMany,
@@ -53,6 +60,8 @@ export const EventCreateDrawer = ({
 					<EventCreateBody
 						defaultDate={defaultDate}
 						defaultValues={defaultValues}
+						isReadingEventsPrompt={isReadingEventsPrompt}
+						onReadEventsPrompt={onReadEventsPrompt}
 						onClose={onClose}
 						onSubmit={onSubmit}
 						onSubmitMany={onSubmitMany}
@@ -68,17 +77,17 @@ export const EventCreateDrawer = ({
 const EventCreateBody = ({
 	defaultDate,
 	defaultValues,
+	isReadingEventsPrompt = false,
+	onReadEventsPrompt,
 	onClose,
 	onSubmit,
 	onSubmitMany,
 }: Omit<EventCreateDrawerProps, "isOpen">) => {
 	const [mode, setMode] = useState<"form" | "prompt">("form");
 
-	return mode === "prompt" && onSubmitMany ? (
+	return mode === "prompt" && onSubmitMany && onReadEventsPrompt ? (
 		<EventPromptForm
 			startDate={defaultDate}
-			onSubmit={onSubmitMany}
-			onCancel={onClose}
 			afterType={
 				<Button
 					type="button"
@@ -89,14 +98,17 @@ const EventCreateBody = ({
 					Add a single event instead
 				</Button>
 			}
+			isReadingEventsPrompt={isReadingEventsPrompt}
+			onReadEventsPrompt={onReadEventsPrompt}
+			onSubmit={onSubmitMany}
+			onCancel={onClose}
 		/>
 	) : (
 		<EventCreateForm
 			defaultValues={defaultValues ?? getNewEventFormValues(defaultDate)}
-			onSubmit={onSubmit}
-			onCancel={onClose}
 			afterType={
-				onSubmitMany && (
+				onSubmitMany &&
+				onReadEventsPrompt && (
 					<Button
 						type="button"
 						variant="link"
@@ -108,6 +120,8 @@ const EventCreateBody = ({
 					</Button>
 				)
 			}
+			onSubmit={onSubmit}
+			onCancel={onClose}
 		/>
 	);
 };

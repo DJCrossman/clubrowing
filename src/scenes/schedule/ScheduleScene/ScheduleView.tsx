@@ -2,11 +2,14 @@
 
 import { IconCalendarShare, IconPlus, IconTable } from "@tabler/icons-react";
 
+import { useMutation } from "@tanstack/react-query";
 import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import type { ParseEventsPromptResult } from "@/app/api/v1/events/parse-prompt/route";
+import type { ParseDescriptionResult } from "@/app/api/v1/workouts/parse-description/route";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useShareToChat } from "@/hooks/useShareToChat";
@@ -26,7 +29,7 @@ import type {
 	ScheduleWeek,
 } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
-import type { ScheduleTypeFilter } from "@/schemas";
+import type { EventType, ScheduleTypeFilter } from "@/schemas";
 import {
 	DayRow,
 	EventCard,
@@ -38,6 +41,7 @@ import {
 	WeekNavigation,
 } from "./components";
 import { formatNudgeResult } from "./utils/formatNudgeResult";
+import { parseWorkoutDescription } from "./utils/parseWorkoutDescription";
 
 const TYPE_FILTERS = [
 	{ value: "all", label: "All" },
@@ -99,6 +103,42 @@ export const ScheduleView = ({
 			onSuccess: () => toast.success("Your old calendar link stopped working"),
 			onError: toastError,
 		});
+	const readEventsPrompt = useMutation({
+		mutationFn: async ({
+			prompt,
+			type,
+			startDate,
+			repeatUntil,
+		}: {
+			prompt: string;
+			type: EventType;
+			startDate: string;
+			repeatUntil?: string;
+		}) => {
+			const response = await fetch("/api/v1/events/parse-prompt", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ prompt, type, startDate, repeatUntil }),
+			});
+			if (!response.ok) {
+				const body = await response.json().catch(() => ({}));
+				throw new Error(body?.error || "Failed to parse prompt");
+			}
+			const { events }: ParseEventsPromptResult = await response.json();
+			// Repeated sessions share a description, so each is read once. One at a time,
+			// since the local model handles a single request at a time anyway.
+			const workouts = new Map<string, ParseDescriptionResult>();
+			for (const description of new Set(
+				events.flatMap((event) => event.workout?.description ?? []),
+			)) {
+				const parsed = await parseWorkoutDescription(description).catch(
+					() => undefined,
+				);
+				if (parsed) workouts.set(description, parsed);
+			}
+			return { events, workouts };
+		},
+	});
 
 	const weekStart = DateTime.fromISO(schedule.weekStart, {
 		zone: CLUB_TIMEZONE,
@@ -279,6 +319,8 @@ export const ScheduleView = ({
 			<EventCreateDrawer
 				isOpen={isCreateDrawerOpen && isAdmin}
 				defaultDate={defaultDay}
+				isReadingEventsPrompt={readEventsPrompt.isPending}
+				onReadEventsPrompt={readEventsPrompt.mutateAsync}
 				onClose={closeOverlay}
 				onSubmit={async (input) => {
 					const event = await withErrorToast(createEvent.mutateAsync(input));
