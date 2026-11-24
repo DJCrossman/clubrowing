@@ -1,13 +1,20 @@
 import { IconShare3 } from "@tabler/icons-react";
 import { InitialsAvatar } from "@/components/chat/initials-avatar";
 import { getAttachmentsPreview } from "@/lib/chat/attachments";
+import type { Gif } from "@/lib/giphy";
 import type { ChatMessage } from "@/lib/trpc/types";
 import { GifTile } from "../GifPicker/GifTile";
 import { MessageGif } from "../GifPicker/MessageGif";
 
 type ForwardedMessage = NonNullable<ChatMessage["forwarded"]>;
 
-export function ForwardedBlock({ forwarded }: { forwarded: ForwardedMessage }) {
+export function ForwardedBlock({
+	forwarded,
+	messageGifs,
+}: {
+	forwarded: ForwardedMessage;
+	messageGifs: ReadonlyMap<string, Gif | null>;
+}) {
 	return (
 		<div className="flex max-w-[520px] flex-col gap-1.5 rounded-[10px] border border-input bg-white/[0.03] px-3 py-2.5">
 			<p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -40,7 +47,7 @@ export function ForwardedBlock({ forwarded }: { forwarded: ForwardedMessage }) {
 					)}
 					{forwarded.gif && forwarded.gifId && (
 						<MessageGif
-							id={forwarded.gifId}
+							gif={messageGifs.get(forwarded.gifId)}
 							title={forwarded.gif}
 							variant="compact"
 						/>

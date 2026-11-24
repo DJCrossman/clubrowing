@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { MentionRange } from "@/lib/chat/mentions";
+import type { Gif } from "@/lib/giphy";
 import type { ChatMembers, ChatMessage } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import {
@@ -37,7 +38,6 @@ import {
 import { getMessagePreviewText } from "../../utils/messageFormatting";
 import { EmojiPicker } from "../EmojiPicker/EmojiPicker";
 import { GifPicker } from "../GifPicker/GifPicker";
-import { useGiphy } from "../GifPicker/useGiphy";
 import { ComposerFileStrip } from "./ComposerFileStrip";
 import { MentionList } from "./MentionList";
 import { useMentionPicker } from "./useMentionPicker";
@@ -59,6 +59,12 @@ interface MessageComposerProps {
 	editingMessage?: ChatMessage | null;
 	videoUploadProgress?: number | null;
 	mentionableMembers: ChatMembers;
+	canUseGifs: boolean;
+	areGifsPaused: boolean;
+	gifSearch: string | null;
+	gifs: Gif[] | undefined;
+	isLoadingGifs: boolean;
+	haveGifsFailed: boolean;
 	ref?: Ref<MessageComposerHandle>;
 	onCancelQuote?: () => void;
 	onSubmit: (submission: ComposerSubmission) => Promise<unknown>;
@@ -70,6 +76,8 @@ interface MessageComposerProps {
 	) => Promise<unknown>;
 	onEditLastMessage?: () => void;
 	onMentioningChange: (isMentioning: boolean) => void;
+	onGifSearchChange: (search: string | null) => void;
+	onGifPicked: (gif: Gif) => void;
 }
 
 export function MessageComposer({
@@ -79,6 +87,12 @@ export function MessageComposer({
 	editingMessage,
 	videoUploadProgress = null,
 	mentionableMembers,
+	canUseGifs,
+	areGifsPaused,
+	gifSearch,
+	gifs,
+	isLoadingGifs,
+	haveGifsFailed,
 	ref,
 	onCancelQuote,
 	onSubmit,
@@ -86,6 +100,8 @@ export function MessageComposer({
 	onSaveEdit,
 	onEditLastMessage,
 	onMentioningChange,
+	onGifSearchChange,
+	onGifPicked,
 }: MessageComposerProps) {
 	const alsoSendToId = useId();
 	const isThread = !!alsoSendToLabel;
@@ -103,7 +119,6 @@ export function MessageComposer({
 	const canSend = hasText || files.length > 0;
 	const isSending = form.formState.isSubmitting && files.length > 0;
 	const { ref: registerTextRef, ...textField } = form.register("text");
-	const { canUseGifs, isPaused: gifsPaused } = useGiphy();
 	const mentions = useMentionPicker({
 		members: mentionableMembers,
 		form,
@@ -365,24 +380,30 @@ export function MessageComposer({
 					{!editingMessage && canUseGifs && (
 						<GifPicker
 							anchor={isMobile ? rootRef : undefined}
-							onSelect={(gif) =>
+							search={gifSearch}
+							gifs={gifs}
+							isLoading={isLoadingGifs}
+							hasFailed={haveGifsFailed}
+							onSearchChange={onGifSearchChange}
+							onSelect={(gif) => {
+								onGifPicked(gif);
 								onSubmit({
-									gif,
+									gif: { id: gif.id, title: gif.title || "GIF" },
 									files: [],
 									alsoSendToChannel: form.getValues("alsoSendToChannel"),
 								})
 									.then(() => form.setValue("alsoSendToChannel", false))
-									.catch(() => undefined)
-							}
+									.catch(() => undefined);
+							}}
 						>
 							<ComposerButton
 								label={
-									gifsPaused
+									areGifsPaused
 										? "GIFs are taking a break. Try again later."
 										: "Add a GIF"
 								}
 								className="[&_svg]:size-5"
-								disabled={isSending || gifsPaused}
+								disabled={isSending || areGifsPaused}
 							>
 								<IconGif />
 							</ComposerButton>

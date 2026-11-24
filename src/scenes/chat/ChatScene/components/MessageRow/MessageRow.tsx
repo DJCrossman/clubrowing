@@ -1,6 +1,7 @@
 "use client";
 
 import { InitialsAvatar } from "@/components/chat/initials-avatar";
+import type { Gif } from "@/lib/giphy";
 import type { ChatMessage } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { formatMessageTime } from "../../utils/messageFormatting";
@@ -23,6 +24,7 @@ interface MessageRowProps extends MessageActionHandlers {
 	compact?: boolean;
 	isHighlighted?: boolean;
 	videosPausedUntil?: string | null;
+	messageGifs: ReadonlyMap<string, Gif | null>;
 	onVideoError: () => void;
 	onOpenFile: (file: ChatMessage["files"][number]) => void;
 }
@@ -33,6 +35,7 @@ export function MessageRow({
 	compact = false,
 	isHighlighted = false,
 	videosPausedUntil = null,
+	messageGifs,
 	onVideoError,
 	onOpenFile,
 	...handlers
@@ -90,10 +93,15 @@ export function MessageRow({
 						preview={preview}
 					/>
 				))}
-				{message.forwarded && <ForwardedBlock forwarded={message.forwarded} />}
+				{message.forwarded && (
+					<ForwardedBlock
+						forwarded={message.forwarded}
+						messageGifs={messageGifs}
+					/>
+				)}
 				{message.gif && message.gifId && (
 					<MessageGif
-						id={message.gifId}
+						gif={messageGifs.get(message.gifId)}
 						title={message.gif}
 						variant={compact ? "compact" : "message"}
 					/>

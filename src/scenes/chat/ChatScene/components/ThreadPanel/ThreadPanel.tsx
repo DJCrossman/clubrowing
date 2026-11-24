@@ -11,6 +11,7 @@ import {
 	DrawerTitle,
 } from "@/components/ui/drawer";
 import type { MentionRange } from "@/lib/chat/mentions";
+import type { Gif } from "@/lib/giphy";
 import type { ChatMembers, ChatMessage, ChatThread } from "@/lib/trpc/types";
 import { useScrollToOwnMessage } from "../../hooks/useScrollToOwnMessage";
 import {
@@ -33,6 +34,13 @@ interface ThreadPanelProps
 	isMobile: boolean;
 	videosPausedUntil: string | null;
 	mentionableMembers: ChatMembers;
+	messageGifs: ReadonlyMap<string, Gif | null>;
+	canUseGifs: boolean;
+	areGifsPaused: boolean;
+	gifSearch: string | null;
+	gifs: Gif[] | undefined;
+	isLoadingGifs: boolean;
+	haveGifsFailed: boolean;
 	onClose: () => void;
 	onReply: (submission: ComposerSubmission) => Promise<unknown>;
 	onSaveEdit: (
@@ -43,6 +51,8 @@ interface ThreadPanelProps
 	onVideoError: () => void;
 	onOpenFile: (file: ChatMessage["files"][number]) => void;
 	onMentioningChange: (isMentioning: boolean) => void;
+	onGifSearchChange: (search: string | null) => void;
+	onGifPicked: (gif: Gif) => void;
 }
 
 export function ThreadPanel({ isMobile, ...props }: ThreadPanelProps) {
@@ -87,6 +97,13 @@ function ThreadContent({
 	isUnavailable,
 	videosPausedUntil,
 	mentionableMembers,
+	messageGifs,
+	canUseGifs,
+	areGifsPaused,
+	gifSearch,
+	gifs,
+	isLoadingGifs,
+	haveGifsFailed,
 	header,
 	onClose,
 	onReply,
@@ -94,6 +111,8 @@ function ThreadContent({
 	onVideoError,
 	onOpenFile,
 	onMentioningChange,
+	onGifSearchChange,
+	onGifPicked,
 	...handlers
 }: Omit<ThreadPanelProps, "isMobile"> & { header?: ReactNode }) {
 	const [editing, setEditing] = useState<ChatMessage | null>(null);
@@ -141,6 +160,7 @@ function ThreadContent({
 								compact
 								isHighlighted={thread.root.id === editingMessage?.id}
 								videosPausedUntil={videosPausedUntil}
+								messageGifs={messageGifs}
 								onVideoError={onVideoError}
 								onOpenFile={onOpenFile}
 								{...bindMessageHandlers(
@@ -159,6 +179,7 @@ function ThreadContent({
 									showThreadSummary={false}
 									compact
 									isHighlighted={reply.id === editingMessage?.id}
+									messageGifs={messageGifs}
 									onVideoError={onVideoError}
 									onOpenFile={onOpenFile}
 									{...bindMessageHandlers(
@@ -180,6 +201,12 @@ function ThreadContent({
 						alsoSendToLabel={`Also send to ${channelName}`}
 						editingMessage={editingMessage}
 						mentionableMembers={mentionableMembers}
+						canUseGifs={canUseGifs}
+						areGifsPaused={areGifsPaused}
+						gifSearch={gifSearch}
+						gifs={gifs}
+						isLoadingGifs={isLoadingGifs}
+						haveGifsFailed={haveGifsFailed}
 						onSubmit={onReply}
 						onCancelEdit={() => setEditing(null)}
 						onSaveEdit={onSaveEdit}
@@ -189,6 +216,8 @@ function ThreadContent({
 							)
 						}
 						onMentioningChange={onMentioningChange}
+						onGifSearchChange={onGifSearchChange}
+						onGifPicked={onGifPicked}
 					/>
 				</div>
 			)}

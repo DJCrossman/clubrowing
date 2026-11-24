@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { type ComponentProps, type ReactElement, useState } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { useDrawerContentContainer } from "@/components/ui/drawer";
 import {
 	Popover,
@@ -9,32 +9,36 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Gif } from "@/lib/giphy";
 import { PickerSearch } from "../PickerSearch/PickerSearch";
-import { useGiphy } from "./useGiphy";
 
 interface GifPickerProps {
 	children: ReactElement;
-	onSelect: (gif: { id: string; title: string }) => void;
 	anchor?: ComponentProps<typeof PopoverContent>["anchor"];
+	search: string | null;
+	gifs: Gif[] | undefined;
+	isLoading: boolean;
+	hasFailed: boolean;
+	onSearchChange: (search: string | null) => void;
+	onSelect: (gif: Gif) => void;
 }
 
-export function GifPicker({ children, onSelect, anchor }: GifPickerProps) {
-	const [open, setOpen] = useState(false);
-	const [query, setQuery] = useState("");
+export function GifPicker({
+	children,
+	anchor,
+	search,
+	gifs,
+	isLoading,
+	hasFailed,
+	onSearchChange,
+	onSelect,
+}: GifPickerProps) {
 	const container = useDrawerContentContainer();
-	const { isPaused, searchQuery, rememberGif } = useGiphy({
-		query,
-		isEnabled: open,
-	});
-	const hasFailed = searchQuery.isError || isPaused;
 
 	return (
 		<Popover
-			open={open}
-			onOpenChange={(next) => {
-				setOpen(next);
-				if (!next) setQuery("");
-			}}
+			open={search !== null}
+			onOpenChange={(open) => onSearchChange(open ? "" : null)}
 		>
 			<PopoverTrigger render={children} />
 			<PopoverContent
@@ -45,28 +49,26 @@ export function GifPicker({ children, onSelect, anchor }: GifPickerProps) {
 				className="flex max-h-(--available-height) w-[380px] flex-col gap-2 rounded-xl border-input bg-card p-2.5"
 			>
 				<PickerSearch
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
+					value={search ?? ""}
+					onChange={(event) => onSearchChange(event.target.value)}
 					placeholder="Search GIFs"
 				/>
 				<div className="grid max-h-[318px] grid-cols-2 gap-1.5 overflow-y-auto">
 					{!hasFailed &&
-						searchQuery.isPending &&
+						isLoading &&
 						Array.from({ length: 6 }, (_, index) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: placeholders have no identity
 							<Skeleton key={index} className="h-[100px] rounded-lg" />
 						))}
 					{!hasFailed &&
-						searchQuery.data?.map((gif) => (
+						gifs?.map((gif) => (
 							<button
 								key={gif.id}
 								type="button"
 								aria-label={`Send GIF: ${gif.title || "GIF"}`}
 								onClick={() => {
-									rememberGif(gif);
-									onSelect({ id: gif.id, title: gif.title || "GIF" });
-									setOpen(false);
-									setQuery("");
+									onSelect(gif);
+									onSearchChange(null);
 								}}
 								className="relative h-[100px] overflow-hidden rounded-lg bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 							>
@@ -82,7 +84,7 @@ export function GifPicker({ children, onSelect, anchor }: GifPickerProps) {
 							</button>
 						))}
 				</div>
-				{!hasFailed && searchQuery.data?.length === 0 && (
+				{!hasFailed && gifs?.length === 0 && (
 					<p className="py-6 text-center text-sm text-muted-foreground">
 						No GIFs found
 					</p>

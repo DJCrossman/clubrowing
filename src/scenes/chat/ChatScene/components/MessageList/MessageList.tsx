@@ -2,6 +2,7 @@
 
 import { Fragment, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import type { Gif } from "@/lib/giphy";
 import type { ChatMessage } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { useScrollToOwnMessage } from "../../hooks/useScrollToOwnMessage";
@@ -23,6 +24,7 @@ interface MessageListProps extends MessageHandlers {
 	editingMessageId?: string;
 	firstUnreadMessageId?: string;
 	videosPausedUntil: string | null;
+	messageGifs: ReadonlyMap<string, Gif | null>;
 	isKeyboardOpen: boolean;
 	onLoadOlder: () => void;
 	onVideoError: () => void;
@@ -39,6 +41,7 @@ export function MessageList({
 	editingMessageId,
 	firstUnreadMessageId,
 	videosPausedUntil,
+	messageGifs,
 	isKeyboardOpen,
 	onLoadOlder,
 	onVideoError,
@@ -94,6 +97,7 @@ export function MessageList({
 										message.id === editingMessageId
 									}
 									videosPausedUntil={videosPausedUntil}
+									messageGifs={messageGifs}
 									onVideoError={onVideoError}
 									onOpenFile={onOpenFile}
 									{...bindMessageHandlers(handlers, message)}

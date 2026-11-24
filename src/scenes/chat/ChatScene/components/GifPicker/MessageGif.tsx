@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Gif } from "@/lib/giphy";
 import { cn } from "@/lib/utils";
-import { useGiphy } from "./useGiphy";
 
 const VARIANTS = {
 	message: { height: 160, skeleton: "h-40 w-60", rounded: "rounded-[10px]" },
@@ -16,26 +16,20 @@ const VARIANTS = {
 };
 
 export function MessageGif({
-	id,
+	gif,
 	title,
 	variant,
 }: {
-	id: string;
+	gif: Gif | null | undefined;
 	title: string;
 	variant: keyof typeof VARIANTS;
 }) {
-	const { canUseGifs, isPaused, gifQuery } = useGiphy({ gifId: id });
 	const [image, setImage] = useState<"loading" | "loaded" | "failed">(
 		"loading",
 	);
 	const { height, skeleton, rounded } = VARIANTS[variant];
-	const rendition = gifQuery.data?.images.fixed_height;
-	const showLabel =
-		!canUseGifs ||
-		isPaused ||
-		gifQuery.isError ||
-		gifQuery.data === null ||
-		image === "failed";
+	const rendition = gif?.images.fixed_height;
+	const showLabel = gif === null || image === "failed";
 
 	return (
 		<>
