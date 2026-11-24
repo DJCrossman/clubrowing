@@ -96,6 +96,12 @@ bun run instance:migrate
 
 ### Dummy instances and e2e
 
+**Neon is for worktree previews only**: a plain instance forks production so you can look
+at a branch, and nothing else gets a Neon branch. End-to-end tests, recordings and dummy
+data belong on a Docker Postgres container, locally and in any CI. Until
+`instance:create --dummy` runs on that container, it still forks an `inst/` Neon branch:
+keep one dummy instance per thread and destroy it as soon as you are done.
+
 A plain instance is a fork of production: real members' names, results and push
 subscriptions. **Never record, screenshot or browser-test one.** Use a dummy instance:
 
