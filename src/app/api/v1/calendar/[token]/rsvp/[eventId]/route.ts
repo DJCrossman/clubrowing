@@ -7,12 +7,16 @@ import {
 import { renderCalendarReplyPage } from "@/domain/schedule/common/calendar-reply-page";
 import { getCalendarReplyQuery } from "@/domain/schedule/queries/get-calendar-reply/get-calendar-reply.query";
 import { db } from "@/lib/db";
+import { createUserService } from "@/server/services/user-service";
 
 type RouteContext = { params: Promise<{ token: string; eventId: string }> };
 
 export async function GET(request: Request, { params }: RouteContext) {
 	const { token, eventId } = await params;
-	const reply = await getCalendarReplyQuery({ token, eventId }, { db });
+	const reply = await getCalendarReplyQuery(
+		{ token, eventId },
+		{ db, services: { userService: createUserService() } },
+	);
 	if (!reply) {
 		return htmlResponse(notFoundPage(), 404);
 	}
@@ -40,7 +44,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 	try {
 		const reply = await replyFromCalendarCommand(
 			{ token, eventId, status },
-			{ db },
+			{ db, services: { userService: createUserService() } },
 		);
 		if (!reply) {
 			return htmlResponse(notFoundPage(), 404);
@@ -57,7 +61,10 @@ export async function POST(request: Request, { params }: RouteContext) {
 		if (!(error instanceof DomainError)) {
 			throw error;
 		}
-		const reply = await getCalendarReplyQuery({ token, eventId }, { db });
+		const reply = await getCalendarReplyQuery(
+			{ token, eventId },
+			{ db, services: { userService: createUserService() } },
+		);
 		return htmlResponse(
 			renderCalendarReplyPage({
 				title: reply?.event.title ?? "Club Rowing",

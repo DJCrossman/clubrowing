@@ -1,23 +1,17 @@
 import type { AdminContext } from "@/domain/common/context";
 import type { InviteMembers } from "@/schemas";
-import {
-	describeClerkError,
-	inviteOrganizationMember,
-	listOrganizationMembers,
-	listPendingInvitations,
-	type PendingInvitation,
-} from "@/server/clerk/organization-members";
+import type { PendingInvitation } from "@/server/services/user-service";
 
 type SkippedInvite = { email: string; reason: string };
 type InviteOutcome = { sent: PendingInvitation } | { skipped: SkippedInvite };
 
 export async function inviteMembersCommand(
 	{ emails, role }: InviteMembers,
-	{ user, origin }: AdminContext,
+	{ user, origin, services }: AdminContext,
 ) {
 	const [members, invitations] = await Promise.all([
-		listOrganizationMembers(),
-		listPendingInvitations(),
+		services.userService.listMembers(),
+		services.userService.listPendingInvitations(),
 	]);
 	const memberEmails = new Set(
 		members.flatMap((member) =>
@@ -38,7 +32,7 @@ export async function inviteMembersCommand(
 			}
 			try {
 				return {
-					sent: await inviteOrganizationMember({
+					sent: await services.userService.inviteMember({
 						email,
 						role,
 						inviterUserId: user.id,
@@ -49,7 +43,7 @@ export async function inviteMembersCommand(
 				return {
 					skipped: {
 						email,
-						reason: describeClerkError(error, "could not be invited"),
+						reason: error instanceof Error ? error.message : String(error),
 					},
 				};
 			}

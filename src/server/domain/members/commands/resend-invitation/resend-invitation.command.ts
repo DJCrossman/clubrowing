@@ -1,7 +1,6 @@
 import type { AdminContext } from "@/domain/common/context";
 import { DomainError } from "@/domain/common/domain-error";
 import type { InvitationIdInput } from "@/schemas";
-import { listPendingInvitations } from "@/server/clerk/organization-members";
 import { inviteMembersCommand } from "../invite-members/invite-members.command";
 import { revokeInvitationCommand } from "../revoke-invitation/revoke-invitation.command";
 
@@ -9,9 +8,9 @@ export async function resendInvitationCommand(
 	{ invitationId }: InvitationIdInput,
 	ctx: AdminContext,
 ) {
-	const invitation = (await listPendingInvitations()).find(
-		(candidate) => candidate.id === invitationId,
-	);
+	const invitation = (
+		await ctx.services.userService.listPendingInvitations()
+	).find((candidate) => candidate.id === invitationId);
 	if (!invitation) {
 		throw new DomainError("NOT_FOUND", "That invitation is no longer pending");
 	}

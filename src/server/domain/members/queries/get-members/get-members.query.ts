@@ -5,16 +5,15 @@ import { findGroupRules } from "@/domain/groups/common";
 import { paginate } from "@/lib/pagination";
 import type { GetMembersInput } from "@/schemas";
 import {
-	listOrganizationMembers,
-	listPendingInvitations,
-} from "@/server/clerk/organization-members";
-import {
 	filterMembers,
 	mergeMembers,
 	sortMembers,
 } from "../../common/member-rows";
 
-export async function getMembersQuery(input: GetMembersInput, { db }: Context) {
+export async function getMembersQuery(
+	input: GetMembersInput,
+	{ db, services }: Context,
+) {
 	const {
 		page,
 		pageSize = 20,
@@ -25,8 +24,8 @@ export async function getMembersQuery(input: GetMembersInput, { db }: Context) {
 		search,
 	} = input;
 	const [users, invitations, athletes, rules] = await Promise.all([
-		listOrganizationMembers(),
-		listPendingInvitations(),
+		services.userService.listMembers(),
+		services.userService.listPendingInvitations(),
 		db.athlete.findMany({ include: athleteInclude }),
 		findGroupRules(db),
 	]);

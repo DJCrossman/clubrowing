@@ -1,6 +1,7 @@
 import { getCalendarFeedQuery } from "@/domain/schedule/queries/get-calendar-feed/get-calendar-feed.query";
 import { db } from "@/lib/db";
 import { getRequestOrigin } from "@/lib/request-origin";
+import { createUserService } from "@/server/services/user-service";
 
 export async function GET(
 	request: Request,
@@ -9,7 +10,7 @@ export async function GET(
 	const { token } = await params;
 	const calendar = await getCalendarFeedQuery(
 		{ token: token.replace(/\.ics$/, ""), origin: getRequestOrigin(request) },
-		{ db },
+		{ db, services: { userService: createUserService() } },
 	);
 	if (calendar === null) {
 		return new Response("Calendar not found", { status: 404 });

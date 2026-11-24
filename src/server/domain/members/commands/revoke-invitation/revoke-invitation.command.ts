@@ -1,24 +1,20 @@
 import type { AdminContext } from "@/domain/common/context";
 import { DomainError } from "@/domain/common/domain-error";
 import type { InvitationIdInput } from "@/schemas";
-import {
-	describeClerkError,
-	revokeOrganizationInvitation,
-} from "@/server/clerk/organization-members";
 
 export async function revokeInvitationCommand(
 	{ invitationId }: InvitationIdInput,
-	{ user }: AdminContext,
+	{ user, services }: AdminContext,
 ) {
 	try {
-		await revokeOrganizationInvitation({
+		await services.userService.revokeInvitation({
 			invitationId,
 			requestingUserId: user.id,
 		});
 	} catch (error) {
 		throw new DomainError(
 			"BAD_REQUEST",
-			describeClerkError(error, "Could not revoke the invitation"),
+			error instanceof Error ? error.message : String(error),
 		);
 	}
 	return { invitationId };

@@ -9,9 +9,14 @@ const FEED_HISTORY_DAYS = 90;
 
 export async function getCalendarFeedQuery(
 	{ token, origin }: { token: string; origin: string },
-	{ db }: Pick<Context, "db">,
+	{
+		db,
+		services,
+	}: Pick<Context, "db"> & {
+		services: Pick<Context["services"], "userService">;
+	},
 ) {
-	const viewer = await resolveCalendarViewer(db, token);
+	const viewer = await resolveCalendarViewer({ db, services }, token);
 	if (!viewer) {
 		return null;
 	}

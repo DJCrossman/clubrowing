@@ -3,7 +3,7 @@ import { getDisplayName } from "@/domain/chat/common/chat-user-names";
 import type {
 	OrganizationMember,
 	PendingInvitation,
-} from "@/server/clerk/organization-members";
+} from "@/server/services/user-service";
 
 export type MemberAthlete = ReturnType<typeof mapToAthleteWithGroups>;
 export type MemberAccount = "user" | "invited" | "none";

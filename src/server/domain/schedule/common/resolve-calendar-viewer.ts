@@ -1,8 +1,12 @@
 import type { Context } from "@/domain/common/context";
-import { isDefaultOrgAdmin } from "@/server/clerk/default-organization";
 
 export async function resolveCalendarViewer(
-	db: Context["db"],
+	{
+		db,
+		services,
+	}: Pick<Context, "db"> & {
+		services: Pick<Context["services"], "userService">;
+	},
 	token: string,
 ): Promise<{ userId: string; athleteId: string | null } | null> {
 	const calendarToken = await db.calendar_token.findUnique({
@@ -20,6 +24,6 @@ export async function resolveCalendarViewer(
 	if (athlete) {
 		return { userId, athleteId: athlete.id };
 	}
-	const isAdmin = await isDefaultOrgAdmin(userId).catch(() => false);
+	const isAdmin = await services.userService.isAdmin(userId).catch(() => false);
 	return isAdmin ? { userId, athleteId: null } : null;
 }

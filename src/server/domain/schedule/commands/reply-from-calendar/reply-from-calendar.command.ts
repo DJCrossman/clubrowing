@@ -9,9 +9,17 @@ export async function replyFromCalendarCommand(
 		eventId,
 		status,
 	}: { token: string; eventId: string; status: CalendarReplyStatus },
-	{ db }: Pick<Context, "db">,
+	{
+		db,
+		services,
+	}: Pick<Context, "db"> & {
+		services: Pick<Context["services"], "userService">;
+	},
 ) {
-	const reply = await getCalendarReplyQuery({ token, eventId }, { db });
+	const reply = await getCalendarReplyQuery(
+		{ token, eventId },
+		{ db, services },
+	);
 	if (!reply) {
 		return null;
 	}

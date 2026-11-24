@@ -4,9 +4,15 @@ import { formatEventDate, formatEventTime } from "@/lib/schedule/event-labels";
 
 export async function getCalendarReplyQuery(
 	{ token, eventId }: { token: string; eventId: string },
-	{ db }: Pick<Context, "db">,
+	{
+		db,
+		services,
+	}: Pick<Context, "db"> & {
+		services: Pick<Context["services"], "userService">;
+	},
 ) {
-	const athleteId = (await resolveCalendarViewer(db, token))?.athleteId;
+	const athleteId = (await resolveCalendarViewer({ db, services }, token))
+		?.athleteId;
 	if (!athleteId) {
 		return null;
 	}
