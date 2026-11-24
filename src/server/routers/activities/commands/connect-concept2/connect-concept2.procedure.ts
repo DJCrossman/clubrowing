@@ -1,5 +1,5 @@
 import { connectConcept2InputSchema } from "@/schemas";
-import { protectedProcedure } from "@/server/procedures";
+import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
 import { connectConcept2Command } from "./connect-concept2.command";
 
 export const connectConcept2Procedure = protectedProcedure

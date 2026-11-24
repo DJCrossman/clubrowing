@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 
 const del = vi.fn();
 

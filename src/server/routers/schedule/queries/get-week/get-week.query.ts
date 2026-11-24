@@ -5,7 +5,7 @@ import {
 	parseWeekStart,
 } from "@/lib/schedule/week";
 import type { GetWeekInput } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { getViewerGroups } from "@/server/routers/groups/common";
 import {
 	eventInclude,

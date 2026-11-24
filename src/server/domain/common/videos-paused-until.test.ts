@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { findVideosPausedUntil } from "./videos-paused-until";
 
 const gigabyte = 1024 * 1024 * 1024;

@@ -1,5 +1,5 @@
 import { getGroupByIdInputSchema } from "@/schemas";
-import { viewerProcedure } from "@/server/procedures";
+import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
 import { canViewGroup } from "@/server/routers/groups/common";
 import { getGroupMetersQuery } from "./get-group-meters.query";
 

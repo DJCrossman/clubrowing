@@ -1,6 +1,6 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { getDefaultOrganizationId } from "@/server/clerk/default-organization";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { getGroupMemberIds } from "@/server/routers/groups/common";
 import { type AccessibleChannel, canAccessChannel } from "./chat-access";

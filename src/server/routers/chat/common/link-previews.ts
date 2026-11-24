@@ -7,7 +7,7 @@ import {
 	formatEventDate,
 	formatEventTime,
 } from "@/lib/schedule/event-labels";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { getDisplayName } from "./chat-user-names";
 
 type Db = ViewerContext["db"];

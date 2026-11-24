@@ -1,5 +1,5 @@
 import type { UpdateActivity } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { updateActivityCommand } from "./update-activity.command";
 

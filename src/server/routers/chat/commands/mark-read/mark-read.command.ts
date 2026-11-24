@@ -1,5 +1,5 @@
 import type { MarkRead } from "@/schemas/chat.schema";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { findAccessibleChannel } from "@/server/routers/chat/common/chat-access";
 
 export async function markReadCommand(

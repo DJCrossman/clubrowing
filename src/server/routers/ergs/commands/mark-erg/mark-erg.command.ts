@@ -1,5 +1,5 @@
 import type { MarkErg } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 
 export async function markErgCommand(

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { processConcept2InboxBatchCommand } from "./process-concept2-inbox-batch.command";
 
 const result = {

@@ -1,9 +1,9 @@
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { type AfterableBuilder, wrapBuilder } from "../builder";
-import type { AuthenticatedContext } from "../context";
+import { baseProcedure } from "../init";
 import { requireAuthAndAthlete } from "../middleware/auth";
-import { baseProcedure } from "../trpc";
 
-export const authenticatedProcedure: AfterableBuilder<
+export const protectedProcedure: AfterableBuilder<
 	AuthenticatedContext,
 	undefined
 > = wrapBuilder<AuthenticatedContext, undefined>(

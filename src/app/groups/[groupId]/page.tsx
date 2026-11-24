@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { GroupScene } from "@/scenes/groups";
-import { createServerCaller } from "@/server/caller";
+import { createServerCaller } from "@/server/infra/trpc/caller";
 
 export default async function GroupPage({
 	params,

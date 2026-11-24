@@ -1,9 +1,9 @@
 import { head } from "@vercel/blob";
 import { Prisma } from "@/generated/prisma/client";
 import type { SendMessage } from "@/schemas/chat.schema";
-import { storedFileMatches } from "@/server/common/stored-file-matches";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
+import { storedFileMatches } from "@/server/domain/common/stored-file-matches";
 import { findAccessibleChannel } from "@/server/routers/chat/common/chat-access";
 import { loadMessageDtos } from "@/server/routers/chat/common/load-message-dtos";
 import { messageInclude } from "@/server/routers/chat/common/map-to-message-dto";

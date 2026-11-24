@@ -5,7 +5,7 @@ import {
 	concept2StrokesSchema,
 	type GetActivityStrokesInput,
 } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { canViewActivity } from "@/server/routers/activities/common/can-view-activity";
 import { parseStoredJson } from "@/server/routers/activities/common/cross-source-activity";

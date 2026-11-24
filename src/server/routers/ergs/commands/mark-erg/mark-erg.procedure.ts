@@ -1,5 +1,5 @@
 import { markErgSchema } from "@/schemas";
-import { viewerProcedure } from "@/server/procedures";
+import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
 import { markErgCommand } from "./mark-erg.command";
 
 export const markErgProcedure = viewerProcedure

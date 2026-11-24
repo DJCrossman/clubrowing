@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SubmitFeedback } from "@/schemas";
-import type { UnauthenticatedContext } from "@/server/context";
+import type { UnauthenticatedContext } from "@/server/domain/common/context";
 import type { GitHubService } from "@/server/services/github-service";
 import { submitCommand } from "./submit.command";
 

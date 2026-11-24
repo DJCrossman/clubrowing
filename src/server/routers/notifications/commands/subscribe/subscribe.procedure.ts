@@ -1,5 +1,5 @@
 import { subscribeToPushSchema } from "@/schemas";
-import { protectedProcedure } from "@/server/procedures";
+import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
 import { subscribeCommand } from "./subscribe.command";
 
 export const subscribeProcedure = protectedProcedure

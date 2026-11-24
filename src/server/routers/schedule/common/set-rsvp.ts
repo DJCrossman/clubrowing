@@ -1,5 +1,5 @@
 import type { RsvpStatus } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { isInEventAudience } from "./event-audience";
 

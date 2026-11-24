@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 
 // The storage plan stops serving every file for 30 days past 10 GB of transfer, and
 // photos, files and repeated range requests need the rest.

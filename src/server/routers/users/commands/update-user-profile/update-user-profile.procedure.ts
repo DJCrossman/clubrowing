@@ -1,7 +1,7 @@
 import { athleteProfileSchema } from "@/schemas";
-import { authenticatedProcedure } from "@/server/common/procedures/authenticated.procedure";
+import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
 import { updateUserProfileCommand } from "./update-user-profile.command";
 
-export const updateUserProfileProcedure = authenticatedProcedure
+export const updateUserProfileProcedure = protectedProcedure
 	.input(athleteProfileSchema)
 	.mutation(({ ctx, input }) => updateUserProfileCommand(input, ctx));

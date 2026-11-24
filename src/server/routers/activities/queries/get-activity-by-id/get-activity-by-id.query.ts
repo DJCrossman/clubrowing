@@ -1,5 +1,5 @@
 import type { GetActivityByIdInput } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { canViewActivity } from "@/server/routers/activities/common/can-view-activity";
 import {
 	activityInclude,

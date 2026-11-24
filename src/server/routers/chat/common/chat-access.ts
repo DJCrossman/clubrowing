@@ -1,6 +1,9 @@
 import type { ChannelKind } from "@/generated/prisma/client";
 import { EVERYONE_CHANNEL_ID } from "@/schemas/chat.schema";
-import type { SessionUser, ViewerContext } from "@/server/context";
+import type {
+	SessionUser,
+	ViewerContext,
+} from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	isViewerAdmin,

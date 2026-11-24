@@ -1,5 +1,5 @@
 import { getWorkoutByIdInputSchema } from "@/schemas";
-import { viewerProcedure } from "@/server/procedures";
+import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
 import { getWorkoutByIdQuery } from "./get-workout-by-id.query";
 
 export const getWorkoutByIdProcedure = viewerProcedure

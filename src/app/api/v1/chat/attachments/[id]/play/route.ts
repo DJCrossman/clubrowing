@@ -3,8 +3,8 @@ import { DateTime } from "luxon";
 import { NextResponse } from "next/server";
 import { envVars } from "@/lib/env";
 import { isChatVideo } from "@/schemas/chat.schema";
-import { findVideosPausedUntil } from "@/server/common/videos-paused-until";
-import { createTRPCContext } from "@/server/context";
+import { findVideosPausedUntil } from "@/server/domain/common/videos-paused-until";
+import { createRequestContext } from "@/server/infra/trpc/request-context";
 import { findViewableAttachment } from "../find-viewable-attachment";
 
 // Long enough to play a clip of up to 20 MB from one link.
@@ -17,7 +17,7 @@ export async function GET(
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		const { user, db } = await createTRPCContext();
+		const { user, db } = await createRequestContext();
 		if (!user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}

@@ -7,7 +7,7 @@ const findUnique = vi.fn();
 const get = vi.fn();
 
 vi.mock("@/lib/env", () => ({ envVars: env }));
-vi.mock("@/server/caller", () => ({
+vi.mock("@/server/infra/trpc/caller", () => ({
 	createServerCaller: async () => ({ activities: { getActivityById } }),
 }));
 vi.mock("@/lib/db", () => ({ db: { activity: { findUnique } } }));

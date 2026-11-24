@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { parseWeekStart } from "@/lib/schedule/week";
 import { TrainingBulkEditScene } from "@/scenes/schedule";
-import { createServerCaller } from "@/server/caller";
+import { createServerCaller } from "@/server/infra/trpc/caller";
 
 const querySchema = z.object({
 	week: z.string().optional(),

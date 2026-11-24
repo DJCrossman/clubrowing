@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { envVars } from "@/lib/env";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 
 // The storage plan stops serving every file for 30 days past 2,000 uploads in a month.
 const CLUB_MONTHLY_UPLOAD_LIMIT = 1500;

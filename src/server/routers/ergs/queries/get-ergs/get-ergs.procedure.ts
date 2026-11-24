@@ -1,4 +1,4 @@
-import { viewerProcedure } from "@/server/procedures";
+import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
 import { getErgsInputSchema, getErgsQuery } from "./get-ergs.query";
 
 export const getErgsProcedure = viewerProcedure

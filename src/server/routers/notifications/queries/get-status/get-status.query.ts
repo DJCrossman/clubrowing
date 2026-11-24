@@ -1,5 +1,5 @@
 import type { NotificationPreferences } from "@/lib/notifications";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 
 export async function getStatusQuery(
 	_input: undefined,

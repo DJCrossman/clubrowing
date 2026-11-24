@@ -1,4 +1,4 @@
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { mapToUserDto } from "@/server/routers/users/common/map-to-user-dto";
 
 export async function disconnectConcept2Command(

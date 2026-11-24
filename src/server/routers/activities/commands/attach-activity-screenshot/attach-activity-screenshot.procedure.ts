@@ -1,7 +1,7 @@
 import { attachActivityScreenshotInputSchema } from "@/schemas";
-import { authenticatedProcedure } from "@/server/common/procedures/authenticated.procedure";
+import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
 import { attachActivityScreenshotCommand } from "./attach-activity-screenshot.command";
 
-export const attachActivityScreenshotProcedure = authenticatedProcedure
+export const attachActivityScreenshotProcedure = protectedProcedure
 	.input(attachActivityScreenshotInputSchema)
 	.mutation(({ ctx, input }) => attachActivityScreenshotCommand(input, ctx));

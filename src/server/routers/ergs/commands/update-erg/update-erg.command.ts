@@ -1,5 +1,5 @@
 import type { UpdateErg } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import {
 	ergInclude,
 	mapToErgDto,

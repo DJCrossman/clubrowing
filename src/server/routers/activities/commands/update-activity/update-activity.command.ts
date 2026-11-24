@@ -1,5 +1,5 @@
 import type { UpdateActivity } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	activityInclude,

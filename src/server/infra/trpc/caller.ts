@@ -1,16 +1,16 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { routes } from "@/lib/routes";
-import { createTRPCContext } from "./context";
-import { appRouter } from "./root";
+import { appRouter } from "@/server/infra/routes";
+import { createRequestContext } from "./request-context";
 
 export async function createServerCaller() {
-	const ctx = await createTRPCContext();
+	const ctx = await createRequestContext();
 	return appRouter.createCaller(ctx);
 }
 
 export async function createAdminCaller() {
-	const ctx = await createTRPCContext();
+	const ctx = await createRequestContext();
 	if (!ctx.user?.isAdmin) {
 		redirect(routes.dashboard.home());
 	}

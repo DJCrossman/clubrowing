@@ -1,5 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { decryptToken } from "@/server/integration-token-crypto";
 import type { RcaSessionData } from "@/server/services/rca-service";
 

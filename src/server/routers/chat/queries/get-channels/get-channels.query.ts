@@ -1,6 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { paginate } from "@/lib/pagination";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import {
 	canAccessChannel,
 	ensureEveryoneChannel,

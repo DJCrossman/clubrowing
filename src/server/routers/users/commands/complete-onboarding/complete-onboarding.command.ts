@@ -1,6 +1,6 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import type { CompleteOnboarding } from "@/schemas";
-import type { OnboardingContext } from "@/server/common/context";
+import type { OnboardingContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { mapToAthleteDto } from "@/server/routers/athletes/common/map-to-athlete-dto";
 

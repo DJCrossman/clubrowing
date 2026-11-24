@@ -1,5 +1,5 @@
 import type { CreateBoat } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import {
 	convertWeightToKg,
 	mapToBoatDto,

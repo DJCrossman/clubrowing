@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { canSeeGroup, canViewGroup, canViewGroupScope } from "./viewer-groups";
 
 const viewer = (isAdmin: boolean) =>

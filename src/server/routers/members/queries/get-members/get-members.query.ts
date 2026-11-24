@@ -4,7 +4,7 @@ import {
 	listOrganizationMembers,
 	listPendingInvitations,
 } from "@/server/clerk/organization-members";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { athleteInclude } from "@/server/routers/athletes/common/map-to-athlete-dto";
 import { mapToAthleteWithGroups } from "@/server/routers/athletes/common/map-to-athlete-with-groups";
 import { findGroupRules } from "@/server/routers/groups/common";

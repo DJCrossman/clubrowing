@@ -4,7 +4,7 @@ import {
 	scheduleQuerySchema,
 } from "@/app/schedule/load-schedule-page";
 import { GroupScheduleScene } from "@/scenes/groups";
-import { createServerCaller } from "@/server/caller";
+import { createServerCaller } from "@/server/infra/trpc/caller";
 
 export default async function GroupSchedulePage({
 	params,

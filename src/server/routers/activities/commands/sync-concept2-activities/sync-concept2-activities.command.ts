@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { createLogger } from "@/lib/logger";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { syncConcept2ActivitiesFinalizeCallback } from "./sync-concept2-activities.finalize";
 
 const logger = createLogger("sync.concept2");

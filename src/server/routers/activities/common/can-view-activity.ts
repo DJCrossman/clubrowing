@@ -1,4 +1,4 @@
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 
 export function canViewActivity({
 	activity,

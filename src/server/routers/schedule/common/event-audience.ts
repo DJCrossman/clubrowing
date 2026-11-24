@@ -1,5 +1,5 @@
 import type { EventAudience } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { getMemberIdsByGroup } from "@/server/routers/groups/common";
 
 type AudienceEvent = {

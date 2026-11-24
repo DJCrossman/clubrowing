@@ -1,8 +1,8 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { OnboardingScene } from "@/scenes/onboarding";
-import { createServerCaller } from "@/server/caller";
 import { ensureDefaultOrganization } from "@/server/clerk/default-organization";
+import { createServerCaller } from "@/server/infra/trpc/caller";
 
 export default async function OnboardingPage({
 	searchParams,

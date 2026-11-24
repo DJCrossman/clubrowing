@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveOAuthReturnPath } from "@/lib/oauth-return";
-import { createServerCaller } from "@/server/caller";
+import { createServerCaller } from "@/server/infra/trpc/caller";
 import { getConcept2Config } from "@/server/services/concept2-service";
 
 export async function GET(request: Request) {

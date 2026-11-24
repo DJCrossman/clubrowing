@@ -1,9 +1,9 @@
-import { resolveViewerAccess } from "@/server/common/middleware/viewer-access";
-import type { Context, SessionUser } from "@/server/context";
+import { TRPCError } from "@trpc/server";
+import type { Context, SessionUser } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
+import { resolveViewerAccess } from "@/server/infra/trpc/middleware/viewer-access";
 import { athleteInclude } from "@/server/routers/athletes/common/map-to-athlete-dto";
 import { findAccessibleMessage } from "@/server/routers/chat/common/chat-access";
-import { TRPCError } from "@/server/trpc";
 
 export async function findViewableAttachment({
 	db,

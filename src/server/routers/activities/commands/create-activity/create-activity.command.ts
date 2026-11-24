@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import type { CreateActivity } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { notifyActivityAdded } from "@/server/routers/activities/common/activity-notifications";
 import {
 	activityInclude,

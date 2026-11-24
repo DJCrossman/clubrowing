@@ -1,5 +1,5 @@
 import type { RsvpInput } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { setRsvp } from "@/server/routers/schedule/common/set-rsvp";
 
 export async function rsvpCommand(

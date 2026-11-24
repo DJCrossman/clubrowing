@@ -1,4 +1,4 @@
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import {
 	type AthleteRow,
 	athleteInclude,

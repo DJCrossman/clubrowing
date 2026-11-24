@@ -1,5 +1,5 @@
 import type { MarkUnread } from "@/schemas/chat.schema";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { findAccessibleMessage } from "@/server/routers/chat/common/chat-access";
 import { readMarkerBefore } from "@/server/routers/chat/common/unread";
 

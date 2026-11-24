@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { getActivitiesQuery } from "./get-activities.query";
 
 describe("getActivitiesQuery", () => {

@@ -5,7 +5,7 @@ import {
 	concept2ActivitySchema,
 	type GetConcept2ResultsInput,
 } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { getConcept2Config } from "@/server/services/concept2-service";
 import { getConcept2AccessToken } from "../../common/get-concept2-access-token";
 

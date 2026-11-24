@@ -1,5 +1,5 @@
 import { formatEventDate, formatEventTime } from "@/lib/schedule/event-labels";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { resolveCalendarViewer } from "@/server/routers/schedule/common/resolve-calendar-viewer";
 
 export async function getCalendarReplyQuery(

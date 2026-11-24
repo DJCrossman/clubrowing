@@ -1,5 +1,5 @@
 import { isDefaultOrgAdmin } from "@/server/clerk/default-organization";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 
 export async function resolveCalendarViewer(
 	db: Context["db"],

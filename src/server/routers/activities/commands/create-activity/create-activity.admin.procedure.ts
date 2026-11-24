@@ -1,5 +1,5 @@
 import { createActivitySchema } from "@/schemas";
-import { adminProcedure } from "@/server/common/procedures/admin.procedure";
+import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
 import { createActivityCommand } from "./create-activity.command";
 
 export const createActivityAdminProcedure = adminProcedure

@@ -1,6 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { getStravaAccessToken } from "../../common/get-strava-access-token";
 import { processStravaInboxBatchCommand } from "../process-strava-inbox-batch/process-strava-inbox-batch.command";
 

@@ -1,5 +1,5 @@
 import { paginate } from "@/lib/pagination";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { findRuleMemberships } from "../../common/group-members";
 import { resolveGroupMemberIds } from "../../common/group-membership";
 import { groupInclude, mapToGroupDto } from "../../common/map-to-group-dto";

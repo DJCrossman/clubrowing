@@ -1,5 +1,5 @@
 import { submitFeedbackSchema } from "@/schemas";
-import { publicProcedure } from "@/server/procedures";
+import { publicProcedure } from "@/server/infra/trpc/procedures/public.procedure";
 import { submitCommand } from "./submit.command";
 
 export const submitProcedure = publicProcedure

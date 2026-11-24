@@ -1,6 +1,6 @@
 import { StravaError } from "@/app/api/v1/strava/types";
 import type { GetStravaActivitiesInput, StravaActivity } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { StravaServiceError } from "@/server/services/strava-service";
 import { getStravaAccessToken } from "../../common/get-strava-access-token";
 

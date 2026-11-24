@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { markErgCommand } from "./mark-erg.command";
 
 describe("markErgCommand", () => {

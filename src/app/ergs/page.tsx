@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ErgListScene } from "@/scenes/ergs";
-import { createServerCaller } from "@/server/caller";
-import { createTRPCContext } from "@/server/context";
+import { createServerCaller } from "@/server/infra/trpc/caller";
+import { createRequestContext } from "@/server/infra/trpc/request-context";
 
 const querySchema = z.object({
 	ergId: z.string().optional(),
@@ -15,7 +15,7 @@ export default async function ErgsPage({
 }) {
 	const { ergId, action } = querySchema.parse(await searchParams);
 	const caller = await createServerCaller();
-	const { user } = await createTRPCContext();
+	const { user } = await createRequestContext();
 	const [ergsResponse, { data: activities }, selectedErg, { data: athletes }] =
 		await Promise.all([
 			caller.ergs.getErgs(),

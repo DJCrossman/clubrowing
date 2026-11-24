@@ -1,5 +1,5 @@
 import { paginate } from "@/lib/pagination";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { getAthleteGroups } from "../../common/group-members";
 
 export async function getMyGroupsQuery(

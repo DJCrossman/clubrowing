@@ -1,5 +1,5 @@
 import { deleteEventInputSchema } from "@/schemas";
-import { adminProcedure } from "@/server/procedures";
+import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
 import { deleteEventCommand } from "./delete-event.command";
 
 export const deleteEventProcedure = adminProcedure

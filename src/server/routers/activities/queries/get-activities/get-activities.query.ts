@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { paginate } from "@/lib/pagination";
 import { ActivityType, WorkoutType, withPagination } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import {
 	activityInclude,
 	mapToActivityDto,

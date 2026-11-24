@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import type { SessionSnapshot } from "@/lib/schedule/changes";
 import type { SaveTrainingWeek } from "@/schemas";
-import type { AdminContext } from "@/server/context";
+import type { AdminContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { attachLoggedActivitiesToWorkout } from "@/server/routers/activities/common/scheduled-workout";
 import {

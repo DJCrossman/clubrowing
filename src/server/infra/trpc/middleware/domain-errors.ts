@@ -1,9 +1,9 @@
 import { TRPCError, type TRPCMiddlewareFunction } from "@trpc/server";
+import type { Context } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
-import type { RequestContext } from "../context";
 
 export const mapDomainErrors: TRPCMiddlewareFunction<
-	RequestContext,
+	Context,
 	object,
 	object,
 	object,

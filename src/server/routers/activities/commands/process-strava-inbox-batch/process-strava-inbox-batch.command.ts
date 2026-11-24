@@ -5,7 +5,7 @@ import {
 	type StravaActivity,
 	stravaActivitySchema,
 } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import {
 	type CrossSourceShape,
 	concept2MatchShape,

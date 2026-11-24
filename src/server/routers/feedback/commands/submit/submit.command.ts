@@ -1,5 +1,5 @@
 import type { FeedbackType, SubmitFeedback } from "@/schemas";
-import type { UnauthenticatedContext } from "@/server/context";
+import type { UnauthenticatedContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 
 const LABELS: Record<FeedbackType, string> = {

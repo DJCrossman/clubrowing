@@ -3,7 +3,7 @@ import {
 	EARLIEST_START_BEFORE_EVENT_MS,
 	LATEST_START_AFTER_EVENT_MS,
 } from "@/lib/schedule/week";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import {
 	type GroupsDb,
 	getAthleteGroupIds,

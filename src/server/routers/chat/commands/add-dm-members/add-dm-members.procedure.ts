@@ -1,5 +1,5 @@
 import { addDmMembersSchema } from "@/schemas/chat.schema";
-import { viewerProcedure } from "@/server/procedures";
+import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
 import { addDmMembersCommand } from "./add-dm-members.command";
 
 export const addDmMembersProcedure = viewerProcedure

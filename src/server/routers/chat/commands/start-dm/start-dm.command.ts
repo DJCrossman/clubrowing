@@ -1,5 +1,5 @@
 import type { StartDm } from "@/schemas/chat.schema";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { findExactDm } from "@/server/routers/chat/common/chat-access";
 import { assertKnownChatUsers } from "@/server/routers/chat/common/chat-users";

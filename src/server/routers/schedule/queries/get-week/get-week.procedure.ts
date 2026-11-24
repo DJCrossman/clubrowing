@@ -1,5 +1,5 @@
 import { getWeekInputSchema } from "@/schemas";
-import { viewerProcedure } from "@/server/procedures";
+import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
 import { getWeekQuery } from "./get-week.query";
 
 export const getWeekProcedure = viewerProcedure

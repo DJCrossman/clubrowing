@@ -1,5 +1,5 @@
 import type { SetNotificationPreference } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 
 export async function setPreferenceCommand(
 	input: SetNotificationPreference,

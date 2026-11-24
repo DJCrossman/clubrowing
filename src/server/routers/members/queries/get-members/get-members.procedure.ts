@@ -1,5 +1,5 @@
 import { getMembersInputSchema } from "@/schemas";
-import { adminProcedure } from "@/server/procedures";
+import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
 import { getMembersQuery } from "./get-members.query";
 
 export const getMembersProcedure = adminProcedure

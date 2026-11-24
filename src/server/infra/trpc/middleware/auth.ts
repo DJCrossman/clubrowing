@@ -1,5 +1,5 @@
 import { athleteInclude } from "@/server/routers/athletes/common/map-to-athlete-dto";
-import { middleware, TRPCError } from "../trpc";
+import { middleware, TRPCError } from "../init";
 import { resolveViewerAccess } from "./viewer-access";
 
 export const requireAuthAndAthlete = middleware(async ({ ctx, next }) => {

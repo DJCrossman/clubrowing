@@ -2,7 +2,7 @@ import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { envVars } from "@/lib/env";
-import { createTRPCContext } from "@/server/context";
+import { createRequestContext } from "@/server/infra/trpc/request-context";
 import { findViewableAttachment } from "./find-viewable-attachment";
 
 const THUMBNAIL_DIMENSION = 720;
@@ -12,7 +12,7 @@ export async function GET(
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
-		const { user, db } = await createTRPCContext();
+		const { user, db } = await createRequestContext();
 		if (!user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}

@@ -1,4 +1,4 @@
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { generateCalendarToken } from "@/server/routers/schedule/common/calendar-token";
 
 export async function getCalendarTokenCommand(

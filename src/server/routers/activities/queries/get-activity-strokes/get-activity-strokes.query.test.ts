@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { getConcept2AccessTokenForAthlete } from "@/server/routers/activities/common/get-concept2-access-token-for-athlete";
 import { getActivityStrokesQuery } from "./get-activity-strokes.query";
 

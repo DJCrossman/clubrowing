@@ -6,8 +6,8 @@ import {
 	listPendingInvitations,
 	type PendingInvitation,
 } from "@/server/clerk/organization-members";
-import { getRequestOrigin } from "@/server/common/request-origin";
-import type { AdminContext } from "@/server/context";
+import type { AdminContext } from "@/server/domain/common/context";
+import { getRequestOrigin } from "@/server/domain/common/request-origin";
 
 type SkippedInvite = { email: string; reason: string };
 type InviteOutcome = { sent: PendingInvitation } | { skipped: SkippedInvite };

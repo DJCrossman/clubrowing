@@ -1,5 +1,5 @@
 import type { GetBoatByIdInput } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { mapToBoatDto } from "@/server/routers/boats/common/map-to-boat-dto";
 
 export async function getBoatByIdQuery(

@@ -1,4 +1,4 @@
-import { protectedProcedure } from "@/server/procedures";
+import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
 import { syncStravaActivitiesCommand } from "./sync-strava-activities.command";
 
 export const syncStravaActivitiesProcedure = protectedProcedure.mutation(

@@ -1,4 +1,4 @@
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import type { CalendarReplyStatus } from "@/server/routers/schedule/common/calendar-reply";
 import { setRsvp } from "@/server/routers/schedule/common/set-rsvp";
 import { getCalendarReplyQuery } from "@/server/routers/schedule/queries/get-calendar-reply/get-calendar-reply.query";

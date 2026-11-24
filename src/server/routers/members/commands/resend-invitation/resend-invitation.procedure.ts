@@ -1,5 +1,5 @@
 import { invitationIdSchema } from "@/schemas";
-import { adminProcedure } from "@/server/procedures";
+import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
 import { resendInvitationCommand } from "./resend-invitation.command";
 
 export const resendInvitationProcedure = adminProcedure

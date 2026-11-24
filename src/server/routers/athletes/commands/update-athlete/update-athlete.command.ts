@@ -1,5 +1,5 @@
 import type { UpdateAthlete } from "@/schemas/athlete.schema";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import {
 	athleteInclude,
 	mapToAthleteDto,

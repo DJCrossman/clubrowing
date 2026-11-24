@@ -17,11 +17,13 @@ const db = {
 		create: vi.fn(),
 	},
 };
-const createTRPCContext = vi.fn();
+const createRequestContext = vi.fn();
 
 vi.mock("@/lib/env", () => ({ envVars: env }));
 vi.mock("@vercel/blob", () => ({ issueSignedToken, presignUrl }));
-vi.mock("@/server/context", () => ({ createTRPCContext }));
+vi.mock("@/server/infra/trpc/request-context", () => ({
+	createRequestContext,
+}));
 vi.mock("@/server/routers/chat/common/chat-access", () => ({
 	findAccessibleMessage,
 }));
@@ -42,7 +44,7 @@ describe("GET /api/v1/chat/attachments/[id]/play", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		env.BLOB_READ_WRITE_TOKEN = "blob-token";
-		createTRPCContext.mockResolvedValue({ user, db });
+		createRequestContext.mockResolvedValue({ user, db });
 		db.athlete.findUnique.mockResolvedValue({ id: "ath_1", memberships: [] });
 		db.upload.findUnique.mockResolvedValue({
 			userId: "user_sender",
@@ -67,7 +69,7 @@ describe("GET /api/v1/chat/attachments/[id]/play", () => {
 	});
 
 	it("rejects a signed-out request", async () => {
-		createTRPCContext.mockResolvedValue({ user: null, db });
+		createRequestContext.mockResolvedValue({ user: null, db });
 
 		const response = await GET(...playRequest());
 

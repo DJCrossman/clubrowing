@@ -1,5 +1,5 @@
 import type { EditMessage } from "@/schemas/chat.schema";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { findAccessibleMessage } from "@/server/routers/chat/common/chat-access";
 import { selectChannelMentions } from "@/server/routers/chat/common/message-mentions";

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import type { EventRow } from "@/server/routers/schedule/common/map-to-event-dto";
 import { getUpcomingQuery } from "./get-upcoming.query";
 

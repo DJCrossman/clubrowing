@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import type { CreateEvent } from "@/schemas";
-import type { AdminContext } from "@/server/context";
+import type { AdminContext } from "@/server/domain/common/context";
 import { attachLoggedActivitiesToWorkout } from "@/server/routers/activities/common/scheduled-workout";
 import { createEventRow } from "@/server/routers/schedule/common/event-writes";
 import { mapToEventDtos } from "@/server/routers/schedule/common/map-to-event-dto";

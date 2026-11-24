@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ActivityListScene } from "@/scenes/activities";
-import { createServerCaller } from "@/server/caller";
-import { createTRPCContext } from "@/server/context";
+import { createServerCaller } from "@/server/infra/trpc/caller";
+import { createRequestContext } from "@/server/infra/trpc/request-context";
 
 const querySchema = z.object({
 	activityId: z.string().optional(),
@@ -21,7 +21,7 @@ export default async function ActivitiesPage({
 		await searchParams,
 	);
 	const caller = await createServerCaller();
-	const { user } = await createTRPCContext();
+	const { user } = await createRequestContext();
 
 	const [
 		[currentAthleteResult, activitiesResult, selectedActivityResult],

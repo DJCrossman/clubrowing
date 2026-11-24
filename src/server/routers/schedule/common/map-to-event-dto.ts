@@ -5,7 +5,7 @@ import {
 	formatEventTime,
 	formatGroupLabel,
 } from "@/lib/schedule/event-labels";
-import type { Context, ViewerContext } from "@/server/context";
+import type { Context, ViewerContext } from "@/server/domain/common/context";
 import { canSeeGroup, type ViewerGroups } from "@/server/routers/groups/common";
 import {
 	mapToWorkoutDto,

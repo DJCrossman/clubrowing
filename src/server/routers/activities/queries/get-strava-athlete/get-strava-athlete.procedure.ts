@@ -1,5 +1,5 @@
 import { getStravaAthleteInputSchema } from "@/schemas";
-import { protectedProcedure } from "@/server/procedures";
+import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
 import { getStravaAthleteQuery } from "./get-strava-athlete.query";
 
 export const getStravaAthleteProcedure = protectedProcedure

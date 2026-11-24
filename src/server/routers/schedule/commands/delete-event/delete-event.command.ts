@@ -1,5 +1,5 @@
 import type { DeleteEventInput } from "@/schemas";
-import type { AdminContext } from "@/server/context";
+import type { AdminContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	notifiableEventSelect,

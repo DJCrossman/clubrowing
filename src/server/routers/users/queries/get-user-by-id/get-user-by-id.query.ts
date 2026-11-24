@@ -1,5 +1,5 @@
 import type { GetUserByIdInput } from "@/schemas";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { mapToUserDto } from "@/server/routers/users/common/map-to-user-dto";
 
 export async function getUserByIdQuery(

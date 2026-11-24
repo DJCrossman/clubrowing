@@ -1,5 +1,5 @@
 import type { GetGroupByIdInput } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { ensureGroupChannel } from "@/server/routers/chat/common/chat-access";
 import { getGroupMembers } from "../../common/group-members";
 import {

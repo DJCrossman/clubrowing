@@ -1,6 +1,6 @@
 import { BlobNotFoundError, del, head } from "@vercel/blob";
 import { DateTime } from "luxon";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { removeUploads } from "./remove-uploads";
 import { storedFileMatches } from "./stored-file-matches";
 

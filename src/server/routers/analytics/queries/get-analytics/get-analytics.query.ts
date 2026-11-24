@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { CLUB_TIMEZONE } from "@/lib/schedule/week";
 import { AnalyticsPeriodDays } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { getWeekStreak, startOfWeek } from "../../common/get-week-streak";
 import { isErgTest } from "../../common/is-erg-test";
 import { toMetersTimeSeries } from "../../common/to-meters-time-series";

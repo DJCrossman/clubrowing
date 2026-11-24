@@ -1,5 +1,5 @@
 import type { UnsubscribeFromPush } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 
 export async function unsubscribeCommand(
 	input: UnsubscribeFromPush,

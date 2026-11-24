@@ -1,7 +1,7 @@
 import { createLogger } from "@/lib/logger";
 import { type GetMessagesInput, isChatVideo } from "@/schemas/chat.schema";
-import { findVideosPausedUntil } from "@/server/common/videos-paused-until";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
+import { findVideosPausedUntil } from "@/server/domain/common/videos-paused-until";
 import {
 	findAccessibleChannel,
 	getVisibleFrom,

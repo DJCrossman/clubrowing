@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { notifyActivityAdded } from "../../common/activity-notifications";
 import { getStravaAccessTokenForAthlete } from "../../common/get-strava-access-token-for-athlete";
 import { removeActivitySource } from "../../common/remove-activity-source";

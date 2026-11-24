@@ -1,5 +1,5 @@
 import type { GetThreadInput } from "@/schemas/chat.schema";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { findAccessibleMessage } from "@/server/routers/chat/common/chat-access";
 import { loadMessageDtos } from "@/server/routers/chat/common/load-message-dtos";
 import { messageInclude } from "@/server/routers/chat/common/map-to-message-dto";

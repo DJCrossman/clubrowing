@@ -1,5 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import type { ContextAthlete, SessionUser } from "../context";
+import type {
+	ContextAthlete,
+	SessionUser,
+} from "@/server/domain/common/context";
 
 export function resolveViewerAccess<TAthlete extends ContextAthlete | null>({
 	user,

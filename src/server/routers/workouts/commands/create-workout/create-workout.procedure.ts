@@ -1,5 +1,5 @@
 import { workoutCoreSchema } from "@/schemas";
-import { adminProcedure } from "@/server/common/procedures/admin.procedure";
+import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
 import { createWorkoutCommand } from "./create-workout.command";
 
 export const createWorkoutProcedure = adminProcedure

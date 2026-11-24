@@ -5,7 +5,7 @@ import {
 	formatGroupLabel,
 } from "@/lib/schedule/event-labels";
 import type { EventIdInput } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	type AthleteRow,

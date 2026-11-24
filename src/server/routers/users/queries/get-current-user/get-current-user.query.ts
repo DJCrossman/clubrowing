@@ -1,5 +1,5 @@
 import { clerkClient } from "@clerk/nextjs/server";
-import type { UnauthenticatedContext } from "@/server/common/context";
+import type { UnauthenticatedContext } from "@/server/domain/common/context";
 import { findOrLinkUserAthlete } from "../../commands/find-or-create-user-and-athlete-by-user-id/find-or-create-user-and-athlete-by-user-id.command";
 import { synthesizeAdminUser } from "../../common/synthesize-admin-user";
 

@@ -2,8 +2,8 @@ import type { TRPCMutationProcedure, TRPCQueryProcedure } from "@trpc/server";
 import { after as nextAfter } from "next/server";
 import type { z } from "zod";
 import { createLogger } from "@/lib/logger";
-import type { Permission } from "./permission";
-import { type baseProcedure, TRPCError } from "./trpc";
+import type { Permission } from "@/server/domain/common/permission";
+import { type baseProcedure, TRPCError } from "./init";
 
 const afterLogger = createLogger("procedure.after");
 

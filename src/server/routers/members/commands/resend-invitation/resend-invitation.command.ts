@@ -1,6 +1,6 @@
 import type { InvitationIdInput } from "@/schemas";
 import { listPendingInvitations } from "@/server/clerk/organization-members";
-import type { AdminContext } from "@/server/context";
+import type { AdminContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { inviteMembersCommand } from "../invite-members/invite-members.command";
 import { revokeInvitationCommand } from "../revoke-invitation/revoke-invitation.command";

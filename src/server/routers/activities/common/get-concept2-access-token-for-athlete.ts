@@ -1,5 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { decryptToken, encryptToken } from "@/server/integration-token-crypto";
 
 const REFRESH_BUFFER_MS = 60 * 60 * 1000;

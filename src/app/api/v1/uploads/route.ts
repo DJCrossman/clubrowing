@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { envVars } from "@/lib/env";
-import { removeOrphanedUploads } from "@/server/common/remove-orphaned-uploads";
+import { removeOrphanedUploads } from "@/server/domain/common/remove-orphaned-uploads";
 import { findUploadRefusal } from "./upload-refusal";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;

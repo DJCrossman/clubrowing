@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { attachActivityScreenshotCommand } from "./attach-activity-screenshot.command";
 
 const input = { id: "act_1", uploadId: "upl_1" };

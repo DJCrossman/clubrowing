@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import type { GetGroupByIdInput } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { getGroupMemberIds } from "@/server/routers/groups/common";
 import { toMetersTimeSeries } from "../../common/to-meters-time-series";
 

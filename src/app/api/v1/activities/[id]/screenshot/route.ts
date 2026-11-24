@@ -4,7 +4,7 @@ import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { envVars } from "@/lib/env";
-import { createServerCaller } from "@/server/caller";
+import { createServerCaller } from "@/server/infra/trpc/caller";
 
 export async function GET(
 	request: Request,

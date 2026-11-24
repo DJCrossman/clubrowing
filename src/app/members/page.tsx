@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AthleteListScene } from "@/scenes/athletes";
-import { createAdminCaller } from "@/server/caller";
+import { createAdminCaller } from "@/server/infra/trpc/caller";
 
 const querySchema = z.object({
 	athleteId: z.string().optional(),

@@ -3,7 +3,7 @@ import { DateTime } from "luxon";
 import { z } from "zod";
 import { parseWeekStart, startOfWeek } from "@/lib/schedule/week";
 import { ScheduleTypeFilters } from "@/schemas";
-import type { createServerCaller } from "@/server/caller";
+import type { createServerCaller } from "@/server/infra/trpc/caller";
 
 export const scheduleQuerySchema = z.object({
 	week: z.string().optional(),

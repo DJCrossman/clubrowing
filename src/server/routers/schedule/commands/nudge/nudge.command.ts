@@ -1,5 +1,5 @@
 import type { EventIdInput } from "@/schemas";
-import type { AdminContext } from "@/server/context";
+import type { AdminContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { getEventAudiences } from "@/server/routers/schedule/common/event-audience";
 import { sendNudge } from "@/server/routers/schedule/common/send-nudge";

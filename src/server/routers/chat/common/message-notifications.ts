@@ -6,7 +6,7 @@ import {
 	type PushMessage,
 } from "@/lib/notifications";
 import { routes } from "@/lib/routes";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { getGroupMemberIds } from "@/server/routers/groups/common";
 import { canAccessChannel } from "./chat-access";
 import { getChatUser } from "./chat-user-names";

@@ -1,8 +1,8 @@
+import type { UnauthenticatedContext } from "@/server/domain/common/context";
 import { type AfterableBuilder, wrapBuilder } from "../builder";
-import type { UnauthenticatedContext } from "../context";
-import { baseProcedure } from "../trpc";
+import { baseProcedure } from "../init";
 
-export const unauthenticatedProcedure: AfterableBuilder<
+export const publicProcedure: AfterableBuilder<
 	UnauthenticatedContext,
 	undefined
 > = wrapBuilder<UnauthenticatedContext, undefined>(baseProcedure);

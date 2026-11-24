@@ -1,5 +1,5 @@
 import { del } from "@vercel/blob";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 
 export async function removeUploads({
 	db,

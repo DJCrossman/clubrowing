@@ -5,7 +5,7 @@ import {
 	type StravaUser,
 	stravaUserSchema,
 } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { StravaServiceError } from "@/server/services/strava-service";
 import { getStravaAccessToken } from "../../common/get-strava-access-token";
 

@@ -1,8 +1,8 @@
 import { createLogger } from "@/lib/logger";
 import type { DeleteMessage } from "@/schemas/chat.schema";
-import { removeUploads } from "@/server/common/remove-uploads";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
+import { removeUploads } from "@/server/domain/common/remove-uploads";
 import {
 	findAccessibleMessage,
 	isChatAdmin,

@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import type { Context } from "@/server/context";
+import type { Context } from "@/server/domain/common/context";
 import { formatCalendarReplyText } from "@/server/routers/schedule/common/calendar-reply";
 import { getEventAudiences } from "@/server/routers/schedule/common/event-audience";
 import {

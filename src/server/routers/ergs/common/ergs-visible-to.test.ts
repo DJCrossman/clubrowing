@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ContextAthlete } from "@/server/context";
+import type { ContextAthlete } from "@/server/domain/common/context";
 import { ergsVisibleTo } from "./ergs-visible-to";
 
 const athlete: ContextAthlete = {

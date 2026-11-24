@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import { paginate } from "@/lib/pagination";
 import { withPagination } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { ViewerContext } from "@/server/domain/common/context";
 import { ergsVisibleTo } from "@/server/routers/ergs/common/ergs-visible-to";
 import {
 	ergInclude,
