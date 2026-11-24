@@ -1,8 +1,8 @@
+import { findAccessibleMessage } from "@/domain/chat/common/chat-access";
+import { loadMessageDtos } from "@/domain/chat/common/load-message-dtos";
+import { messageInclude } from "@/domain/chat/common/map-to-message-dto";
+import type { ViewerContext } from "@/domain/common/context";
 import type { GetThreadInput } from "@/schemas/chat.schema";
-import { findAccessibleMessage } from "@/server/domain/chat/common/chat-access";
-import { loadMessageDtos } from "@/server/domain/chat/common/load-message-dtos";
-import { messageInclude } from "@/server/domain/chat/common/map-to-message-dto";
-import type { ViewerContext } from "@/server/domain/common/context";
 
 export async function getThreadQuery(
 	input: GetThreadInput,

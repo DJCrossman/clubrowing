@@ -1,5 +1,5 @@
+import type { ViewerContext } from "@/domain/common/context";
 import type { Prisma } from "@/generated/prisma/client";
-import type { ViewerContext } from "@/server/domain/common/context";
 
 export function ergsVisibleTo({
 	user,

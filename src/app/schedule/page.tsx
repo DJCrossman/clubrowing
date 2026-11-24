@@ -1,5 +1,5 @@
 import { ScheduleScene } from "@/scenes/schedule";
-import { createServerCaller } from "@/server/infra/trpc/caller";
+import { createServerCaller } from "@/trpc/caller";
 import { loadSchedulePage, scheduleQuerySchema } from "./load-schedule-page";
 
 export default async function SchedulePage({

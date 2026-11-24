@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { mapToBoatDto } from "@/domain/boats/common/map-to-boat-dto";
+import type { Context } from "@/domain/common/context";
 import { paginate } from "@/lib/pagination";
 import { SeatTypes, withPagination } from "@/schemas";
-import { mapToBoatDto } from "@/server/domain/boats/common/map-to-boat-dto";
-import type { Context } from "@/server/domain/common/context";
 
 export const getBoatsInputSchema = withPagination({
 	columns: ["name", "manufacturer", "seats", "rigging"] as const,

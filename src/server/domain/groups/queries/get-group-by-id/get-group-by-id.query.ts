@@ -1,6 +1,6 @@
+import { ensureGroupChannel } from "@/domain/chat/common/chat-access";
+import type { ViewerContext } from "@/domain/common/context";
 import type { GetGroupByIdInput } from "@/schemas";
-import { ensureGroupChannel } from "@/server/domain/chat/common/chat-access";
-import type { ViewerContext } from "@/server/domain/common/context";
 import { getGroupMembers } from "../../common/group-members";
 import {
 	groupInclude,

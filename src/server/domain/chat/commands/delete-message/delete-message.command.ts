@@ -1,12 +1,12 @@
-import { createLogger } from "@/lib/logger";
-import type { DeleteMessage } from "@/schemas/chat.schema";
 import {
 	findAccessibleMessage,
 	isChatAdmin,
-} from "@/server/domain/chat/common/chat-access";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
-import { removeUploads } from "@/server/domain/common/remove-uploads";
+} from "@/domain/chat/common/chat-access";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import { removeUploads } from "@/domain/common/remove-uploads";
+import { createLogger } from "@/lib/logger";
+import type { DeleteMessage } from "@/schemas/chat.schema";
 
 const logger = createLogger("chat.delete-message");
 

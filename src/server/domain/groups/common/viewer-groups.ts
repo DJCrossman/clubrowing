@@ -1,5 +1,5 @@
-import type { ViewerContext } from "@/server/domain/common/context";
-import { definePermission } from "@/server/domain/common/permission";
+import type { ViewerContext } from "@/domain/common/context";
+import { definePermission } from "@/domain/common/permission";
 import { type GroupsDb, getAthleteGroupIds } from "./group-members";
 
 /** Admins see every group; everyone else sees only the groups they're in. */

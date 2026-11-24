@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import type { AuthenticatedContext } from "@/domain/common/context";
 import type { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
 import {
@@ -6,7 +7,6 @@ import {
 	concept2ActivitySchema,
 	stravaActivitySchema,
 } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
 import {
 	type CrossSourceShape,
 	concept2MatchShape,

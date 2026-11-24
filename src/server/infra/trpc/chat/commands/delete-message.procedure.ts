@@ -1,6 +1,6 @@
+import { deleteMessageCommand } from "@/domain/chat/commands/delete-message/delete-message.command";
 import { deleteMessageSchema } from "@/schemas/chat.schema";
-import { deleteMessageCommand } from "@/server/domain/chat/commands/delete-message/delete-message.command";
-import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
+import { viewerProcedure } from "@/trpc/procedures/viewer.procedure";
 
 export const deleteMessageProcedure = viewerProcedure
 	.input(deleteMessageSchema)

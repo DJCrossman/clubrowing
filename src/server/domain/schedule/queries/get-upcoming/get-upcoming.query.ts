@@ -1,16 +1,16 @@
 import { DateTime } from "luxon";
+import type { ViewerContext } from "@/domain/common/context";
+import { getViewerGroups } from "@/domain/groups/common";
+import {
+	eventInclude,
+	mapToVisibleEventDtos,
+} from "@/domain/schedule/common/map-to-event-dto";
 import {
 	CLUB_TIMEZONE,
 	getClubToday,
 	parseWeekStart,
 } from "@/lib/schedule/week";
 import type { GetUpcomingInput } from "@/schemas";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { getViewerGroups } from "@/server/domain/groups/common";
-import {
-	eventInclude,
-	mapToVisibleEventDtos,
-} from "@/server/domain/schedule/common/map-to-event-dto";
 
 const UPCOMING_SCAN_LIMIT = 200;
 

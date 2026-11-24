@@ -1,11 +1,11 @@
 import { StravaError } from "@/app/api/v1/strava/types";
+import type { AuthenticatedContext } from "@/domain/common/context";
 import { createLogger } from "@/lib/logger";
 import {
 	type GetStravaAthleteInput,
 	type StravaUser,
 	stravaUserSchema,
 } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { StravaServiceError } from "@/server/services/strava-service";
 import { getStravaAccessToken } from "../../common/get-strava-access-token";
 

@@ -1,6 +1,6 @@
+import { getResponsesQuery } from "@/domain/schedule/queries/get-responses/get-responses.query";
 import { eventIdInputSchema } from "@/schemas";
-import { getResponsesQuery } from "@/server/domain/schedule/queries/get-responses/get-responses.query";
-import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
+import { viewerProcedure } from "@/trpc/procedures/viewer.procedure";
 
 export const getResponsesProcedure = viewerProcedure
 	.input(eventIdInputSchema)

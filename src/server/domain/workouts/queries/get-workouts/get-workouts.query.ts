@@ -1,9 +1,9 @@
-import { paginate } from "@/lib/pagination";
-import type { Context } from "@/server/domain/common/context";
+import type { Context } from "@/domain/common/context";
 import {
 	mapToWorkoutDto,
 	workoutInclude,
-} from "@/server/domain/workouts/common/map-to-workout-dto";
+} from "@/domain/workouts/common/map-to-workout-dto";
+import { paginate } from "@/lib/pagination";
 
 export async function getWorkoutsQuery(_input: undefined, { db }: Context) {
 	const [workouts, totalCount] = await Promise.all([

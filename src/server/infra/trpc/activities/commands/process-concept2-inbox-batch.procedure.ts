@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { processConcept2InboxBatchMemberCommand } from "@/server/domain/activities/commands/process-concept2-inbox-batch/process-concept2-inbox-batch.member.command";
-import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
+import { processConcept2InboxBatchMemberCommand } from "@/domain/activities/commands/process-concept2-inbox-batch/process-concept2-inbox-batch.member.command";
+import { protectedProcedure } from "@/trpc/procedures/protected.procedure";
 
 const inputSchema = z.object({ batchId: z.string() });
 

@@ -1,5 +1,5 @@
+import type { Context } from "@/domain/common/context";
 import type { CreateGroup } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
 
 export async function createGroupCommand(input: CreateGroup, { db }: Context) {
 	return db.group.create({

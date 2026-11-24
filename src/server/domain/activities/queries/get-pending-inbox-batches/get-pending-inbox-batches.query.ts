@@ -1,6 +1,6 @@
+import type { ViewerContext } from "@/domain/common/context";
 import type { IntegrationSource } from "@/generated/prisma/client";
 import { paginate } from "@/lib/pagination";
-import type { ViewerContext } from "@/server/domain/common/context";
 import {
 	type ActivityInboxDto,
 	mapToInboxDto,

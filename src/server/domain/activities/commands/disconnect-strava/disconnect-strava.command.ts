@@ -1,7 +1,7 @@
+import type { AuthenticatedContext } from "@/domain/common/context";
+import { mapToUserDto } from "@/domain/users/common/map-to-user-dto";
 import { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
-import { mapToUserDto } from "@/server/domain/users/common/map-to-user-dto";
 
 const logger = createLogger("strava.disconnect");
 

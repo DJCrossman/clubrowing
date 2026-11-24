@@ -1,5 +1,5 @@
+import type { Context } from "@/domain/common/context";
 import type { UpdateGroup } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
 import { findGroupOrThrow } from "../../common/find-group-or-throw";
 
 export async function updateGroupCommand(

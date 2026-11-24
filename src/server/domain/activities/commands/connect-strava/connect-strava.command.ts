@@ -1,7 +1,7 @@
+import type { AuthenticatedContext } from "@/domain/common/context";
+import { mapToUserDto } from "@/domain/users/common/map-to-user-dto";
 import { createLogger } from "@/lib/logger";
 import type { ConnectStravaInput } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
-import { mapToUserDto } from "@/server/domain/users/common/map-to-user-dto";
 
 const logger = createLogger("strava.connect");
 

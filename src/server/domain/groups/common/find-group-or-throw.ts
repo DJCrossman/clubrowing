@@ -1,4 +1,4 @@
-import { DomainError } from "@/server/domain/common/domain-error";
+import { DomainError } from "@/domain/common/domain-error";
 import type { GroupsDb } from "./group-members";
 
 export async function findGroupOrThrow(db: GroupsDb, groupId: string) {

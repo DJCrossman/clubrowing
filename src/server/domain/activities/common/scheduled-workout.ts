@@ -1,13 +1,10 @@
+import type { Context } from "@/domain/common/context";
+import { type GroupsDb, getAthleteGroupIds } from "@/domain/groups/common";
 import type { ActivityType } from "@/generated/prisma/client";
 import {
 	EARLIEST_START_BEFORE_EVENT_MS,
 	LATEST_START_AFTER_EVENT_MS,
 } from "@/lib/schedule/week";
-import type { Context } from "@/server/domain/common/context";
-import {
-	type GroupsDb,
-	getAthleteGroupIds,
-} from "@/server/domain/groups/common";
 
 export async function findScheduledWorkoutForActivity({
 	db,

@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import type { ViewerContext } from "@/domain/common/context";
 import type { ActivityType, EventType } from "@/generated/prisma/client";
 import { extractLinkTargets } from "@/lib/chat/links";
 import { routes } from "@/lib/routes";
@@ -7,7 +8,6 @@ import {
 	formatEventDate,
 	formatEventTime,
 } from "@/lib/schedule/event-labels";
-import type { ViewerContext } from "@/server/domain/common/context";
 import { getDisplayName } from "./chat-user-names";
 
 type Db = ViewerContext["db"];

@@ -1,5 +1,5 @@
-import type { ViewerContext } from "@/server/domain/common/context";
-import { generateCalendarToken } from "@/server/domain/schedule/common/calendar-token";
+import type { ViewerContext } from "@/domain/common/context";
+import { generateCalendarToken } from "@/domain/schedule/common/calendar-token";
 
 export async function getCalendarTokenCommand(
 	_input: undefined,

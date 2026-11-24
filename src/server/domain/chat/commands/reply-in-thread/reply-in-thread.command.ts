@@ -1,10 +1,10 @@
+import { findAccessibleMessage } from "@/domain/chat/common/chat-access";
+import { loadMessageDtos } from "@/domain/chat/common/load-message-dtos";
+import { messageInclude } from "@/domain/chat/common/map-to-message-dto";
+import { selectChannelMentions } from "@/domain/chat/common/message-mentions";
+import { notifyChannelAfterResponse } from "@/domain/chat/common/message-notifications";
+import type { ViewerContext } from "@/domain/common/context";
 import type { ReplyInThread } from "@/schemas/chat.schema";
-import { findAccessibleMessage } from "@/server/domain/chat/common/chat-access";
-import { loadMessageDtos } from "@/server/domain/chat/common/load-message-dtos";
-import { messageInclude } from "@/server/domain/chat/common/map-to-message-dto";
-import { selectChannelMentions } from "@/server/domain/chat/common/message-mentions";
-import { notifyChannelAfterResponse } from "@/server/domain/chat/common/message-notifications";
-import type { ViewerContext } from "@/server/domain/common/context";
 
 export async function replyInThreadCommand(
 	input: ReplyInThread,

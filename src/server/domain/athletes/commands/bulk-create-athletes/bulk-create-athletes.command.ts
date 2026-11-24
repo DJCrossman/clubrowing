@@ -1,10 +1,10 @@
-import type { BulkCreateAthletes } from "@/schemas/athlete.schema";
 import {
 	type AthleteRow,
 	athleteInclude,
 	mapToAthleteDto,
-} from "@/server/domain/athletes/common/map-to-athlete-dto";
-import type { Context } from "@/server/domain/common/context";
+} from "@/domain/athletes/common/map-to-athlete-dto";
+import type { Context } from "@/domain/common/context";
+import type { BulkCreateAthletes } from "@/schemas/athlete.schema";
 
 export async function bulkCreateAthletesCommand(
 	input: BulkCreateAthletes,

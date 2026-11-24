@@ -1,4 +1,4 @@
-import { athleteInclude } from "@/server/domain/athletes/common/map-to-athlete-dto";
+import { athleteInclude } from "@/domain/athletes/common/map-to-athlete-dto";
 import { middleware, TRPCError } from "../init";
 import { resolveViewerAccess } from "./viewer-access";
 

@@ -1,11 +1,11 @@
-import type { GetActivityByIdInput } from "@/schemas";
-import { canViewActivity } from "@/server/domain/activities/common/can-view-activity";
+import { canViewActivity } from "@/domain/activities/common/can-view-activity";
 import {
 	activityInclude,
 	mapToActivityDto,
-} from "@/server/domain/activities/common/map-to-activity-dto";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
+} from "@/domain/activities/common/map-to-activity-dto";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import type { GetActivityByIdInput } from "@/schemas";
 
 export async function getActivityByIdMemberQuery(
 	input: GetActivityByIdInput,

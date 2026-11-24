@@ -1,13 +1,13 @@
-import { createLogger } from "@/lib/logger";
-import { type GetMessagesInput, isChatVideo } from "@/schemas/chat.schema";
 import {
 	findAccessibleChannel,
 	getVisibleFrom,
-} from "@/server/domain/chat/common/chat-access";
-import { loadMessageDtos } from "@/server/domain/chat/common/load-message-dtos";
-import { messageInclude } from "@/server/domain/chat/common/map-to-message-dto";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { findVideosPausedUntil } from "@/server/domain/common/videos-paused-until";
+} from "@/domain/chat/common/chat-access";
+import { loadMessageDtos } from "@/domain/chat/common/load-message-dtos";
+import { messageInclude } from "@/domain/chat/common/map-to-message-dto";
+import type { ViewerContext } from "@/domain/common/context";
+import { findVideosPausedUntil } from "@/domain/common/videos-paused-until";
+import { createLogger } from "@/lib/logger";
+import { type GetMessagesInput, isChatVideo } from "@/schemas/chat.schema";
 
 const logger = createLogger("chat.get-messages");
 

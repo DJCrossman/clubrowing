@@ -1,4 +1,4 @@
-import { DomainError } from "@/server/domain/common/domain-error";
+import { DomainError } from "@/domain/common/domain-error";
 
 export function resolveActivityAthleteIds({
 	isAdmin,

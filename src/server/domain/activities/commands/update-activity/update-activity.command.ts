@@ -1,10 +1,10 @@
-import type { UpdateActivity } from "@/schemas";
 import {
 	activityInclude,
 	mapToActivityDto,
-} from "@/server/domain/activities/common/map-to-activity-dto";
-import type { Context } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
+} from "@/domain/activities/common/map-to-activity-dto";
+import type { Context } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import type { UpdateActivity } from "@/schemas";
 
 export async function updateActivityCommand(
 	input: UpdateActivity,

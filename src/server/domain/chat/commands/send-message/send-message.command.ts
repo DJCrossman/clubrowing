@@ -1,14 +1,14 @@
 import { head } from "@vercel/blob";
+import { findAccessibleChannel } from "@/domain/chat/common/chat-access";
+import { loadMessageDtos } from "@/domain/chat/common/load-message-dtos";
+import { messageInclude } from "@/domain/chat/common/map-to-message-dto";
+import { selectChannelMentions } from "@/domain/chat/common/message-mentions";
+import { notifyChannelAfterResponse } from "@/domain/chat/common/message-notifications";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import { storedFileMatches } from "@/domain/common/stored-file-matches";
 import { Prisma } from "@/generated/prisma/client";
 import type { SendMessage } from "@/schemas/chat.schema";
-import { findAccessibleChannel } from "@/server/domain/chat/common/chat-access";
-import { loadMessageDtos } from "@/server/domain/chat/common/load-message-dtos";
-import { messageInclude } from "@/server/domain/chat/common/map-to-message-dto";
-import { selectChannelMentions } from "@/server/domain/chat/common/message-mentions";
-import { notifyChannelAfterResponse } from "@/server/domain/chat/common/message-notifications";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
-import { storedFileMatches } from "@/server/domain/common/stored-file-matches";
 
 export async function sendMessageCommand(
 	input: SendMessage,

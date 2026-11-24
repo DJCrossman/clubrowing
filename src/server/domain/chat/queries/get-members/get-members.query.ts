@@ -1,11 +1,11 @@
-import { paginate } from "@/lib/pagination";
-import type { GetMembersInput } from "@/schemas/chat.schema";
-import { findAccessibleChannel } from "@/server/domain/chat/common/chat-access";
+import { findAccessibleChannel } from "@/domain/chat/common/chat-access";
 import {
 	listChannelChatUsers,
 	listChatUsers,
-} from "@/server/domain/chat/common/chat-users";
-import type { ViewerContext } from "@/server/domain/common/context";
+} from "@/domain/chat/common/chat-users";
+import type { ViewerContext } from "@/domain/common/context";
+import { paginate } from "@/lib/pagination";
+import type { GetMembersInput } from "@/schemas/chat.schema";
 
 export async function getMembersQuery(
 	input: GetMembersInput,

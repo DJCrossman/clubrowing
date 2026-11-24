@@ -1,6 +1,6 @@
+import { getLeaderboardQuery } from "@/domain/analytics/queries/get-leaderboard/get-leaderboard.query";
 import { getLeaderboardInputSchema } from "@/schemas";
-import { getLeaderboardQuery } from "@/server/domain/analytics/queries/get-leaderboard/get-leaderboard.query";
-import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
+import { viewerProcedure } from "@/trpc/procedures/viewer.procedure";
 
 export const getLeaderboardProcedure = viewerProcedure
 	.input(getLeaderboardInputSchema)

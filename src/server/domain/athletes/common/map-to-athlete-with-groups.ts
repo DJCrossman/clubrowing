@@ -1,7 +1,7 @@
 import {
 	type GroupRule,
 	resolveAthleteGroups,
-} from "@/server/domain/groups/common/group-membership";
+} from "@/domain/groups/common/group-membership";
 import { type AthleteRow, mapToAthleteDto } from "./map-to-athlete-dto";
 
 export function mapToAthleteWithGroups(row: AthleteRow, rules: GroupRule[]) {

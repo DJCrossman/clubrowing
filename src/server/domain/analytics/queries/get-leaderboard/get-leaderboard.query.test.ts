@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Context } from "@/server/domain/common/context";
+import type { Context } from "@/domain/common/context";
 import { getLeaderboardQuery } from "./get-leaderboard.query";
 
 // Wednesday, mid-afternoon in Regina, so no activity sits near a day or week boundary.

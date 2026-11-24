@@ -1,11 +1,11 @@
 import { after, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { createLogger } from "@/lib/logger";
 import {
 	processStravaWebhookEventCommand,
 	type StravaWebhookEvent,
 	stravaWebhookEventSchema,
-} from "@/server/domain/activities/commands/process-strava-webhook-event/process-strava-webhook-event.command";
+} from "@/domain/activities/commands/process-strava-webhook-event/process-strava-webhook-event.command";
+import { db } from "@/lib/db";
+import { createLogger } from "@/lib/logger";
 import { createConcept2Service } from "@/server/services/concept2-service";
 import { createGitHubService } from "@/server/services/github-service";
 import { createPushService } from "@/server/services/push-service";

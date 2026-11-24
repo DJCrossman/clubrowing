@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ErgListScene } from "@/scenes/ergs";
-import { createServerCaller } from "@/server/infra/trpc/caller";
-import { createRequestContext } from "@/server/infra/trpc/request-context";
+import { createServerCaller } from "@/trpc/caller";
+import { createRequestContext } from "@/trpc/request-context";
 
 const querySchema = z.object({
 	ergId: z.string().optional(),

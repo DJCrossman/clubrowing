@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
+import { mapToAthleteWithGroups } from "@/domain/athletes/common/map-to-athlete-with-groups";
+import type { Context } from "@/domain/common/context";
+import { findGroupRules } from "@/domain/groups/common";
 import { paginate } from "@/lib/pagination";
 import { AnalyticsPeriodDays, type GetLeaderboardInput } from "@/schemas";
-import { mapToAthleteWithGroups } from "@/server/domain/athletes/common/map-to-athlete-with-groups";
-import type { Context } from "@/server/domain/common/context";
-import { findGroupRules } from "@/server/domain/groups/common";
 import { getWeekStreak } from "../../common/get-week-streak";
 import { isErgTest } from "../../common/is-erg-test";
 

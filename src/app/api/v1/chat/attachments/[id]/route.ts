@@ -2,7 +2,7 @@ import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { envVars } from "@/lib/env";
-import { createRequestContext } from "@/server/infra/trpc/request-context";
+import { createRequestContext } from "@/trpc/request-context";
 import { findViewableAttachment } from "./find-viewable-attachment";
 
 const THUMBNAIL_DIMENSION = 720;

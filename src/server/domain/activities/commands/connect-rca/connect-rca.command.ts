@@ -1,8 +1,8 @@
+import type { AuthenticatedContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import { mapToUserDto } from "@/domain/users/common/map-to-user-dto";
 import { createLogger } from "@/lib/logger";
 import type { ConnectRcaInput } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
-import { mapToUserDto } from "@/server/domain/users/common/map-to-user-dto";
 import { encryptToken } from "@/server/integration-token-crypto";
 
 const logger = createLogger("rca.connect");

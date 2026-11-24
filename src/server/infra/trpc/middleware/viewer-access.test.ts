@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { describe, expect, it } from "vitest";
-import type { ContextAthlete } from "@/server/domain/common/context";
+import type { ContextAthlete } from "@/domain/common/context";
 import { resolveViewerAccess } from "./viewer-access";
 
 const athlete = { id: "ath_1" } as unknown as ContextAthlete;

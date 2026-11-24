@@ -1,4 +1,4 @@
-import type { AuthenticatedContext } from "@/server/domain/common/context";
+import type { AuthenticatedContext } from "@/domain/common/context";
 import { type AfterableBuilder, wrapBuilder } from "../builder";
 import { baseProcedure } from "../init";
 import { requireAuthAndAthlete } from "../middleware/auth";

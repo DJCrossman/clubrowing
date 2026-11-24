@@ -1,11 +1,11 @@
 import { after } from "next/server";
-import type { CreateActivity } from "@/schemas";
-import { notifyActivityAdded } from "@/server/domain/activities/common/activity-notifications";
+import { notifyActivityAdded } from "@/domain/activities/common/activity-notifications";
 import {
 	activityInclude,
 	mapToActivityDto,
-} from "@/server/domain/activities/common/map-to-activity-dto";
-import type { ViewerContext } from "@/server/domain/common/context";
+} from "@/domain/activities/common/map-to-activity-dto";
+import type { ViewerContext } from "@/domain/common/context";
+import type { CreateActivity } from "@/schemas";
 
 export async function createActivityCommand(
 	input: CreateActivity,

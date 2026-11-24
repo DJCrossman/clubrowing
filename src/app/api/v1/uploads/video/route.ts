@@ -3,10 +3,10 @@ import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import { DateTime } from "luxon";
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
+import { removeOrphanedUploads } from "@/domain/common/remove-orphaned-uploads";
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { envVars } from "@/lib/env";
-import { removeOrphanedUploads } from "@/server/domain/common/remove-orphaned-uploads";
 import { findUploadRefusal } from "../upload-refusal";
 
 const MAX_VIDEO_BYTES = 20 * 1024 * 1024;

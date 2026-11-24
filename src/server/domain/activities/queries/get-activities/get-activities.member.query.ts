@@ -1,4 +1,4 @@
-import type { ViewerContext } from "@/server/domain/common/context";
+import type { ViewerContext } from "@/domain/common/context";
 import { resolveActivityAthleteIds } from "./activity-scope";
 import {
 	type GetActivitiesInput,

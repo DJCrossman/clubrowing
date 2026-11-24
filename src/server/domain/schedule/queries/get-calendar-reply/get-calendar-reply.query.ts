@@ -1,6 +1,6 @@
+import type { Context } from "@/domain/common/context";
+import { resolveCalendarViewer } from "@/domain/schedule/common/resolve-calendar-viewer";
 import { formatEventDate, formatEventTime } from "@/lib/schedule/event-labels";
-import type { Context } from "@/server/domain/common/context";
-import { resolveCalendarViewer } from "@/server/domain/schedule/common/resolve-calendar-viewer";
 
 export async function getCalendarReplyQuery(
 	{ token, eventId }: { token: string; eventId: string },

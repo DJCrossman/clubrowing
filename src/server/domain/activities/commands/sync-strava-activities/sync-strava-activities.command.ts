@@ -1,6 +1,6 @@
 import { after } from "next/server";
+import type { AuthenticatedContext } from "@/domain/common/context";
 import { createLogger } from "@/lib/logger";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { syncStravaActivitiesFinalizeCallback } from "./sync-strava-activities.finalize";
 
 const logger = createLogger("sync.strava");

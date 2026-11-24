@@ -1,6 +1,6 @@
 import { clerkClient } from "@clerk/nextjs/server";
+import { mapToUserDto } from "@/domain/users/common/map-to-user-dto";
 import { db } from "@/lib/db";
-import { mapToUserDto } from "@/server/domain/users/common/map-to-user-dto";
 
 export async function findOrLinkUserAthlete({
 	userId,

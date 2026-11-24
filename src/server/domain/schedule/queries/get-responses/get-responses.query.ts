@@ -1,24 +1,24 @@
 import {
+	type AthleteRow,
+	athleteInclude,
+	mapToAthleteDto,
+} from "@/domain/athletes/common/map-to-athlete-dto";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import { canSeeGroup, getViewerGroups } from "@/domain/groups/common";
+import { countResponses } from "@/domain/schedule/common/count-responses";
+import { getEventAudiences } from "@/domain/schedule/common/event-audience";
+import {
+	eventInclude,
+	findGroupNames,
+} from "@/domain/schedule/common/map-to-event-dto";
+import {
 	EVENT_TYPE_LABELS,
 	formatEventDate,
 	formatEventTime,
 	formatGroupLabel,
 } from "@/lib/schedule/event-labels";
 import type { EventIdInput } from "@/schemas";
-import {
-	type AthleteRow,
-	athleteInclude,
-	mapToAthleteDto,
-} from "@/server/domain/athletes/common/map-to-athlete-dto";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
-import { canSeeGroup, getViewerGroups } from "@/server/domain/groups/common";
-import { countResponses } from "@/server/domain/schedule/common/count-responses";
-import { getEventAudiences } from "@/server/domain/schedule/common/event-audience";
-import {
-	eventInclude,
-	findGroupNames,
-} from "@/server/domain/schedule/common/map-to-event-dto";
 
 export async function getResponsesQuery(
 	{ eventId }: EventIdInput,

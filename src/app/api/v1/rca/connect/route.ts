@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { NextResponse } from "next/server";
 import { connectRcaInputSchema } from "@/schemas";
-import { createServerCaller } from "@/server/infra/trpc/caller";
+import { createServerCaller } from "@/trpc/caller";
 
 export async function POST(request: Request) {
 	const caller = await createServerCaller();

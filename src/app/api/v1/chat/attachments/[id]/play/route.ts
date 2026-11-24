@@ -1,10 +1,10 @@
 import { issueSignedToken, presignUrl } from "@vercel/blob";
 import { DateTime } from "luxon";
 import { NextResponse } from "next/server";
+import { findVideosPausedUntil } from "@/domain/common/videos-paused-until";
 import { envVars } from "@/lib/env";
 import { isChatVideo } from "@/schemas/chat.schema";
-import { findVideosPausedUntil } from "@/server/domain/common/videos-paused-until";
-import { createRequestContext } from "@/server/infra/trpc/request-context";
+import { createRequestContext } from "@/trpc/request-context";
 import { findViewableAttachment } from "../find-viewable-attachment";
 
 // Long enough to play a clip of up to 20 MB from one link.

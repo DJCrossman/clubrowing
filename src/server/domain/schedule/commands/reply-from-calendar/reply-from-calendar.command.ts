@@ -1,7 +1,7 @@
-import type { Context } from "@/server/domain/common/context";
-import type { CalendarReplyStatus } from "@/server/domain/schedule/common/calendar-reply";
-import { setRsvp } from "@/server/domain/schedule/common/set-rsvp";
-import { getCalendarReplyQuery } from "@/server/domain/schedule/queries/get-calendar-reply/get-calendar-reply.query";
+import type { Context } from "@/domain/common/context";
+import type { CalendarReplyStatus } from "@/domain/schedule/common/calendar-reply";
+import { setRsvp } from "@/domain/schedule/common/set-rsvp";
+import { getCalendarReplyQuery } from "@/domain/schedule/queries/get-calendar-reply/get-calendar-reply.query";
 
 export async function replyFromCalendarCommand(
 	{

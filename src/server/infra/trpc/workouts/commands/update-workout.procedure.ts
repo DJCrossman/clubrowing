@@ -1,6 +1,6 @@
+import { updateWorkoutCommand } from "@/domain/workouts/commands/update-workout/update-workout.command";
 import { updateWorkoutSchema } from "@/schemas";
-import { updateWorkoutCommand } from "@/server/domain/workouts/commands/update-workout/update-workout.command";
-import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
+import { adminProcedure } from "@/trpc/procedures/admin.procedure";
 
 export const updateWorkoutProcedure = adminProcedure
 	.input(updateWorkoutSchema)

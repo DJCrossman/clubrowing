@@ -15,11 +15,11 @@ vi.mock("@/lib/db", () => ({
 		activity_inbox: { create: vi.fn().mockResolvedValue({ id: "batch_1" }) },
 	},
 }));
-vi.mock("@/server/domain/activities/common/remove-activity-source", () => ({
+vi.mock("@/domain/activities/common/remove-activity-source", () => ({
 	removeActivitySource,
 }));
 vi.mock(
-	"@/server/domain/activities/common/get-strava-access-token-for-athlete",
+	"@/domain/activities/common/get-strava-access-token-for-athlete",
 	() => ({
 		getStravaAccessTokenForAthlete: vi.fn().mockResolvedValue("token"),
 	}),
@@ -33,7 +33,7 @@ vi.mock("@/server/services/strava-service", () => ({
 	}),
 }));
 vi.mock(
-	"@/server/domain/activities/commands/process-strava-inbox-batch/process-strava-inbox-batch.command",
+	"@/domain/activities/commands/process-strava-inbox-batch/process-strava-inbox-batch.command",
 	() => ({
 		processStravaInboxBatchCommand: vi
 			.fn()

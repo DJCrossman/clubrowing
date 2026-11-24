@@ -1,6 +1,6 @@
+import type { Context } from "@/domain/common/context";
+import { removeUploads } from "@/domain/common/remove-uploads";
 import type { DeleteActivityInput } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
-import { removeUploads } from "@/server/domain/common/remove-uploads";
 
 export async function deleteActivityCommand(
 	input: DeleteActivityInput,

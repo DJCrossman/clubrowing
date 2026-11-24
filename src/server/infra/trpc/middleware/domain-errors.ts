@@ -1,6 +1,6 @@
 import { TRPCError, type TRPCMiddlewareFunction } from "@trpc/server";
-import type { Context } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
+import type { Context } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
 
 export const mapDomainErrors: TRPCMiddlewareFunction<
 	Context,

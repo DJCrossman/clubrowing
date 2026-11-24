@@ -1,5 +1,5 @@
+import type { Context } from "@/domain/common/context";
 import { createLogger } from "@/lib/logger";
-import type { Context } from "@/server/domain/common/context";
 
 const REFRESH_BUFFER_MS = 60 * 60 * 1000;
 

@@ -1,8 +1,8 @@
+import { athleteInclude } from "@/domain/athletes/common/map-to-athlete-dto";
+import { mapToAthleteWithGroups } from "@/domain/athletes/common/map-to-athlete-with-groups";
+import type { Context } from "@/domain/common/context";
+import { findGroupRules } from "@/domain/groups/common";
 import type { GetAthleteByIdInput } from "@/schemas";
-import { athleteInclude } from "@/server/domain/athletes/common/map-to-athlete-dto";
-import { mapToAthleteWithGroups } from "@/server/domain/athletes/common/map-to-athlete-with-groups";
-import type { Context } from "@/server/domain/common/context";
-import { findGroupRules } from "@/server/domain/groups/common";
 
 export async function getAthleteByIdQuery(
 	input: GetAthleteByIdInput,

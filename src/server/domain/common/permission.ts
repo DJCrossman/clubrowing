@@ -1,4 +1,4 @@
-import type { DomainError } from "@/server/domain/common/domain-error";
+import type { DomainError } from "@/domain/common/domain-error";
 
 type PermissionError = { code: DomainError["code"]; message: string };
 

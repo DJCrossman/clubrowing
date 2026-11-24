@@ -1,6 +1,6 @@
+import type { Context } from "@/domain/common/context";
+import { removeUploads } from "@/domain/common/remove-uploads";
 import type { DeleteGroupInput } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
-import { removeUploads } from "@/server/domain/common/remove-uploads";
 import { findGroupOrThrow } from "../../common/find-group-or-throw";
 
 export async function deleteGroupCommand(

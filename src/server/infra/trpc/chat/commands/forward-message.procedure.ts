@@ -1,6 +1,6 @@
+import { forwardMessageCommand } from "@/domain/chat/commands/forward-message/forward-message.command";
 import { forwardMessageSchema } from "@/schemas/chat.schema";
-import { forwardMessageCommand } from "@/server/domain/chat/commands/forward-message/forward-message.command";
-import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
+import { viewerProcedure } from "@/trpc/procedures/viewer.procedure";
 
 export const forwardMessageProcedure = viewerProcedure
 	.input(forwardMessageSchema)

@@ -1,7 +1,7 @@
+import { findAccessibleMessage } from "@/domain/chat/common/chat-access";
+import { readMarkerBefore } from "@/domain/chat/common/unread";
+import type { ViewerContext } from "@/domain/common/context";
 import type { MarkUnread } from "@/schemas/chat.schema";
-import { findAccessibleMessage } from "@/server/domain/chat/common/chat-access";
-import { readMarkerBefore } from "@/server/domain/chat/common/unread";
-import type { ViewerContext } from "@/server/domain/common/context";
 
 export async function markUnreadCommand(
 	input: MarkUnread,

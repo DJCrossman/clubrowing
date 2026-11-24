@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { getConcept2AccessTokenForAthlete } from "@/server/domain/activities/common/get-concept2-access-token-for-athlete";
-import type { ViewerContext } from "@/server/domain/common/context";
+import { getConcept2AccessTokenForAthlete } from "@/domain/activities/common/get-concept2-access-token-for-athlete";
+import type { ViewerContext } from "@/domain/common/context";
 import { getActivityStrokesQuery } from "./get-activity-strokes.query";
 
 vi.mock(
-	"@/server/domain/activities/common/get-concept2-access-token-for-athlete",
+	"@/domain/activities/common/get-concept2-access-token-for-athlete",
 	() => ({ getConcept2AccessTokenForAthlete: vi.fn(async () => "token") }),
 );
 

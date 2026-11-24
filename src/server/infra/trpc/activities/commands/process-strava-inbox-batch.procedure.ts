@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { processStravaInboxBatchMemberCommand } from "@/server/domain/activities/commands/process-strava-inbox-batch/process-strava-inbox-batch.member.command";
-import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
+import { processStravaInboxBatchMemberCommand } from "@/domain/activities/commands/process-strava-inbox-batch/process-strava-inbox-batch.member.command";
+import { protectedProcedure } from "@/trpc/procedures/protected.procedure";
 
 const inputSchema = z.object({ batchId: z.string() });
 

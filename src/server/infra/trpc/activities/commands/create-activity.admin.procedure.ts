@@ -1,6 +1,6 @@
+import { createActivityCommand } from "@/domain/activities/commands/create-activity/create-activity.command";
 import { createActivitySchema } from "@/schemas";
-import { createActivityCommand } from "@/server/domain/activities/commands/create-activity/create-activity.command";
-import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
+import { adminProcedure } from "@/trpc/procedures/admin.procedure";
 
 export const createActivityAdminProcedure = adminProcedure
 	.input(createActivitySchema)

@@ -1,3 +1,9 @@
+import type { ViewerContext } from "@/domain/common/context";
+import { getViewerGroups } from "@/domain/groups/common";
+import {
+	eventInclude,
+	mapToVisibleEventDtos,
+} from "@/domain/schedule/common/map-to-event-dto";
 import {
 	bucketByDay,
 	getClubToday,
@@ -5,12 +11,6 @@ import {
 	parseWeekStart,
 } from "@/lib/schedule/week";
 import type { GetWeekInput } from "@/schemas";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { getViewerGroups } from "@/server/domain/groups/common";
-import {
-	eventInclude,
-	mapToVisibleEventDtos,
-} from "@/server/domain/schedule/common/map-to-event-dto";
 
 export async function getWeekQuery(input: GetWeekInput, ctx: ViewerContext) {
 	const { db } = ctx;

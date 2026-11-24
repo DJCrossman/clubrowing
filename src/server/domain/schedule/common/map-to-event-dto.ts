@@ -1,16 +1,16 @@
 import { DateTime } from "luxon";
+import type { Context, ViewerContext } from "@/domain/common/context";
+import { canSeeGroup, type ViewerGroups } from "@/domain/groups/common";
+import {
+	mapToWorkoutDto,
+	workoutInclude,
+} from "@/domain/workouts/common/map-to-workout-dto";
 import type { Prisma } from "@/generated/prisma/client";
 import {
 	EVENT_TYPE_LABELS,
 	formatEventTime,
 	formatGroupLabel,
 } from "@/lib/schedule/event-labels";
-import type { Context, ViewerContext } from "@/server/domain/common/context";
-import { canSeeGroup, type ViewerGroups } from "@/server/domain/groups/common";
-import {
-	mapToWorkoutDto,
-	workoutInclude,
-} from "@/server/domain/workouts/common/map-to-workout-dto";
 import { countResponses } from "./count-responses";
 import { getEventAudiences } from "./event-audience";
 

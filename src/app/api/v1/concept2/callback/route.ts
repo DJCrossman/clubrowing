@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { resolveOAuthReturnPath } from "@/lib/oauth-return";
-import { createServerCaller } from "@/server/infra/trpc/caller";
 import {
 	type Concept2TokenData,
 	createConcept2Service,
 	getConcept2Config,
 } from "@/server/services/concept2-service";
+import { createServerCaller } from "@/trpc/caller";
 
 export async function GET(request: Request) {
 	const { searchParams } = new URL(request.url);

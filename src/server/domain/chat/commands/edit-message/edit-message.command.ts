@@ -1,8 +1,8 @@
+import { findAccessibleMessage } from "@/domain/chat/common/chat-access";
+import { selectChannelMentions } from "@/domain/chat/common/message-mentions";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
 import type { EditMessage } from "@/schemas/chat.schema";
-import { findAccessibleMessage } from "@/server/domain/chat/common/chat-access";
-import { selectChannelMentions } from "@/server/domain/chat/common/message-mentions";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
 
 export async function editMessageCommand(
 	input: EditMessage,

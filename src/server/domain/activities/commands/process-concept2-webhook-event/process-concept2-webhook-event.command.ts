@@ -1,7 +1,7 @@
+import type { Context } from "@/domain/common/context";
 import type { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
 import { type Concept2WebhookEvent, getConcept2WebhookUserId } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
 import { notifyActivityAdded } from "../../common/activity-notifications";
 import { getConcept2AccessTokenForAthlete } from "../../common/get-concept2-access-token-for-athlete";
 import { removeActivitySource } from "../../common/remove-activity-source";

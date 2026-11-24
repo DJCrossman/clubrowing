@@ -1,11 +1,11 @@
-import type { DeleteEventInput } from "@/schemas";
-import type { AdminContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
+import type { AdminContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
 import {
 	notifiableEventSelect,
 	planChangeNotifications,
 	sendAfterResponse,
-} from "@/server/domain/schedule/common/schedule-change-notifications";
+} from "@/domain/schedule/common/schedule-change-notifications";
+import type { DeleteEventInput } from "@/schemas";
 
 export async function deleteEventCommand(
 	{ id, notify }: DeleteEventInput,

@@ -19,6 +19,8 @@
 			}
 		],
 		"paths": {
+			"@/trpc/*": ["./src/server/infra/trpc/*"],
+			"@/domain/*": ["./src/server/domain/*"],
 			"@/*": ["./src/*"]
 		}
 	},

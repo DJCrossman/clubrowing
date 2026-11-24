@@ -1,4 +1,5 @@
 import { after, NextResponse } from "next/server";
+import { processConcept2WebhookEventCommand } from "@/domain/activities/commands/process-concept2-webhook-event/process-concept2-webhook-event.command";
 import { db } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import {
@@ -6,7 +7,6 @@ import {
 	concept2WebhookEventSchema,
 	getConcept2WebhookUserId,
 } from "@/schemas";
-import { processConcept2WebhookEventCommand } from "@/server/domain/activities/commands/process-concept2-webhook-event/process-concept2-webhook-event.command";
 import { createConcept2Service } from "@/server/services/concept2-service";
 import { createGitHubService } from "@/server/services/github-service";
 import { createPushService } from "@/server/services/push-service";

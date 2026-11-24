@@ -1,5 +1,5 @@
+import type { Context } from "@/domain/common/context";
 import type { DeleteErgInput } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
 
 export async function deleteErgCommand(
 	input: DeleteErgInput,

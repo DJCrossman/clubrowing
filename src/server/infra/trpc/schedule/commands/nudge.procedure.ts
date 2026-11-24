@@ -1,6 +1,6 @@
+import { nudgeCommand } from "@/domain/schedule/commands/nudge/nudge.command";
 import { eventIdInputSchema } from "@/schemas";
-import { nudgeCommand } from "@/server/domain/schedule/commands/nudge/nudge.command";
-import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
+import { adminProcedure } from "@/trpc/procedures/admin.procedure";
 
 export const nudgeProcedure = adminProcedure
 	.input(eventIdInputSchema)

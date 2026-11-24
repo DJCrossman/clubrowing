@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ViewerContext } from "@/server/domain/common/context";
+import type { ViewerContext } from "@/domain/common/context";
 
 const findAccessibleChannel = vi.fn();
 const loadMessageDtos = vi.fn();
 
-vi.mock("@/server/domain/chat/common/chat-access", () => ({
+vi.mock("@/domain/chat/common/chat-access", () => ({
 	findAccessibleChannel,
 	getVisibleFrom: () => null,
 }));
-vi.mock("@/server/domain/chat/common/load-message-dtos", () => ({
+vi.mock("@/domain/chat/common/load-message-dtos", () => ({
 	loadMessageDtos,
 }));
 

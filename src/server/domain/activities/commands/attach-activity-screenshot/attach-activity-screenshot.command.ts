@@ -1,6 +1,6 @@
+import type { AuthenticatedContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
 import type { AttachActivityScreenshotInput } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
 
 export async function attachActivityScreenshotCommand(
 	input: AttachActivityScreenshotInput,

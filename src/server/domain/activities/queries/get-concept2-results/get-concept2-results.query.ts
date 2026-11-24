@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { Concept2Error } from "@/app/api/v1/concept2/types";
+import type { AuthenticatedContext } from "@/domain/common/context";
 import {
 	type Concept2Activity,
 	concept2ActivitySchema,
 	type GetConcept2ResultsInput,
 } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { getConcept2Config } from "@/server/services/concept2-service";
 import { getConcept2AccessToken } from "../../common/get-concept2-access-token";
 

@@ -1,5 +1,5 @@
+import type { AthleteRow } from "@/domain/athletes/common/map-to-athlete-dto";
 import type { Prisma } from "@/generated/prisma/client";
-import type { AthleteRow } from "@/server/domain/athletes/common/map-to-athlete-dto";
 import { isCoach, isProgramActive } from "./group-membership";
 
 export const groupInclude = {

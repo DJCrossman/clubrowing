@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DomainError } from "@/server/domain/common/domain-error";
+import { DomainError } from "@/domain/common/domain-error";
 
 const env = {
 	BLOB_READ_WRITE_TOKEN: "blob-token" as string | undefined,
@@ -21,10 +21,10 @@ const createRequestContext = vi.fn();
 
 vi.mock("@/lib/env", () => ({ envVars: env }));
 vi.mock("@vercel/blob", () => ({ issueSignedToken, presignUrl }));
-vi.mock("@/server/infra/trpc/request-context", () => ({
+vi.mock("@/trpc/request-context", () => ({
 	createRequestContext,
 }));
-vi.mock("@/server/domain/chat/common/chat-access", () => ({
+vi.mock("@/domain/chat/common/chat-access", () => ({
 	findAccessibleMessage,
 }));
 

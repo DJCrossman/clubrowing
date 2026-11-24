@@ -1,6 +1,6 @@
+import { createEventCommand } from "@/domain/schedule/commands/create-event/create-event.command";
 import { createEventSchema } from "@/schemas";
-import { createEventCommand } from "@/server/domain/schedule/commands/create-event/create-event.command";
-import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
+import { adminProcedure } from "@/trpc/procedures/admin.procedure";
 
 export const createEventProcedure = adminProcedure
 	.input(createEventSchema)

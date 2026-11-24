@@ -1,4 +1,6 @@
 import { after } from "next/server";
+import type { ViewerContext } from "@/domain/common/context";
+import { getGroupMemberIds } from "@/domain/groups/common";
 import type { ChannelKind, message } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
 import {
@@ -6,8 +8,6 @@ import {
 	type PushMessage,
 } from "@/lib/notifications";
 import { routes } from "@/lib/routes";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { getGroupMemberIds } from "@/server/domain/groups/common";
 import { canAccessChannel } from "./chat-access";
 import { getChatUser } from "./chat-user-names";
 import { loadChatUsers } from "./chat-users";

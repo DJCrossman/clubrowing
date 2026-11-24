@@ -1,4 +1,4 @@
-import type { OnboardingContext } from "@/server/domain/common/context";
+import type { OnboardingContext } from "@/domain/common/context";
 import { type AfterableBuilder, wrapBuilder } from "../builder";
 import { baseProcedure } from "../init";
 import { requireAuthAndNoAthlete } from "../middleware/auth";

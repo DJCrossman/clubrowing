@@ -1,7 +1,7 @@
+import { findMyDm } from "@/domain/chat/common/chat-access";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
 import type { LeaveDm } from "@/schemas/chat.schema";
-import { findMyDm } from "@/server/domain/chat/common/chat-access";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
 
 const MIN_MEMBERS_TO_LEAVE = 3;
 

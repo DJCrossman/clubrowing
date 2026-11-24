@@ -1,6 +1,6 @@
+import type { AuthenticatedContext } from "@/domain/common/context";
+import { setRsvp } from "@/domain/schedule/common/set-rsvp";
 import type { RsvpInput } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
-import { setRsvp } from "@/server/domain/schedule/common/set-rsvp";
 
 export async function rsvpCommand(
 	{ eventId, status }: RsvpInput,

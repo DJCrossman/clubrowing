@@ -1,12 +1,12 @@
-import type { ForwardMessage } from "@/schemas/chat.schema";
 import {
 	findAccessibleChannel,
 	findAccessibleMessage,
-} from "@/server/domain/chat/common/chat-access";
-import { resolveForwardSourceId } from "@/server/domain/chat/common/map-to-message-dto";
-import { notifyChannelAfterResponse } from "@/server/domain/chat/common/message-notifications";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
+} from "@/domain/chat/common/chat-access";
+import { resolveForwardSourceId } from "@/domain/chat/common/map-to-message-dto";
+import { notifyChannelAfterResponse } from "@/domain/chat/common/message-notifications";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import type { ForwardMessage } from "@/schemas/chat.schema";
 
 export async function forwardMessageCommand(
 	input: ForwardMessage,

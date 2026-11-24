@@ -1,6 +1,6 @@
+import { createActivityCommand } from "@/domain/activities/commands/create-activity/create-activity.command";
 import { createActivitySchema } from "@/schemas";
-import { createActivityCommand } from "@/server/domain/activities/commands/create-activity/create-activity.command";
-import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
+import { protectedProcedure } from "@/trpc/procedures/protected.procedure";
 
 export const createActivityProcedure = protectedProcedure
 	.input(createActivitySchema)

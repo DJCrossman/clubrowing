@@ -1,6 +1,6 @@
+import { getGroupByIdQuery } from "@/domain/groups/queries/get-group-by-id/get-group-by-id.query";
 import { getGroupByIdInputSchema } from "@/schemas";
-import { getGroupByIdQuery } from "@/server/domain/groups/queries/get-group-by-id/get-group-by-id.query";
-import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
+import { viewerProcedure } from "@/trpc/procedures/viewer.procedure";
 
 export const getGroupByIdProcedure = viewerProcedure
 	.input(getGroupByIdInputSchema)

@@ -1,11 +1,11 @@
 import { after } from "next/server";
-import type { CreateEvents } from "@/schemas";
-import { attachLoggedActivitiesToWorkout } from "@/server/domain/activities/common/scheduled-workout";
-import type { AdminContext } from "@/server/domain/common/context";
+import { attachLoggedActivitiesToWorkout } from "@/domain/activities/common/scheduled-workout";
+import type { AdminContext } from "@/domain/common/context";
 import {
 	createEventRow,
 	fillEmptySession,
-} from "@/server/domain/schedule/common/event-writes";
+} from "@/domain/schedule/common/event-writes";
+import type { CreateEvents } from "@/schemas";
 
 const CONCURRENCY = 8;
 

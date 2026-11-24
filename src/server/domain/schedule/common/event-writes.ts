@@ -1,12 +1,12 @@
-import type { Prisma } from "@/generated/prisma/client";
-import type { CreateEvent } from "@/schemas";
 import {
 	toEventData,
 	toEventGroups,
 	toWorkoutData,
-} from "@/server/domain/schedule/common/event-data";
-import { eventInclude } from "@/server/domain/schedule/common/map-to-event-dto";
-import { toZoneRows } from "@/server/domain/workouts/common/zone-minutes-write";
+} from "@/domain/schedule/common/event-data";
+import { eventInclude } from "@/domain/schedule/common/map-to-event-dto";
+import { toZoneRows } from "@/domain/workouts/common/zone-minutes-write";
+import type { Prisma } from "@/generated/prisma/client";
+import type { CreateEvent } from "@/schemas";
 
 export async function createEventRow(
 	tx: Prisma.TransactionClient,

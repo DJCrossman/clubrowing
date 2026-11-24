@@ -1,7 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { ensureDefaultOrganization } from "@/server/clerk/default-organization";
-import { createServerCaller } from "@/server/infra/trpc/caller";
+import { createServerCaller } from "@/trpc/caller";
 
 export async function GET() {
 	try {

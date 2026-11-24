@@ -1,23 +1,23 @@
-import { Prisma } from "@/generated/prisma/client";
-import { paginate } from "@/lib/pagination";
 import {
 	canAccessChannel,
 	ensureEveryoneChannel,
 	getChannelViewer,
-} from "@/server/domain/chat/common/chat-access";
-import { loadChatUsers } from "@/server/domain/chat/common/chat-users";
+} from "@/domain/chat/common/chat-access";
+import { loadChatUsers } from "@/domain/chat/common/chat-users";
 import {
 	channelInclude,
 	type LastMessageRow,
 	mapToChannelDto,
 	sortChannels,
-} from "@/server/domain/chat/common/map-to-channel-dto";
+} from "@/domain/chat/common/map-to-channel-dto";
 import {
 	buildUnreadMessageWhere,
 	toUnreadCounts,
-} from "@/server/domain/chat/common/unread";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { getMemberIdsByGroup } from "@/server/domain/groups/common";
+} from "@/domain/chat/common/unread";
+import type { ViewerContext } from "@/domain/common/context";
+import { getMemberIdsByGroup } from "@/domain/groups/common";
+import { Prisma } from "@/generated/prisma/client";
+import { paginate } from "@/lib/pagination";
 
 type Db = ViewerContext["db"];
 

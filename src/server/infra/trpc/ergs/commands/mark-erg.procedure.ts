@@ -1,6 +1,6 @@
+import { markErgCommand } from "@/domain/ergs/commands/mark-erg/mark-erg.command";
 import { markErgSchema } from "@/schemas";
-import { markErgCommand } from "@/server/domain/ergs/commands/mark-erg/mark-erg.command";
-import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
+import { viewerProcedure } from "@/trpc/procedures/viewer.procedure";
 
 export const markErgProcedure = viewerProcedure
 	.input(markErgSchema)

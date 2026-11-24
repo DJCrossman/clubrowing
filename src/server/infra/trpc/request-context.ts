@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
+import type { Context } from "@/domain/common/context";
 import { db } from "@/lib/db";
 import { isDefaultOrgAdmin } from "@/server/clerk/default-organization";
-import type { Context } from "@/server/domain/common/context";
 import { createConcept2Service } from "@/server/services/concept2-service";
 import { createGitHubService } from "@/server/services/github-service";
 import { createPushService } from "@/server/services/push-service";

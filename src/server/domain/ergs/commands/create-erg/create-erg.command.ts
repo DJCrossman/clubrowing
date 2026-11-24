@@ -1,9 +1,6 @@
+import type { Context } from "@/domain/common/context";
+import { ergInclude, mapToErgDto } from "@/domain/ergs/common/map-to-erg-dto";
 import type { CreateErg } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
-import {
-	ergInclude,
-	mapToErgDto,
-} from "@/server/domain/ergs/common/map-to-erg-dto";
 
 export async function createErgCommand(input: CreateErg, { db }: Context) {
 	const erg = await db.erg.create({

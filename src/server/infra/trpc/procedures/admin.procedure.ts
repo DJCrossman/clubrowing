@@ -1,4 +1,4 @@
-import type { AdminContext } from "@/server/domain/common/context";
+import type { AdminContext } from "@/domain/common/context";
 import { type AfterableBuilder, wrapBuilder } from "../builder";
 import { baseProcedure } from "../init";
 import { requireAuthAndAdmin } from "../middleware/auth";

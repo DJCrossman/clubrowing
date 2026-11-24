@@ -1,9 +1,9 @@
-import type { BulkCreateBoats } from "@/schemas";
 import {
 	convertWeightToKg,
 	mapToBoatDto,
-} from "@/server/domain/boats/common/map-to-boat-dto";
-import type { Context } from "@/server/domain/common/context";
+} from "@/domain/boats/common/map-to-boat-dto";
+import type { Context } from "@/domain/common/context";
+import type { BulkCreateBoats } from "@/schemas";
 
 export async function bulkCreateBoatsCommand(
 	input: BulkCreateBoats,

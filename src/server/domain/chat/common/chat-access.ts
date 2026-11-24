@@ -1,14 +1,8 @@
+import type { SessionUser, ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import { isViewerAdmin, resolveViewerGroups } from "@/domain/groups/common";
 import type { ChannelKind } from "@/generated/prisma/client";
 import { EVERYONE_CHANNEL_ID } from "@/schemas/chat.schema";
-import type {
-	SessionUser,
-	ViewerContext,
-} from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
-import {
-	isViewerAdmin,
-	resolveViewerGroups,
-} from "@/server/domain/groups/common";
 
 type Db = ViewerContext["db"];
 

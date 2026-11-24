@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { DomainError } from "@/server/domain/common/domain-error";
-import { definePermission } from "@/server/domain/common/permission";
+import { DomainError } from "@/domain/common/domain-error";
+import { definePermission } from "@/domain/common/permission";
 import { wrapBuilder } from "./builder";
 import { baseProcedure, router, TRPCError } from "./init";
 

@@ -1,16 +1,16 @@
 import { after } from "next/server";
-import type { UpdateEventInput } from "@/schemas";
-import { attachLoggedActivitiesToWorkout } from "@/server/domain/activities/common/scheduled-workout";
-import type { AdminContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
-import { updateEventRow } from "@/server/domain/schedule/common/event-writes";
-import { mapToEventDtos } from "@/server/domain/schedule/common/map-to-event-dto";
+import { attachLoggedActivitiesToWorkout } from "@/domain/activities/common/scheduled-workout";
+import type { AdminContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import { updateEventRow } from "@/domain/schedule/common/event-writes";
+import { mapToEventDtos } from "@/domain/schedule/common/map-to-event-dto";
 import {
 	notifiableEventSelect,
 	planChangeNotifications,
 	sendAfterResponse,
 	toEventSnapshot,
-} from "@/server/domain/schedule/common/schedule-change-notifications";
+} from "@/domain/schedule/common/schedule-change-notifications";
+import type { UpdateEventInput } from "@/schemas";
 
 export async function updateEventCommand(
 	{ id, notify, ...input }: UpdateEventInput,

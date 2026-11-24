@@ -1,6 +1,6 @@
+import { completeOnboardingCommand } from "@/domain/users/commands/complete-onboarding/complete-onboarding.command";
 import { completeOnboardingSchema } from "@/schemas";
-import { completeOnboardingCommand } from "@/server/domain/users/commands/complete-onboarding/complete-onboarding.command";
-import { onboardingProcedure } from "@/server/infra/trpc/procedures/onboarding.procedure";
+import { onboardingProcedure } from "@/trpc/procedures/onboarding.procedure";
 
 export const completeOnboardingProcedure = onboardingProcedure
 	.input(completeOnboardingSchema)

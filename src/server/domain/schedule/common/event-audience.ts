@@ -1,6 +1,6 @@
+import type { Context } from "@/domain/common/context";
+import { getMemberIdsByGroup } from "@/domain/groups/common";
 import type { EventAudience } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
-import { getMemberIdsByGroup } from "@/server/domain/groups/common";
 
 type AudienceEvent = {
 	id: string;

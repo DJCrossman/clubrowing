@@ -9,6 +9,8 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
+			"@/trpc": path.resolve(__dirname, "./src/server/infra/trpc"),
+			"@/domain": path.resolve(__dirname, "./src/server/domain"),
 			"@": path.resolve(__dirname, "./src"),
 		},
 	},

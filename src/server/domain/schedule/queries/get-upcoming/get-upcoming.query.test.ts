@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ViewerContext } from "@/server/domain/common/context";
-import type { EventRow } from "@/server/domain/schedule/common/map-to-event-dto";
+import type { ViewerContext } from "@/domain/common/context";
+import type { EventRow } from "@/domain/schedule/common/map-to-event-dto";
 import { getUpcomingQuery } from "./get-upcoming.query";
 
 // Wednesday noon in Regina; the club week runs Sunday Nov 22 to Saturday Nov 28.

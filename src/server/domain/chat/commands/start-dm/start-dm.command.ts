@@ -1,8 +1,8 @@
+import { findExactDm } from "@/domain/chat/common/chat-access";
+import { assertKnownChatUsers } from "@/domain/chat/common/chat-users";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
 import type { StartDm } from "@/schemas/chat.schema";
-import { findExactDm } from "@/server/domain/chat/common/chat-access";
-import { assertKnownChatUsers } from "@/server/domain/chat/common/chat-users";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
 
 export async function startDmCommand(
 	input: StartDm,

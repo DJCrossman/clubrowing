@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Context } from "@/server/domain/common/context";
+import type { Context } from "@/domain/common/context";
 import { getAthleteStatsQuery } from "./get-athlete-stats.query";
 
 describe("getAthleteStatsQuery", () => {

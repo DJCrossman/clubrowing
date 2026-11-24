@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { GroupListScene } from "@/scenes/groups";
-import { createServerCaller } from "@/server/infra/trpc/caller";
+import { createServerCaller } from "@/trpc/caller";
 
 const querySchema = z.object({
 	groupId: z.string().optional(),

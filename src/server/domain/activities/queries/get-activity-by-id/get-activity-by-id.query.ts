@@ -1,10 +1,10 @@
-import type { GetActivityByIdInput } from "@/schemas";
-import { canViewActivity } from "@/server/domain/activities/common/can-view-activity";
+import { canViewActivity } from "@/domain/activities/common/can-view-activity";
 import {
 	activityInclude,
 	mapToActivityDto,
-} from "@/server/domain/activities/common/map-to-activity-dto";
-import type { ViewerContext } from "@/server/domain/common/context";
+} from "@/domain/activities/common/map-to-activity-dto";
+import type { ViewerContext } from "@/domain/common/context";
+import type { GetActivityByIdInput } from "@/schemas";
 
 export async function getActivityByIdQuery(
 	input: GetActivityByIdInput,

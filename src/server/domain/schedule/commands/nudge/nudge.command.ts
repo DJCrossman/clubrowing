@@ -1,8 +1,8 @@
+import type { AdminContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
+import { getEventAudiences } from "@/domain/schedule/common/event-audience";
+import { sendNudge } from "@/domain/schedule/common/send-nudge";
 import type { EventIdInput } from "@/schemas";
-import type { AdminContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
-import { getEventAudiences } from "@/server/domain/schedule/common/event-audience";
-import { sendNudge } from "@/server/domain/schedule/common/send-nudge";
 
 export async function nudgeCommand(
 	{ eventId }: EventIdInput,

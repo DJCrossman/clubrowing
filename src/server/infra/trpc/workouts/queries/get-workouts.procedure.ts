@@ -1,5 +1,5 @@
-import { getWorkoutsQuery } from "@/server/domain/workouts/queries/get-workouts/get-workouts.query";
-import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
+import { getWorkoutsQuery } from "@/domain/workouts/queries/get-workouts/get-workouts.query";
+import { viewerProcedure } from "@/trpc/procedures/viewer.procedure";
 
 export const getWorkoutsProcedure = viewerProcedure.query(({ ctx }) =>
 	getWorkoutsQuery(undefined, ctx),

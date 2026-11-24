@@ -1,12 +1,9 @@
 import { DateTime } from "luxon";
-import type { Context } from "@/server/domain/common/context";
-import { formatCalendarReplyText } from "@/server/domain/schedule/common/calendar-reply";
-import { getEventAudiences } from "@/server/domain/schedule/common/event-audience";
-import {
-	formatICalendar,
-	type ICalEvent,
-} from "@/server/domain/schedule/common/ical";
-import { resolveCalendarViewer } from "@/server/domain/schedule/common/resolve-calendar-viewer";
+import type { Context } from "@/domain/common/context";
+import { formatCalendarReplyText } from "@/domain/schedule/common/calendar-reply";
+import { getEventAudiences } from "@/domain/schedule/common/event-audience";
+import { formatICalendar, type ICalEvent } from "@/domain/schedule/common/ical";
+import { resolveCalendarViewer } from "@/domain/schedule/common/resolve-calendar-viewer";
 
 const FEED_HISTORY_DAYS = 90;
 

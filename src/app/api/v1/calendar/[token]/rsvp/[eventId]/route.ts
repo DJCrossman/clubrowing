@@ -1,12 +1,12 @@
-import { db } from "@/lib/db";
-import { DomainError } from "@/server/domain/common/domain-error";
-import { replyFromCalendarCommand } from "@/server/domain/schedule/commands/reply-from-calendar/reply-from-calendar.command";
+import { DomainError } from "@/domain/common/domain-error";
+import { replyFromCalendarCommand } from "@/domain/schedule/commands/reply-from-calendar/reply-from-calendar.command";
 import {
 	describeReply,
 	parseCalendarReplyStatus,
-} from "@/server/domain/schedule/common/calendar-reply";
-import { renderCalendarReplyPage } from "@/server/domain/schedule/common/calendar-reply-page";
-import { getCalendarReplyQuery } from "@/server/domain/schedule/queries/get-calendar-reply/get-calendar-reply.query";
+} from "@/domain/schedule/common/calendar-reply";
+import { renderCalendarReplyPage } from "@/domain/schedule/common/calendar-reply-page";
+import { getCalendarReplyQuery } from "@/domain/schedule/queries/get-calendar-reply/get-calendar-reply.query";
+import { db } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ token: string; eventId: string }> };
 

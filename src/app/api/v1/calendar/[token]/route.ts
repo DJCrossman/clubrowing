@@ -1,6 +1,6 @@
+import { getCalendarFeedQuery } from "@/domain/schedule/queries/get-calendar-feed/get-calendar-feed.query";
 import { db } from "@/lib/db";
 import { getRequestOrigin } from "@/lib/request-origin";
-import { getCalendarFeedQuery } from "@/server/domain/schedule/queries/get-calendar-feed/get-calendar-feed.query";
 
 export async function GET(
 	request: Request,

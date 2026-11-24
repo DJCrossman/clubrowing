@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ViewerContext } from "@/server/domain/common/context";
+import type { ViewerContext } from "@/domain/common/context";
 
 const head = vi.fn();
 const findAccessibleChannel = vi.fn();
@@ -7,16 +7,16 @@ const loadMessageDtos = vi.fn();
 const notifyChannelAfterResponse = vi.fn();
 
 vi.mock("@vercel/blob", () => ({ head }));
-vi.mock("@/server/domain/chat/common/chat-access", () => ({
+vi.mock("@/domain/chat/common/chat-access", () => ({
 	findAccessibleChannel,
 }));
-vi.mock("@/server/domain/chat/common/load-message-dtos", () => ({
+vi.mock("@/domain/chat/common/load-message-dtos", () => ({
 	loadMessageDtos,
 }));
-vi.mock("@/server/domain/chat/common/message-mentions", () => ({
+vi.mock("@/domain/chat/common/message-mentions", () => ({
 	selectChannelMentions: vi.fn().mockResolvedValue([]),
 }));
-vi.mock("@/server/domain/chat/common/message-notifications", () => ({
+vi.mock("@/domain/chat/common/message-notifications", () => ({
 	notifyChannelAfterResponse,
 }));
 

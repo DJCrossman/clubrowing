@@ -1,3 +1,5 @@
+import type { AuthenticatedContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
 import { createLogger } from "@/lib/logger";
 import {
 	makeRcaProgramSignature,
@@ -10,8 +12,6 @@ import {
 	pickRcaProgramStartDate,
 	type RcaMembershipItem,
 } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
 import { RcaSessionExpiredError } from "@/server/services/rca-service";
 import {
 	clearRcaCredentials,

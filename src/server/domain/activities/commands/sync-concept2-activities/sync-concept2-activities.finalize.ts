@@ -1,6 +1,6 @@
+import type { AuthenticatedContext } from "@/domain/common/context";
 import type { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { getConcept2AccessToken } from "../../common/get-concept2-access-token";
 import { processConcept2InboxBatchCommand } from "../process-concept2-inbox-batch/process-concept2-inbox-batch.command";
 

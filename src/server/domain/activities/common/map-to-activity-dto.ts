@@ -1,14 +1,14 @@
-import type { Prisma } from "@/generated/prisma/client";
-import { concept2ActivitySchema } from "@/schemas/concept2Activity.schema";
-import { stravaActivitySchema } from "@/schemas/stravaActivity.schema";
 import {
 	athleteInclude,
 	mapToAthleteDto,
-} from "@/server/domain/athletes/common/map-to-athlete-dto";
+} from "@/domain/athletes/common/map-to-athlete-dto";
 import {
 	mapToWorkoutDto,
 	workoutInclude,
-} from "@/server/domain/workouts/common/map-to-workout-dto";
+} from "@/domain/workouts/common/map-to-workout-dto";
+import type { Prisma } from "@/generated/prisma/client";
+import { concept2ActivitySchema } from "@/schemas/concept2Activity.schema";
+import { stravaActivitySchema } from "@/schemas/stravaActivity.schema";
 
 export const activityInclude = {
 	athlete: { include: athleteInclude },

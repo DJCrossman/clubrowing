@@ -1,9 +1,9 @@
-import type { GetWorkoutByIdInput } from "@/schemas";
-import type { Context } from "@/server/domain/common/context";
+import type { Context } from "@/domain/common/context";
 import {
 	mapToWorkoutDto,
 	workoutInclude,
-} from "@/server/domain/workouts/common/map-to-workout-dto";
+} from "@/domain/workouts/common/map-to-workout-dto";
+import type { GetWorkoutByIdInput } from "@/schemas";
 
 export async function getWorkoutByIdQuery(
 	input: GetWorkoutByIdInput,

@@ -1,6 +1,6 @@
 import { Concept2Error } from "@/app/api/v1/concept2/types";
+import type { AuthenticatedContext } from "@/domain/common/context";
 import type { Concept2User } from "@/schemas";
-import type { AuthenticatedContext } from "@/server/domain/common/context";
 import { getConcept2AccessToken } from "../../common/get-concept2-access-token";
 
 export async function getConcept2UserQuery(

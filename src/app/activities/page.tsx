@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ActivityListScene } from "@/scenes/activities";
-import { createServerCaller } from "@/server/infra/trpc/caller";
-import { createRequestContext } from "@/server/infra/trpc/request-context";
+import { createServerCaller } from "@/trpc/caller";
+import { createRequestContext } from "@/trpc/request-context";
 
 const querySchema = z.object({
 	activityId: z.string().optional(),

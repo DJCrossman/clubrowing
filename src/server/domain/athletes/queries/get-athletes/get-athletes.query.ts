@@ -1,10 +1,10 @@
 import { z } from "zod";
+import { athleteInclude } from "@/domain/athletes/common/map-to-athlete-dto";
+import { mapToAthleteWithGroups } from "@/domain/athletes/common/map-to-athlete-with-groups";
+import type { Context } from "@/domain/common/context";
+import { findGroupRules } from "@/domain/groups/common";
 import { paginate } from "@/lib/pagination";
 import { withPagination } from "@/schemas";
-import { athleteInclude } from "@/server/domain/athletes/common/map-to-athlete-dto";
-import { mapToAthleteWithGroups } from "@/server/domain/athletes/common/map-to-athlete-with-groups";
-import type { Context } from "@/server/domain/common/context";
-import { findGroupRules } from "@/server/domain/groups/common";
 
 export const getAthletesInputSchema = withPagination({
 	columns: ["dateJoined"] as const,

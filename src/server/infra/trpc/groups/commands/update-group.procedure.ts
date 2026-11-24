@@ -1,6 +1,6 @@
+import { updateGroupCommand } from "@/domain/groups/commands/update-group/update-group.command";
 import { updateGroupSchema } from "@/schemas";
-import { updateGroupCommand } from "@/server/domain/groups/commands/update-group/update-group.command";
-import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
+import { adminProcedure } from "@/trpc/procedures/admin.procedure";
 
 export const updateGroupProcedure = adminProcedure
 	.input(updateGroupSchema)

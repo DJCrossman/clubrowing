@@ -1,5 +1,5 @@
+import type { Context } from "@/domain/common/context";
 import { paginate } from "@/lib/pagination";
-import type { Context } from "@/server/domain/common/context";
 
 export async function getProgramsQuery(_input: undefined, { db }: Context) {
 	const [programs, totalCount] = await Promise.all([

@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import type { Context } from "@/server/domain/common/context";
+import type { Context } from "@/domain/common/context";
 import { mapDomainErrors } from "./middleware/domain-errors";
 
 const t = initTRPC.context<Context>().create();

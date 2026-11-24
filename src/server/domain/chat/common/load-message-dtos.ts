@@ -1,4 +1,4 @@
-import type { ViewerContext } from "@/server/domain/common/context";
+import type { ViewerContext } from "@/domain/common/context";
 import { isChatAdmin } from "./chat-access";
 import { loadChatUsers } from "./chat-users";
 import { loadLinkPreviews } from "./link-previews";

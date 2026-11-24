@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveOAuthReturnPath } from "@/lib/oauth-return";
-import { createServerCaller } from "@/server/infra/trpc/caller";
+import { createServerCaller } from "@/trpc/caller";
 import type { StravaTokenData } from "../types";
 import { getStravaConfig } from "../utils";
 

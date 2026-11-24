@@ -1,3 +1,8 @@
+import { canViewActivity } from "@/domain/activities/common/can-view-activity";
+import { parseStoredJson } from "@/domain/activities/common/cross-source-activity";
+import { getConcept2AccessTokenForAthlete } from "@/domain/activities/common/get-concept2-access-token-for-athlete";
+import type { ViewerContext } from "@/domain/common/context";
+import { DomainError } from "@/domain/common/domain-error";
 import { createLogger } from "@/lib/logger";
 import {
 	type Concept2Strokes,
@@ -5,11 +10,6 @@ import {
 	concept2StrokesSchema,
 	type GetActivityStrokesInput,
 } from "@/schemas";
-import { canViewActivity } from "@/server/domain/activities/common/can-view-activity";
-import { parseStoredJson } from "@/server/domain/activities/common/cross-source-activity";
-import { getConcept2AccessTokenForAthlete } from "@/server/domain/activities/common/get-concept2-access-token-for-athlete";
-import type { ViewerContext } from "@/server/domain/common/context";
-import { DomainError } from "@/server/domain/common/domain-error";
 
 const logger = createLogger("activities.strokes");
 

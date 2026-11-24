@@ -1,8 +1,8 @@
 import {
 	getAthletesInputSchema,
 	getAthletesQuery,
-} from "@/server/domain/athletes/queries/get-athletes/get-athletes.query";
-import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
+} from "@/domain/athletes/queries/get-athletes/get-athletes.query";
+import { viewerProcedure } from "@/trpc/procedures/viewer.procedure";
 
 export const getAthletesProcedure = viewerProcedure
 	.input(getAthletesInputSchema.optional())

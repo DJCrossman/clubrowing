@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BoatListScene } from "@/scenes/boats";
-import { createServerCaller } from "@/server/infra/trpc/caller";
+import { createServerCaller } from "@/trpc/caller";
 
 const querySchema = z.object({
 	boatId: z.string().optional(),

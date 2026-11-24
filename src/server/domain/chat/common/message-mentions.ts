@@ -1,5 +1,5 @@
+import type { ViewerContext } from "@/domain/common/context";
 import type { MentionRange } from "@/lib/chat/mentions";
-import type { ViewerContext } from "@/server/domain/common/context";
 import type { AccessibleChannel } from "./chat-access";
 import { listChannelChatUsers } from "./chat-users";
 

@@ -1,4 +1,4 @@
-import type { UnauthenticatedContext } from "@/server/domain/common/context";
+import type { UnauthenticatedContext } from "@/domain/common/context";
 import { type AfterableBuilder, wrapBuilder } from "../builder";
 import { baseProcedure } from "../init";
 
