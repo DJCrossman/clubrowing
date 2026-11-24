@@ -2,10 +2,12 @@
 
 import { IconDownload } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
+import type { PDFDocumentProxy } from "pdfjs-dist";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getViewableKind } from "@/lib/chat/attachments";
 import type { ChatMessage } from "@/lib/trpc/types";
+import type { SheetReply } from "./sheet.worker";
 
 const PdfPages = dynamic(
 	() => import("./PdfPages").then(({ PdfPages }) => PdfPages),
@@ -25,10 +27,21 @@ const SheetTable = dynamic(
 
 interface FileViewerDialogProps {
 	file: ChatMessage["files"][number] | null;
+	isOpening: boolean;
+	isFailed: boolean;
+	pdfDocument: PDFDocumentProxy | null;
+	sheet: Extract<SheetReply, { status: "ready" }> | null;
 	onClose: () => void;
 }
 
-export function FileViewerDialog({ file, onClose }: FileViewerDialogProps) {
+export function FileViewerDialog({
+	file,
+	isOpening,
+	isFailed,
+	pdfDocument,
+	sheet,
+	onClose,
+}: FileViewerDialogProps) {
 	const kind = file && getViewableKind(file.name);
 
 	return (
@@ -52,9 +65,19 @@ export function FileViewerDialog({ file, onClose }: FileViewerDialogProps) {
 							/>
 						</div>
 						<div className="min-h-0 flex-1 overflow-y-auto bg-muted/40 p-4 max-sm:p-2 max-sm:pb-[max(env(safe-area-inset-bottom),0.5rem)]">
-							{kind === "pdf" && <PdfPages url={file.url} />}
+							{kind === "pdf" && (
+								<PdfPages
+									pdfDocument={pdfDocument}
+									isOpening={isOpening}
+									isFailed={isFailed}
+								/>
+							)}
 							{(kind === "xlsx" || kind === "csv") && (
-								<SheetTable url={file.url} kind={kind} />
+								<SheetTable
+									sheet={sheet}
+									isOpening={isOpening}
+									isFailed={isFailed}
+								/>
 							)}
 						</div>
 					</>

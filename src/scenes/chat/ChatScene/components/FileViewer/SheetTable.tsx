@@ -1,29 +1,26 @@
 "use client";
 
-import { useSheetRows } from "./useSheetRows";
+import type { SheetReply } from "./sheet.worker";
 
 interface SheetTableProps {
-	url: string;
-	kind: "xlsx" | "csv";
+	sheet: Extract<SheetReply, { status: "ready" }> | null;
+	isOpening: boolean;
+	isFailed: boolean;
 }
 
-export function SheetTable({ url, kind }: SheetTableProps) {
-	const sheet = useSheetRows({ url, kind });
-
+export function SheetTable({ sheet, isOpening, isFailed }: SheetTableProps) {
 	return (
 		<>
-			{sheet.status === "opening" && (
-				<p className="text-sm text-muted-foreground">Opening…</p>
-			)}
-			{sheet.status === "failed" && (
+			{isOpening && <p className="text-sm text-muted-foreground">Opening…</p>}
+			{isFailed && (
 				<p className="text-sm text-muted-foreground">
 					This file can't be shown here. Download it to open it on your device.
 				</p>
 			)}
-			{sheet.status === "ready" && sheet.rows.length === 0 && (
+			{sheet && sheet.rows.length === 0 && (
 				<p className="text-sm text-muted-foreground">This file has no rows.</p>
 			)}
-			{sheet.status === "ready" && sheet.rows.length > 0 && (
+			{sheet && sheet.rows.length > 0 && (
 				<div className="flex h-full flex-col gap-2">
 					{sheet.hasMoreSheets && (
 						<p className="shrink-0 text-sm text-muted-foreground">

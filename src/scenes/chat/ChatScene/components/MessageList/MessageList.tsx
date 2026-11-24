@@ -18,14 +18,15 @@ interface MessageListProps extends MessageHandlers {
 	isLoading: boolean;
 	hasOlder: boolean;
 	isLoadingOlder: boolean;
-	onLoadOlder: () => void;
 	emptyState: ReactNode;
 	highlightedMessageId?: string | null;
 	editingMessageId?: string;
 	firstUnreadMessageId?: string;
 	videosPausedUntil: string | null;
-	onVideoError: () => void;
 	isKeyboardOpen: boolean;
+	onLoadOlder: () => void;
+	onVideoError: () => void;
+	onOpenFile: (file: ChatMessage["files"][number]) => void;
 }
 
 export function MessageList({
@@ -33,14 +34,15 @@ export function MessageList({
 	isLoading,
 	hasOlder,
 	isLoadingOlder,
-	onLoadOlder,
 	emptyState,
 	highlightedMessageId,
 	editingMessageId,
 	firstUnreadMessageId,
 	videosPausedUntil,
-	onVideoError,
 	isKeyboardOpen,
+	onLoadOlder,
+	onVideoError,
+	onOpenFile,
 	...handlers
 }: MessageListProps) {
 	const bottomRef = useScrollToOwnMessage(messages);
@@ -93,6 +95,7 @@ export function MessageList({
 									}
 									videosPausedUntil={videosPausedUntil}
 									onVideoError={onVideoError}
+									onOpenFile={onOpenFile}
 									{...bindMessageHandlers(handlers, message)}
 								/>
 							</Fragment>

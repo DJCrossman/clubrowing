@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useChatFile } from "@/hooks/useChatFile";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useNotifications } from "@/hooks/useNotifications";
 import { getViewableKind } from "@/lib/chat/attachments";
@@ -26,6 +27,7 @@ import {
 	ChatEmptyState,
 	DeleteMessageDialog,
 	FileDropOverlay,
+	FileViewerDialog,
 	ForwardDialog,
 	MessageComposer,
 	type MessageComposerHandle,
@@ -57,6 +59,10 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const [videoUploadProgress, setVideoUploadProgress] = useState<number | null>(
 		null,
 	);
+	const [viewing, setViewing] = useState<{
+		fileId: string;
+		threadMessageId: string | null;
+	} | null>(null);
 	const composerRef = useRef<MessageComposerHandle>(null);
 	const {
 		channels,
@@ -82,6 +88,23 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 		channelId,
 		threadMessageId,
 		loadMembers: !!forwardingMessage || isAddingPeople,
+	});
+	// A file opened from a thread closes with the thread, however it closes.
+	if (viewing?.threadMessageId && viewing.threadMessageId !== threadMessageId) {
+		setViewing(null);
+	}
+	const viewingFile =
+		[
+			...messages,
+			...(threadQuery.data
+				? [threadQuery.data.root, ...threadQuery.data.replies]
+				: []),
+		]
+			.flatMap((message) => message.files)
+			.find((file) => file.id === viewing?.fileId) ?? null;
+	const chatFile = useChatFile({
+		url: viewingFile?.url ?? null,
+		kind: viewingFile && getViewableKind(viewingFile.name),
 	});
 	const uploadAttachments = useMutation({ mutationFn: uploadFiles });
 	const notifications = useNotifications();
@@ -179,9 +202,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									editingMessageId={editingMessage?.id}
 									firstUnreadMessageId={firstUnreadMessageId}
 									videosPausedUntil={videosPausedUntil}
-									onVideoError={() => void refreshMessages()}
 									isKeyboardOpen={!!spaceAboveKeyboard}
-									onLoadOlder={() => messagesQuery.fetchNextPage()}
 									emptyState={
 										channel?.kind === "direct_message" ? (
 											<ChatEmptyState
@@ -199,6 +220,8 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 											/>
 										)
 									}
+									onVideoError={() => void refreshMessages()}
+									onLoadOlder={() => messagesQuery.fetchNextPage()}
 									onOpenThread={(message) =>
 										router.push(routes.chat.thread(channelId, message.id), {
 											scroll: false,
@@ -217,6 +240,9 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									onForward={setForwardingMessage}
 									onDelete={setDeletingMessage}
 									onEdit={setEditing}
+									onOpenFile={(file) =>
+										setViewing({ fileId: file.id, threadMessageId: null })
+									}
 								/>
 								<div className="shrink-0 px-4 pt-2 pb-5 lg:px-6">
 									<MessageComposer
@@ -302,6 +328,9 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									mentions,
 								})
 							}
+							onOpenFile={(file) =>
+								setViewing({ fileId: file.id, threadMessageId })
+							}
 						/>
 					)}
 				</div>
@@ -328,6 +357,14 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 					toast.success(`Forwarded to ${target.name}`);
 					router.push(routes.chat.channel(targetChannelId));
 				}}
+			/>
+			<FileViewerDialog
+				file={viewingFile}
+				isOpening={chatFile.isOpening}
+				isFailed={chatFile.isFailed}
+				pdfDocument={chatFile.pdfDocument}
+				sheet={chatFile.sheet}
+				onClose={() => setViewing(null)}
 			/>
 			{channel?.kind === "direct_message" && (
 				<PeoplePickerDialog

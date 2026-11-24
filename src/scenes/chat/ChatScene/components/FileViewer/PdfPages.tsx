@@ -1,38 +1,40 @@
 "use client";
 
+import type { PDFDocumentProxy } from "pdfjs-dist";
 import { PdfPage } from "./PdfPage";
-import { usePdfDocument } from "./usePdfDocument";
 
 const MAX_PAGES = 50;
 
-export function PdfPages({ url }: { url: string }) {
-	const pdf = usePdfDocument(url);
+interface PdfPagesProps {
+	pdfDocument: PDFDocumentProxy | null;
+	isOpening: boolean;
+	isFailed: boolean;
+}
 
+export function PdfPages({ pdfDocument, isOpening, isFailed }: PdfPagesProps) {
 	return (
 		<>
-			{pdf.status === "opening" && (
-				<p className="text-sm text-muted-foreground">Opening…</p>
-			)}
-			{pdf.status === "failed" && (
+			{isOpening && <p className="text-sm text-muted-foreground">Opening…</p>}
+			{isFailed && (
 				<p className="text-sm text-muted-foreground">
 					This file can't be shown here. Download it to open it on your device.
 				</p>
 			)}
-			{pdf.status === "ready" && (
+			{pdfDocument && (
 				<div className="mx-auto flex max-w-3xl flex-col gap-4 max-sm:gap-2">
-					{pdf.pdfDocument.numPages > MAX_PAGES && (
+					{pdfDocument.numPages > MAX_PAGES && (
 						<p className="text-sm text-muted-foreground">
-							Showing the first {MAX_PAGES} of {pdf.pdfDocument.numPages} pages.
+							Showing the first {MAX_PAGES} of {pdfDocument.numPages} pages.
 							Download the file to see the rest.
 						</p>
 					)}
 					{Array.from(
-						{ length: Math.min(pdf.pdfDocument.numPages, MAX_PAGES) },
+						{ length: Math.min(pdfDocument.numPages, MAX_PAGES) },
 						(_, index) => index + 1,
 					).map((pageNumber) => (
 						<PdfPage
 							key={pageNumber}
-							pdfDocument={pdf.pdfDocument}
+							pdfDocument={pdfDocument}
 							pageNumber={pageNumber}
 						/>
 					))}

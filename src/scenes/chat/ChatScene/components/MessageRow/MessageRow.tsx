@@ -24,6 +24,7 @@ interface MessageRowProps extends MessageActionHandlers {
 	isHighlighted?: boolean;
 	videosPausedUntil?: string | null;
 	onVideoError: () => void;
+	onOpenFile: (file: ChatMessage["files"][number]) => void;
 }
 
 export function MessageRow({
@@ -33,6 +34,7 @@ export function MessageRow({
 	isHighlighted = false,
 	videosPausedUntil = null,
 	onVideoError,
+	onOpenFile,
 	...handlers
 }: MessageRowProps) {
 	const { author } = message;
@@ -116,7 +118,9 @@ export function MessageRow({
 						onPlaybackError={onVideoError}
 					/>
 				)}
-				{message.files.length > 0 && <MessageFiles files={message.files} />}
+				{message.files.length > 0 && (
+					<MessageFiles files={message.files} onOpen={onOpenFile} />
+				)}
 				{message.reactions.length > 0 && (
 					<ReactionChips
 						reactions={message.reactions}

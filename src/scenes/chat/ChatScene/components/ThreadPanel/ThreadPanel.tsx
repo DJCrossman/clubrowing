@@ -31,6 +31,7 @@ interface ThreadPanelProps
 	isLoading: boolean;
 	isUnavailable: boolean;
 	isMobile: boolean;
+	videosPausedUntil: string | null;
 	onClose: () => void;
 	onReply: (submission: ComposerSubmission) => Promise<unknown>;
 	onSaveEdit: (
@@ -38,8 +39,8 @@ interface ThreadPanelProps
 		text: string,
 		mentions: MentionRange[],
 	) => Promise<unknown>;
-	videosPausedUntil: string | null;
 	onVideoError: () => void;
+	onOpenFile: (file: ChatMessage["files"][number]) => void;
 }
 
 export function ThreadPanel({ isMobile, ...props }: ThreadPanelProps) {
@@ -82,12 +83,13 @@ function ThreadContent({
 	thread,
 	isLoading,
 	isUnavailable,
+	videosPausedUntil,
+	header,
 	onClose,
 	onReply,
 	onSaveEdit,
-	videosPausedUntil,
 	onVideoError,
-	header,
+	onOpenFile,
 	...handlers
 }: Omit<ThreadPanelProps, "isMobile"> & { header?: ReactNode }) {
 	const [editing, setEditing] = useState<ChatMessage | null>(null);
@@ -136,6 +138,7 @@ function ThreadContent({
 								isHighlighted={thread.root.id === editingMessage?.id}
 								videosPausedUntil={videosPausedUntil}
 								onVideoError={onVideoError}
+								onOpenFile={onOpenFile}
 								{...bindMessageHandlers(
 									{ ...handlers, onEdit: setEditing },
 									thread.root,
@@ -153,6 +156,7 @@ function ThreadContent({
 									compact
 									isHighlighted={reply.id === editingMessage?.id}
 									onVideoError={onVideoError}
+									onOpenFile={onOpenFile}
 									{...bindMessageHandlers(
 										{ ...handlers, onEdit: setEditing },
 										reply,
