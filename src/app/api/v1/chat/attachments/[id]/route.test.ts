@@ -18,7 +18,7 @@ vi.mock("@vercel/blob", () => ({ get }));
 vi.mock("@/server/infra/trpc/request-context", () => ({
 	createRequestContext,
 }));
-vi.mock("@/server/routers/chat/common/chat-access", () => ({
+vi.mock("@/server/domain/chat/common/chat-access", () => ({
 	findAccessibleMessage,
 }));
 

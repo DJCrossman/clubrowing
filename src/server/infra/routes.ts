@@ -13,6 +13,21 @@ import { createBoatProcedure } from "@/server/infra/trpc/boats/commands/create-b
 import { updateBoatProcedure } from "@/server/infra/trpc/boats/commands/update-boat.procedure";
 import { getBoatByIdProcedure } from "@/server/infra/trpc/boats/queries/get-boat-by-id.procedure";
 import { getBoatsProcedure } from "@/server/infra/trpc/boats/queries/get-boats.procedure";
+import { addDmMembersProcedure } from "@/server/infra/trpc/chat/commands/add-dm-members.procedure";
+import { deleteMessageProcedure } from "@/server/infra/trpc/chat/commands/delete-message.procedure";
+import { editMessageProcedure } from "@/server/infra/trpc/chat/commands/edit-message.procedure";
+import { forwardMessageProcedure } from "@/server/infra/trpc/chat/commands/forward-message.procedure";
+import { leaveDmProcedure } from "@/server/infra/trpc/chat/commands/leave-dm.procedure";
+import { markReadProcedure } from "@/server/infra/trpc/chat/commands/mark-read.procedure";
+import { markUnreadProcedure } from "@/server/infra/trpc/chat/commands/mark-unread.procedure";
+import { replyInThreadProcedure } from "@/server/infra/trpc/chat/commands/reply-in-thread.procedure";
+import { sendMessageProcedure } from "@/server/infra/trpc/chat/commands/send-message.procedure";
+import { startDmProcedure } from "@/server/infra/trpc/chat/commands/start-dm.procedure";
+import { toggleReactionProcedure } from "@/server/infra/trpc/chat/commands/toggle-reaction.procedure";
+import { getChannelsProcedure } from "@/server/infra/trpc/chat/queries/get-channels.procedure";
+import { getMembersProcedure as getChatMembersProcedure } from "@/server/infra/trpc/chat/queries/get-members.procedure";
+import { getMessagesProcedure } from "@/server/infra/trpc/chat/queries/get-messages.procedure";
+import { getThreadProcedure } from "@/server/infra/trpc/chat/queries/get-thread.procedure";
 import { createErgProcedure } from "@/server/infra/trpc/ergs/commands/create-erg.procedure";
 import { deleteErgProcedure } from "@/server/infra/trpc/ergs/commands/delete-erg.procedure";
 import { markErgProcedure } from "@/server/infra/trpc/ergs/commands/mark-erg.procedure";
@@ -87,21 +102,6 @@ import { getConcept2UserProcedure } from "@/server/routers/activities/queries/ge
 import { getPendingInboxBatchesProcedure } from "@/server/routers/activities/queries/get-pending-inbox-batches/get-pending-inbox-batches.procedure";
 import { getStravaActivitiesProcedure } from "@/server/routers/activities/queries/get-strava-activities/get-strava-activities.procedure";
 import { getStravaAthleteProcedure } from "@/server/routers/activities/queries/get-strava-athlete/get-strava-athlete.procedure";
-import { addDmMembersProcedure } from "@/server/routers/chat/commands/add-dm-members/add-dm-members.procedure";
-import { deleteMessageProcedure } from "@/server/routers/chat/commands/delete-message/delete-message.procedure";
-import { editMessageProcedure } from "@/server/routers/chat/commands/edit-message/edit-message.procedure";
-import { forwardMessageProcedure } from "@/server/routers/chat/commands/forward-message/forward-message.procedure";
-import { leaveDmProcedure } from "@/server/routers/chat/commands/leave-dm/leave-dm.procedure";
-import { markReadProcedure } from "@/server/routers/chat/commands/mark-read/mark-read.procedure";
-import { markUnreadProcedure } from "@/server/routers/chat/commands/mark-unread/mark-unread.procedure";
-import { replyInThreadProcedure } from "@/server/routers/chat/commands/reply-in-thread/reply-in-thread.procedure";
-import { sendMessageProcedure } from "@/server/routers/chat/commands/send-message/send-message.procedure";
-import { startDmProcedure } from "@/server/routers/chat/commands/start-dm/start-dm.procedure";
-import { toggleReactionProcedure } from "@/server/routers/chat/commands/toggle-reaction/toggle-reaction.procedure";
-import { getChannelsProcedure } from "@/server/routers/chat/queries/get-channels/get-channels.procedure";
-import { getMembersProcedure as getChatMembersProcedure } from "@/server/routers/chat/queries/get-members/get-members.procedure";
-import { getMessagesProcedure } from "@/server/routers/chat/queries/get-messages/get-messages.procedure";
-import { getThreadProcedure } from "@/server/routers/chat/queries/get-thread/get-thread.procedure";
 
 export const appRouter = router({
 	athletes: router({
