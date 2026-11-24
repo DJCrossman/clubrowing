@@ -61,10 +61,6 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const [videoUploadProgress, setVideoUploadProgress] = useState<number | null>(
 		null,
 	);
-	const [viewing, setViewing] = useState<{
-		fileId: string;
-		threadMessageId: string | null;
-	} | null>(null);
 	const composerRef = useRef<MessageComposerHandle>(null);
 	const {
 		channels,
@@ -91,22 +87,10 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 		threadMessageId,
 		loadMembers: !!forwardingMessage || isAddingPeople,
 	});
-	// A file opened from a thread closes with the thread, however it closes.
-	if (viewing?.threadMessageId && viewing.threadMessageId !== threadMessageId) {
-		setViewing(null);
-	}
-	const viewingFile =
-		[
-			...messages,
-			...(threadQuery.data
-				? [threadQuery.data.root, ...threadQuery.data.replies]
-				: []),
-		]
-			.flatMap((message) => message.files)
-			.find((file) => file.id === viewing?.fileId) ?? null;
 	const chatFile = useChatFile({
-		url: viewingFile?.url ?? null,
-		kind: viewingFile && getViewableKind(viewingFile.name),
+		messages,
+		thread: threadQuery.data,
+		threadMessageId,
 	});
 	const uploadAttachments = useMutation({ mutationFn: uploadFiles });
 	const notifications = useNotifications();
@@ -254,9 +238,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									onForward={setForwardingMessage}
 									onDelete={setDeletingMessage}
 									onEdit={setEditing}
-									onOpenFile={(file) =>
-										setViewing({ fileId: file.id, threadMessageId: null })
-									}
+									onOpenFile={chatFile.openChannelFile}
 								/>
 								<div className="shrink-0 px-4 pt-2 pb-5 lg:px-6">
 									<MessageComposer
@@ -359,9 +341,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									mentions,
 								})
 							}
-							onOpenFile={(file) =>
-								setViewing({ fileId: file.id, threadMessageId })
-							}
+							onOpenFile={chatFile.openThreadFile}
 							onMentioningChange={mentions.setIsThreadMentioning}
 							onGifSearchChange={chatGifs.setThreadGifSearch}
 							onGifPicked={chatGifs.rememberGif}
@@ -393,12 +373,12 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 				}}
 			/>
 			<FileViewerDialog
-				file={viewingFile}
+				file={chatFile.file}
 				isOpening={chatFile.isOpening}
 				isFailed={chatFile.isFailed}
 				pdfDocument={chatFile.pdfDocument}
 				sheet={chatFile.sheet}
-				onClose={() => setViewing(null)}
+				onClose={chatFile.closeFile}
 			/>
 			{channel?.kind === "direct_message" && (
 				<PeoplePickerDialog

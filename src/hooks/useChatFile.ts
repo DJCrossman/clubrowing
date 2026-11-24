@@ -1,7 +1,9 @@
 "use client";
 
 import { skipToken, useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getViewableKind } from "@/lib/chat/attachments";
+import type { ChatMessage, ChatThread } from "@/lib/trpc/types";
 import type {
 	SheetReply,
 	SheetRequest,
@@ -10,12 +12,28 @@ import type {
 const WORKER_TIME_LIMIT_MS = 5000;
 
 export function useChatFile({
-	url,
-	kind,
+	messages,
+	thread,
+	threadMessageId,
 }: {
-	url: string | null;
-	kind: "pdf" | SheetRequest["kind"] | null;
+	messages: ChatMessage[];
+	thread: ChatThread | undefined;
+	threadMessageId: string | null;
 }) {
+	const [viewing, setViewing] = useState<{
+		fileId: string;
+		threadMessageId: string | null;
+	} | null>(null);
+	// A file opened from a thread closes with the thread, however it closes.
+	if (viewing?.threadMessageId && viewing.threadMessageId !== threadMessageId) {
+		setViewing(null);
+	}
+	const file =
+		[...messages, ...(thread ? [thread.root, ...thread.replies] : [])]
+			.flatMap((message) => message.files)
+			.find((file) => file.id === viewing?.fileId) ?? null;
+	const url = file?.url ?? null;
+	const kind = file && getViewableKind(file.name);
 	const query = useQuery({
 		queryKey: ["chatFile", url, kind],
 		queryFn:
@@ -36,10 +54,16 @@ export function useChatFile({
 	}, [pdfDocument]);
 
 	return {
+		file,
 		isOpening: query.isLoading,
 		isFailed: query.isError,
 		pdfDocument,
 		sheet: query.data?.sheet ?? null,
+		openChannelFile: (file: ChatMessage["files"][number]) =>
+			setViewing({ fileId: file.id, threadMessageId: null }),
+		openThreadFile: (file: ChatMessage["files"][number]) =>
+			setViewing({ fileId: file.id, threadMessageId }),
+		closeFile: () => setViewing(null),
 	};
 }
 
