@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Context } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/context";
 
 const del = vi.fn();
 
 vi.mock("@vercel/blob", () => ({ del }));
 
 const { deleteActivityCommand } = await import("./delete-activity.command");
+const { deleteActivityMemberCommand } = await import(
+	"./delete-activity.member.command"
+);
 
 describe("deleteActivityCommand", () => {
 	beforeEach(() => {
@@ -51,17 +54,66 @@ describe("deleteActivityCommand", () => {
 	});
 });
 
+describe("deleteActivityMemberCommand", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("deletes the member's own activity", async () => {
+		const { db, ctx } = createContext({ screenshot: null });
+
+		await deleteActivityMemberCommand({ id: "act_1" }, ctx);
+
+		expect(db.activity.delete).toHaveBeenCalled();
+	});
+
+	it("refuses an activity that does not exist", async () => {
+		const { db, ctx } = createContext({ screenshot: null, existing: null });
+
+		await expect(
+			deleteActivityMemberCommand({ id: "act_1" }, ctx),
+		).rejects.toMatchObject({
+			code: "NOT_FOUND",
+			message: "Activity not found",
+		});
+		expect(db.activity.delete).not.toHaveBeenCalled();
+	});
+
+	it("refuses another athlete's activity", async () => {
+		const { db, ctx } = createContext({
+			screenshot: null,
+			existing: { athleteId: "ath_other" },
+		});
+
+		await expect(
+			deleteActivityMemberCommand({ id: "act_1" }, ctx),
+		).rejects.toMatchObject({
+			code: "FORBIDDEN",
+			message: "Cannot delete another athlete's activity",
+		});
+		expect(db.activity.delete).not.toHaveBeenCalled();
+	});
+});
+
 function createContext({
 	screenshot,
+	existing = { athleteId: "ath_me" },
 }: {
 	screenshot: { id: string; url: string } | null;
+	existing?: { athleteId: string } | null;
 }) {
 	const db = {
-		activity: { delete: vi.fn(async () => ({ screenshot })) },
+		activity: {
+			findUnique: vi.fn(async () => existing),
+			delete: vi.fn(async () => ({ screenshot })),
+		},
 		upload: {
 			findMany: vi.fn(async () => []),
 			deleteMany: vi.fn(async () => ({ count: 1 })),
 		},
 	};
-	return { db, ctx: { db } as unknown as Context };
+	return {
+		db,
+		ctx: { db, athlete: { id: "ath_me" } } as unknown as AuthenticatedContext,
+	};
 }

@@ -8,7 +8,7 @@ import {
 
 export async function updateActivityCommand(
 	input: UpdateActivity,
-	{ db }: Context,
+	{ db }: Pick<Context, "db">,
 ) {
 	if (input.type === "water") {
 		const existing = await db.activity.findUnique({

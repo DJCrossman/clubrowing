@@ -8,12 +8,13 @@ import { mapToEventDtos } from "@/server/routers/schedule/common/map-to-event-dt
 import {
 	notifiableEventSelect,
 	planChangeNotifications,
+	sendAfterResponse,
 	toEventSnapshot,
 } from "@/server/routers/schedule/common/schedule-change-notifications";
 
 export async function updateEventCommand(
 	{ id, notify, ...input }: UpdateEventInput,
-	{ db, athlete }: AdminContext,
+	{ db, athlete, services }: AdminContext,
 ) {
 	const existing = await db.event.findUnique({
 		where: { id },
@@ -54,13 +55,14 @@ export async function updateEventCommand(
 		);
 	}
 	const [event] = await mapToEventDtos(db, [row], athlete?.id ?? null);
-	return {
-		event,
-		notifications: notify
+	sendAfterResponse(
+		services.push,
+		notify
 			? planChangeNotifications(
 					[existing],
 					new Map([[id, toEventSnapshot(id, input)]]),
 				)
 			: [],
-	};
+	);
+	return event;
 }

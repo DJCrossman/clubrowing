@@ -3,21 +3,16 @@ import { createLogger } from "@/lib/logger";
 import type { AuthenticatedContext } from "@/server/context";
 import { getStravaAccessToken } from "../../common/get-strava-access-token";
 import { processStravaInboxBatchCommand } from "../process-strava-inbox-batch/process-strava-inbox-batch.command";
-import type { syncStravaActivitiesCommand } from "./sync-strava-activities.command";
 
 const logger = createLogger("sync.strava");
 
 export const syncStravaActivitiesFinalizeCallback = async ({
 	ctx,
-	result,
+	batchId,
 }: {
-	ctx: AuthenticatedContext;
-	result: PromiseSettledResult<
-		Awaited<ReturnType<typeof syncStravaActivitiesCommand>>
-	>;
+	ctx: Pick<AuthenticatedContext, "db" | "athlete" | "services">;
+	batchId: string;
 }) => {
-	if (result.status !== "fulfilled") return;
-	const { batchId } = result.value;
 	const { db, services } = ctx;
 	try {
 		const accessToken = await getStravaAccessToken(ctx);

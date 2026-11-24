@@ -23,7 +23,13 @@ export type GetActivitiesInput = z.infer<typeof getActivitiesInputSchema>;
 
 export async function getActivitiesQuery(
 	input: GetActivitiesInput,
-	{ db, user, athlete }: Context & { athlete?: { id: string } | null },
+	{
+		db,
+		user,
+		athlete,
+	}: Pick<Context, "db" | "user"> & {
+		athlete?: { id: string } | null;
+	},
 ) {
 	const {
 		boatId,

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ViewerContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/context";
 import { attachActivityScreenshotCommand } from "./attach-activity-screenshot.command";
 
 const input = { id: "act_1", uploadId: "upl_1" };
@@ -14,6 +14,31 @@ describe("attachActivityScreenshotCommand", () => {
 			where: { id: "act_1", screenshotId: null },
 			data: { screenshotId: "upl_1" },
 		});
+	});
+
+	it("refuses an activity that does not exist", async () => {
+		const { db, ctx } = createContext({ activity: null });
+
+		await expect(
+			attachActivityScreenshotCommand(input, ctx),
+		).rejects.toMatchObject({
+			code: "NOT_FOUND",
+			message: "Activity not found",
+		});
+		expect(db.activity.updateMany).not.toHaveBeenCalled();
+	});
+
+	it("refuses another athlete's activity before looking at the upload", async () => {
+		const { db, ctx } = createContext({ activity: { athleteId: "ath_other" } });
+
+		await expect(
+			attachActivityScreenshotCommand(input, ctx),
+		).rejects.toMatchObject({
+			code: "FORBIDDEN",
+			message: "Cannot attach a screenshot to another athlete's activity",
+		});
+		expect(db.upload.findUnique).not.toHaveBeenCalled();
+		expect(db.activity.updateMany).not.toHaveBeenCalled();
 	});
 
 	it("refuses an upload that does not exist", async () => {
@@ -118,9 +143,11 @@ describe("attachActivityScreenshotCommand", () => {
 });
 
 function createContext({
+	activity = { athleteId: "ath_me" },
 	upload = { userId: "user_me", activity: null },
 	updatedCount = 1,
 }: {
+	activity?: { athleteId: string } | null;
 	upload?: {
 		userId: string;
 		messageId?: string | null;
@@ -134,13 +161,17 @@ function createContext({
 }) {
 	const db = {
 		upload: { findUnique: vi.fn(async () => upload) },
-		activity: { updateMany: vi.fn(async () => ({ count: updatedCount })) },
+		activity: {
+			findUnique: vi.fn(async () => activity),
+			updateMany: vi.fn(async () => ({ count: updatedCount })),
+		},
 	};
 	return {
 		db,
 		ctx: {
 			db,
 			user: { id: "user_me", isAdmin: false },
-		} as unknown as ViewerContext,
+			athlete: { id: "ath_me" },
+		} as unknown as AuthenticatedContext,
 	};
 }

@@ -4,11 +4,12 @@ import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	notifiableEventSelect,
 	planChangeNotifications,
+	sendAfterResponse,
 } from "@/server/routers/schedule/common/schedule-change-notifications";
 
 export async function deleteEventCommand(
 	{ id, notify }: DeleteEventInput,
-	{ db }: AdminContext,
+	{ db, services }: AdminContext,
 ) {
 	const event = await db.event.findUnique({
 		where: { id },
@@ -23,10 +24,9 @@ export async function deleteEventCommand(
 			await tx.workout.delete({ where: { id: event.workoutId } });
 		}
 	});
-	return {
-		id,
-		notifications: notify
-			? planChangeNotifications([event], new Map([[id, null]]))
-			: [],
-	};
+	sendAfterResponse(
+		services.push,
+		notify ? planChangeNotifications([event], new Map([[id, null]])) : [],
+	);
+	return { id };
 }

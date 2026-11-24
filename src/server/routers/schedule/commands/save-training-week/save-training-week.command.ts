@@ -12,12 +12,13 @@ import type { EventRow } from "@/server/routers/schedule/common/map-to-event-dto
 import {
 	notifiableEventSelect,
 	planChangeNotifications,
+	sendAfterResponse,
 	toEventSnapshot,
 } from "@/server/routers/schedule/common/schedule-change-notifications";
 
 export async function saveTrainingWeekCommand(
 	input: SaveTrainingWeek,
-	{ db, athlete }: AdminContext,
+	{ db, athlete, services }: AdminContext,
 ) {
 	const touchedIds = [...input.updates.map(({ id }) => id), ...input.deleteIds];
 	const existing = await db.event.findMany({
@@ -78,13 +79,14 @@ export async function saveTrainingWeekCommand(
 		...input.deleteIds.map((id) => [id, null] as const),
 	]);
 
+	sendAfterResponse(
+		services.push,
+		input.notify ? planChangeNotifications(existing, afterById) : [],
+	);
 	return {
 		created: input.creates.length,
 		updated: input.updates.length,
 		deletedIds: input.deleteIds,
-		notifications: input.notify
-			? planChangeNotifications(existing, afterById)
-			: [],
 	};
 }
 

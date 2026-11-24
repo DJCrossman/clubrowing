@@ -1,17 +1,26 @@
 import type { IntegrationSource } from "@/generated/prisma/client";
 import { paginate } from "@/lib/pagination";
-import type { AuthenticatedContext } from "@/server/context";
-import { mapToInboxDto } from "../../common/map-to-inbox-dto";
+import type { ViewerContext } from "@/server/context";
+import {
+	type ActivityInboxDto,
+	mapToInboxDto,
+} from "../../common/map-to-inbox-dto";
 
 const STALE_RUNNING_MS = 15 * 60 * 1000;
 const STALE_PENDING_MS = 5 * 60 * 1000;
 
 const SOURCES: IntegrationSource[] = ["strava", "concept2"];
 
+const NO_PENDING_BATCHES = {
+	...paginate<ActivityInboxDto>({ data: [], totalCount: 0 }),
+	latestBySource: { strava: null, concept2: null },
+};
+
 export async function getPendingInboxBatchesQuery(
 	_input: undefined,
-	{ db, athlete }: AuthenticatedContext,
+	{ db, athlete }: Pick<ViewerContext, "db" | "athlete">,
 ) {
+	if (!athlete) return NO_PENDING_BATCHES;
 	const now = new Date();
 	await db.activity_inbox.updateMany({
 		where: {

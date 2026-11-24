@@ -3,7 +3,6 @@ import { createLogger } from "@/lib/logger";
 import type { AuthenticatedContext } from "@/server/context";
 import { getConcept2AccessToken } from "../../common/get-concept2-access-token";
 import { processConcept2InboxBatchCommand } from "../process-concept2-inbox-batch/process-concept2-inbox-batch.command";
-import type { syncConcept2ActivitiesCommand } from "./sync-concept2-activities.command";
 
 const logger = createLogger("sync.concept2");
 
@@ -15,15 +14,11 @@ function raiseGatewayError(err: unknown): never {
 
 export const syncConcept2ActivitiesFinalizeCallback = async ({
 	ctx,
-	result,
+	batchId,
 }: {
-	ctx: AuthenticatedContext;
-	result: PromiseSettledResult<
-		Awaited<ReturnType<typeof syncConcept2ActivitiesCommand>>
-	>;
+	ctx: Pick<AuthenticatedContext, "db" | "athlete" | "services">;
+	batchId: string;
 }) => {
-	if (result.status !== "fulfilled") return;
-	const { batchId } = result.value;
 	const { db, services } = ctx;
 	try {
 		const accessToken = await getConcept2AccessToken(ctx);

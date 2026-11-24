@@ -1,11 +1,24 @@
 import type { AttachActivityScreenshotInput } from "@/schemas";
-import type { ViewerContext } from "@/server/context";
+import type { AuthenticatedContext } from "@/server/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 
 export async function attachActivityScreenshotCommand(
 	input: AttachActivityScreenshotInput,
-	{ db, user }: Pick<ViewerContext, "db" | "user">,
+	{ db, user, athlete }: Pick<AuthenticatedContext, "db" | "user" | "athlete">,
 ) {
+	const existing = await db.activity.findUnique({
+		where: { id: input.id },
+		select: { athleteId: true },
+	});
+	if (!existing) {
+		throw new DomainError("NOT_FOUND", "Activity not found");
+	}
+	if (existing.athleteId !== athlete.id) {
+		throw new DomainError(
+			"FORBIDDEN",
+			"Cannot attach a screenshot to another athlete's activity",
+		);
+	}
 	const upload = await db.upload.findUnique({
 		where: { id: input.uploadId },
 		select: {

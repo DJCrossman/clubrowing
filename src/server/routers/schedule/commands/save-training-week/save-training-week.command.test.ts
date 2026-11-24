@@ -3,6 +3,7 @@ import type { CreateEvent } from "@/schemas";
 import type { AdminContext } from "@/server/context";
 
 const after = vi.fn();
+const sendPush = vi.fn();
 
 vi.mock("next/server", async (importOriginal) => ({
 	...(await importOriginal<typeof import("next/server")>()),
@@ -317,7 +318,7 @@ describe("saveTrainingWeekCommand", () => {
 			},
 		]);
 
-		const result = await saveTrainingWeekCommand(
+		await saveTrainingWeekCommand(
 			{
 				creates: [],
 				updates: [
@@ -332,10 +333,11 @@ describe("saveTrainingWeekCommand", () => {
 			},
 			context,
 		);
+		const notifications = await pushedNotifications();
 
-		expect(result.notifications).toHaveLength(1);
-		expect(result.notifications[0].athleteIds).toEqual(["ath_a", "ath_b"]);
-		expect(result.notifications[0].message.title).toBe(
+		expect(notifications).toHaveLength(1);
+		expect(notifications[0].athleteIds).toEqual(["ath_a", "ath_b"]);
+		expect(notifications[0].message.title).toBe(
 			"A practice for the week of Jan 6 has changed",
 		);
 	});
@@ -350,12 +352,13 @@ describe("saveTrainingWeekCommand", () => {
 			},
 		]);
 
-		const result = await saveTrainingWeekCommand(
+		await saveTrainingWeekCommand(
 			{ creates: [], updates: [], deleteIds: ["evt_1"], notify: true },
 			context,
 		);
+		const notifications = await pushedNotifications();
 
-		expect(result.notifications[0].message.title).toBe(
+		expect(notifications[0].message.title).toBe(
 			"A practice for the week of Jan 6 has been cancelled",
 		);
 	});
@@ -370,12 +373,13 @@ describe("saveTrainingWeekCommand", () => {
 			},
 		]);
 
-		const result = await saveTrainingWeekCommand(
+		await saveTrainingWeekCommand(
 			{ creates: [], updates: [], deleteIds: ["evt_1"], notify: false },
 			context,
 		);
+		const notifications = await pushedNotifications();
 
-		expect(result.notifications).toEqual([]);
+		expect(notifications).toEqual([]);
 	});
 
 	it("stays silent for edits that only touch the workout", async () => {
@@ -388,7 +392,7 @@ describe("saveTrainingWeekCommand", () => {
 			},
 		]);
 
-		const result = await saveTrainingWeekCommand(
+		await saveTrainingWeekCommand(
 			{
 				creates: [],
 				updates: [
@@ -403,8 +407,9 @@ describe("saveTrainingWeekCommand", () => {
 			},
 			context,
 		);
+		const notifications = await pushedNotifications();
 
-		expect(result.notifications).toEqual([]);
+		expect(notifications).toEqual([]);
 	});
 
 	it("stays silent about sessions that already happened", async () => {
@@ -418,12 +423,13 @@ describe("saveTrainingWeekCommand", () => {
 			},
 		]);
 
-		const result = await saveTrainingWeekCommand(
+		await saveTrainingWeekCommand(
 			{ creates: [], updates: [], deleteIds: ["evt_1"], notify: true },
 			context,
 		);
+		const notifications = await pushedNotifications();
 
-		expect(result.notifications).toEqual([]);
+		expect(notifications).toEqual([]);
 	});
 
 	it("propagates a failed write so the transaction rolls back", async () => {
@@ -529,7 +535,16 @@ function createContext(existingEvents: ExistingEvent[]) {
 				return fn(tx);
 			},
 		},
+		services: { push: { sendPush } },
 	} as unknown as AdminContext;
 
 	return { context, calls, tx };
+}
+
+async function pushedNotifications() {
+	for (const [callback] of after.mock.calls) await callback();
+	return sendPush.mock.calls.map(([athleteIds, message]) => ({
+		athleteIds,
+		message,
+	}));
 }
