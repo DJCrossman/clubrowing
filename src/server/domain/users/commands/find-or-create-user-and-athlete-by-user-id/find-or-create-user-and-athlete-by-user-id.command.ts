@@ -1,10 +1,9 @@
 import type { ViewerContext } from "@/domain/common/context";
 import { mapToUserDto } from "@/domain/users/common/map-to-user-dto";
-import { db } from "@/lib/db";
 
 export async function findOrLinkUserAthlete(
 	{ userId, isAdmin }: { userId: string; isAdmin: boolean },
-	{ services }: Pick<ViewerContext, "services">,
+	{ db, services }: Pick<ViewerContext, "db" | "services">,
 ) {
 	const expectedRole = isAdmin ? "admin" : "member";
 

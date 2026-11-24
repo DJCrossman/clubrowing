@@ -4,7 +4,7 @@ import { synthesizeAdminUser } from "../../common/synthesize-admin-user";
 
 export async function getCurrentUserQuery(
 	_input: undefined,
-	{ user, services }: UnauthenticatedContext,
+	{ db, user, services }: UnauthenticatedContext,
 ) {
 	if (!user) {
 		return { user: null, isAdmin: false, hasAthlete: false };
@@ -12,7 +12,7 @@ export async function getCurrentUserQuery(
 
 	const athlete = await findOrLinkUserAthlete(
 		{ userId: user.id, isAdmin: user.isAdmin },
-		{ services },
+		{ db, services },
 	);
 
 	if (athlete) {
