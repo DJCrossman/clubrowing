@@ -16,10 +16,9 @@ import { Label } from "@/components/ui/label";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useChatFile } from "@/hooks/useChatFile";
-import { useGifSearch } from "@/hooks/useGifSearch";
+import { useChatGifs } from "@/hooks/useChatGifs";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useMentions } from "@/hooks/useMentions";
-import { useMessageGifs } from "@/hooks/useMessageGifs";
 import { useNotifications } from "@/hooks/useNotifications";
 import { getViewableKind } from "@/lib/chat/attachments";
 import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
@@ -65,20 +64,6 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const [viewing, setViewing] = useState<{
 		fileId: string;
 		threadMessageId: string | null;
-	} | null>(null);
-	const [mentioningChannelId, setMentioningChannelId] = useState<string | null>(
-		null,
-	);
-	const [mentioningThreadId, setMentioningThreadId] = useState<string | null>(
-		null,
-	);
-	const [channelGifSearch, setChannelGifSearch] = useState<{
-		channelId: string;
-		search: string;
-	} | null>(null);
-	const [threadGifSearch, setThreadGifSearch] = useState<{
-		threadId: string;
-		search: string;
 	} | null>(null);
 	const composerRef = useRef<MessageComposerHandle>(null);
 	const {
@@ -130,58 +115,16 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const editingMessage = editing?.channelId === channelId ? editing : null;
 	const channelName = channel?.name ?? "";
 	const isUnavailable = messagesQuery.error?.data?.code === "NOT_FOUND";
-	// A composer that goes away without a blur, as when Escape closes the
-	// thread drawer, can't report that its mention ended.
-	if (
-		mentioningChannelId &&
-		(mentioningChannelId !== channelId || isUnavailable)
-	) {
-		setMentioningChannelId(null);
-	}
-	if (mentioningThreadId && mentioningThreadId !== threadQuery.data?.root.id) {
-		setMentioningThreadId(null);
-	}
-	const channelMentions = useMentions({
+	const mentions = useMentions({
 		channelId,
-		isEnabled: mentioningChannelId === channelId,
+		thread: threadQuery.data,
+		isUnavailable,
 	});
-	const threadMentions = useMentions({
-		channelId: threadQuery.data?.root.channelId ?? channelId,
-		isEnabled: mentioningThreadId === threadQuery.data?.root.id,
-	});
-	// A GIF picker that goes away while open, as on back and forward, comes back closed.
-	if (
-		channelGifSearch &&
-		(channelGifSearch.channelId !== channelId || isUnavailable)
-	) {
-		setChannelGifSearch(null);
-	}
-	if (
-		threadGifSearch &&
-		threadGifSearch.threadId !== threadQuery.data?.root.id
-	) {
-		setThreadGifSearch(null);
-	}
-	const channelGifs = useGifSearch({
-		query: channelGifSearch?.search ?? "",
-		isEnabled: !!channelGifSearch,
-	});
-	const threadGifs = useGifSearch({
-		query: threadGifSearch?.search ?? "",
-		isEnabled: !!threadGifSearch,
-	});
-	const { messageGifs, rememberGif } = useMessageGifs({
-		gifIds: [
-			...messages,
-			...(threadQuery.data
-				? [threadQuery.data.root, ...threadQuery.data.replies]
-				: []),
-		].flatMap(({ forwarded, gif, gifId }) => [
-			...(forwarded?.gif && forwarded.gifId && !forwarded.deleted
-				? [forwarded.gifId]
-				: []),
-			...(gif && gifId ? [gifId] : []),
-		]),
+	const chatGifs = useChatGifs({
+		channelId,
+		messages,
+		thread: threadQuery.data,
+		isUnavailable,
 	});
 	const fileDrop = useFileDrop({
 		isDisabled: !!editingMessage || isUnavailable,
@@ -272,7 +215,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									editingMessageId={editingMessage?.id}
 									firstUnreadMessageId={firstUnreadMessageId}
 									videosPausedUntil={videosPausedUntil}
-									messageGifs={messageGifs}
+									messageGifs={chatGifs.messageGifs}
 									isKeyboardOpen={!!spaceAboveKeyboard}
 									emptyState={
 										channel?.kind === "direct_message" ? (
@@ -323,13 +266,13 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 										quotedMessage={quotedMessage}
 										videoUploadProgress={videoUploadProgress}
 										editingMessage={editingMessage}
-										mentionableMembers={channelMentions.members}
-										canUseGifs={channelGifs.canUseGifs}
-										areGifsPaused={channelGifs.areGifsPaused}
-										gifSearch={channelGifSearch?.search ?? null}
-										gifs={channelGifs.gifs}
-										isLoadingGifs={channelGifs.isLoading}
-										haveGifsFailed={channelGifs.hasFailed}
+										mentionableMembers={mentions.channelMembers}
+										canUseGifs={chatGifs.canUseGifs}
+										areGifsPaused={chatGifs.areGifsPaused}
+										gifSearch={chatGifs.channelPicker.search}
+										gifs={chatGifs.channelPicker.gifs}
+										isLoadingGifs={chatGifs.channelPicker.isLoading}
+										haveGifsFailed={chatGifs.channelPicker.hasFailed}
 										onCancelQuote={() => setQuote(null)}
 										onCancelEdit={() => setEditing(null)}
 										onSaveEdit={(message, text, mentions) =>
@@ -367,15 +310,9 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 											});
 											setQuote(null);
 										}}
-										onMentioningChange={(isMentioning) =>
-											setMentioningChannelId(isMentioning ? channelId : null)
-										}
-										onGifSearchChange={(search) =>
-											setChannelGifSearch(
-												search === null ? null : { channelId, search },
-											)
-										}
-										onGifPicked={rememberGif}
+										onMentioningChange={mentions.setIsChannelMentioning}
+										onGifSearchChange={chatGifs.setChannelGifSearch}
+										onGifPicked={chatGifs.rememberGif}
 									/>
 								</div>
 							</>
@@ -389,14 +326,14 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							isUnavailable={threadQuery.isError && !threadQuery.data}
 							isMobile={isMobile}
 							videosPausedUntil={videosPausedUntil}
-							mentionableMembers={threadMentions.members}
-							messageGifs={messageGifs}
-							canUseGifs={threadGifs.canUseGifs}
-							areGifsPaused={threadGifs.areGifsPaused}
-							gifSearch={threadGifSearch?.search ?? null}
-							gifs={threadGifs.gifs}
-							isLoadingGifs={threadGifs.isLoading}
-							haveGifsFailed={threadGifs.hasFailed}
+							mentionableMembers={mentions.threadMembers}
+							messageGifs={chatGifs.messageGifs}
+							canUseGifs={chatGifs.canUseGifs}
+							areGifsPaused={chatGifs.areGifsPaused}
+							gifSearch={chatGifs.threadPicker.search}
+							gifs={chatGifs.threadPicker.gifs}
+							isLoadingGifs={chatGifs.threadPicker.isLoading}
+							haveGifsFailed={chatGifs.threadPicker.hasFailed}
 							onVideoError={() => void refreshMessages()}
 							onClose={() =>
 								router.push(routes.chat.channel(channelId), { scroll: false })
@@ -425,19 +362,9 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							onOpenFile={(file) =>
 								setViewing({ fileId: file.id, threadMessageId })
 							}
-							onMentioningChange={(isMentioning) =>
-								setMentioningThreadId(
-									isMentioning ? (threadQuery.data?.root.id ?? null) : null,
-								)
-							}
-							onGifSearchChange={(search) =>
-								setThreadGifSearch(
-									search !== null && threadQuery.data
-										? { threadId: threadQuery.data.root.id, search }
-										: null,
-								)
-							}
-							onGifPicked={rememberGif}
+							onMentioningChange={mentions.setIsThreadMentioning}
+							onGifSearchChange={chatGifs.setThreadGifSearch}
+							onGifPicked={chatGifs.rememberGif}
 						/>
 					)}
 				</div>
