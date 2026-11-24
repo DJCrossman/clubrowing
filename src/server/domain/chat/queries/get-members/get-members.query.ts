@@ -9,14 +9,15 @@ import type { GetMembersInput } from "@/schemas/chat.schema";
 
 export async function getMembersQuery(
 	input: GetMembersInput,
-	{ db, user }: ViewerContext,
+	{ db, user, services }: ViewerContext,
 ) {
 	if (!input?.channelId) {
-		const data = await listChatUsers(db, user.id);
+		const data = await listChatUsers({ db, services }, user.id);
 		return paginate({ data, totalCount: data.length });
 	}
 	const data = await listChannelChatUsers({
 		db,
+		services,
 		channel: await findAccessibleChannel(db, input.channelId, user),
 		excludeUserId: user.id,
 	});

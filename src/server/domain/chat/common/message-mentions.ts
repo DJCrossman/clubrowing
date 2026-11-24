@@ -5,11 +5,11 @@ import { listChannelChatUsers } from "./chat-users";
 
 export async function selectChannelMentions({
 	db,
+	services,
 	channel,
 	authorUserId,
 	mentions,
-}: {
-	db: ViewerContext["db"];
+}: Pick<ViewerContext, "db" | "services"> & {
 	channel: AccessibleChannel;
 	authorUserId: string;
 	mentions: MentionRange[];
@@ -17,6 +17,7 @@ export async function selectChannelMentions({
 	if (mentions.length === 0) return [];
 	const readers = await listChannelChatUsers({
 		db,
+		services,
 		channel,
 		excludeUserId: authorUserId,
 	});

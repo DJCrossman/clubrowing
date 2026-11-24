@@ -11,7 +11,7 @@ import {
 export async function loadMessageDtos(ctx: ViewerContext, rows: MessageRow[]) {
 	const viewer = { userId: ctx.user.id, isAdmin: isChatAdmin(ctx) };
 	const [users, previews] = await Promise.all([
-		loadChatUsers(ctx.db, collectMessageUserIds(rows)),
+		loadChatUsers(ctx, collectMessageUserIds(rows)),
 		loadLinkPreviews(ctx.db, rows, ctx.user.id),
 	]);
 	return rows.map((row) =>

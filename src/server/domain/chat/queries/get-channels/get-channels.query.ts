@@ -23,7 +23,7 @@ type Db = ViewerContext["db"];
 
 export async function getChannelsQuery(
 	_input: undefined,
-	{ db, user }: ViewerContext,
+	{ db, user, services }: ViewerContext,
 ) {
 	const [{ channels: allChannels, groups }, viewer, reads, athleteCount] =
 		await Promise.all([
@@ -57,7 +57,7 @@ export async function getChannelsQuery(
 		),
 	]);
 	const groupNames = new Map(groups.map((group) => [group.id, group.name]));
-	const users = await loadChatUsers(db, [
+	const users = await loadChatUsers({ db, services }, [
 		...channels.flatMap((channel) =>
 			channel.members.map((member) => member.userId),
 		),

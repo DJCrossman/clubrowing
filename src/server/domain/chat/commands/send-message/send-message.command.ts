@@ -14,7 +14,7 @@ export async function sendMessageCommand(
 	input: SendMessage,
 	ctx: ViewerContext,
 ) {
-	const { db, user } = ctx;
+	const { db, user, services } = ctx;
 	const channel = await findAccessibleChannel(db, input.channelId, user);
 	if (input.quotedMessageId) {
 		await assertQuotable(ctx, input.quotedMessageId, input.channelId);
@@ -32,6 +32,7 @@ export async function sendMessageCommand(
 				mentions: {
 					create: await selectChannelMentions({
 						db,
+						services,
 						channel,
 						authorUserId: user.id,
 						mentions: input.mentions ?? [],

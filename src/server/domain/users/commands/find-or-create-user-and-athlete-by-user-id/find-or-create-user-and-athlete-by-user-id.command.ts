@@ -1,14 +1,11 @@
-import { clerkClient } from "@clerk/nextjs/server";
+import type { ViewerContext } from "@/domain/common/context";
 import { mapToUserDto } from "@/domain/users/common/map-to-user-dto";
 import { db } from "@/lib/db";
 
-export async function findOrLinkUserAthlete({
-	userId,
-	isAdmin,
-}: {
-	userId: string;
-	isAdmin: boolean;
-}) {
+export async function findOrLinkUserAthlete(
+	{ userId, isAdmin }: { userId: string; isAdmin: boolean },
+	{ services }: Pick<ViewerContext, "services">,
+) {
 	const expectedRole = isAdmin ? "admin" : "member";
 
 	const existing = await db.athlete.findUnique({ where: { userId } });
@@ -23,8 +20,7 @@ export async function findOrLinkUserAthlete({
 		return mapToUserDto(existing);
 	}
 
-	const client = await clerkClient();
-	const clerkUser = await client.users.getUser(userId);
+	const clerkUser = await services.userService.getUser(userId);
 	const email = clerkUser.primaryEmailAddress?.emailAddress ?? null;
 
 	if (email) {

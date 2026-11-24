@@ -10,7 +10,7 @@ export async function replyInThreadCommand(
 	input: ReplyInThread,
 	ctx: ViewerContext,
 ) {
-	const { db, user } = ctx;
+	const { db, user, services } = ctx;
 	const target = await findAccessibleMessage(db, input.messageId, user);
 	const rootId = target.parentId ?? target.id;
 	const content = {
@@ -22,6 +22,7 @@ export async function replyInThreadCommand(
 		mentions: {
 			create: await selectChannelMentions({
 				db,
+				services,
 				channel: target.channel,
 				authorUserId: user.id,
 				mentions: input.mentions ?? [],

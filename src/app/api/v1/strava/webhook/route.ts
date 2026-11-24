@@ -12,6 +12,7 @@ import { createPushService } from "@/server/services/push-service";
 import { createRcaService } from "@/server/services/rca-service";
 import { createStravaService } from "@/server/services/strava-service";
 import { createTaskManager } from "@/server/services/task-manager";
+import { createUserService } from "@/server/services/user-service";
 
 const logger = createLogger("strava.webhook.route");
 
@@ -112,6 +113,7 @@ export async function POST(request: Request) {
 				push: createPushService({ db }),
 				github: createGitHubService(),
 				taskManager: createTaskManager(),
+				userService: createUserService(),
 			};
 			await processStravaWebhookEventCommand(event, { db, services });
 		} catch (err) {

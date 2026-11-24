@@ -6,7 +6,7 @@ import { type AddDmMembers, MAX_DM_MEMBERS } from "@/schemas/chat.schema";
 
 export async function addDmMembersCommand(
 	input: AddDmMembers,
-	{ db, user }: ViewerContext,
+	{ db, user, services }: ViewerContext,
 ) {
 	const channel = await findMyDm(db, input.channelId, user.id);
 	const current = new Set(channel.members.map((member) => member.userId));
@@ -17,7 +17,7 @@ export async function addDmMembersCommand(
 			`A conversation can have at most ${MAX_DM_MEMBERS} people`,
 		);
 	}
-	await assertKnownChatUsers(db, newIds);
+	await assertKnownChatUsers({ db, services }, newIds);
 	const visibleFrom = input.shareHistory ? null : new Date();
 	await db.channel_member.createMany({
 		data: newIds.map((id) => ({

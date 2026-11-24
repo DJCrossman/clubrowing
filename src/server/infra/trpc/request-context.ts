@@ -9,6 +9,7 @@ import { createPushService } from "@/server/services/push-service";
 import { createRcaService } from "@/server/services/rca-service";
 import { createStravaService } from "@/server/services/strava-service";
 import { createTaskManager } from "@/server/services/task-manager";
+import { createUserService } from "@/server/services/user-service";
 
 export async function createRequestContext(_opts?: {
 	req?: Request;
@@ -22,6 +23,7 @@ export async function createRequestContext(_opts?: {
 		push: createPushService({ db }),
 		github: createGitHubService(),
 		taskManager: createTaskManager(),
+		userService: createUserService(),
 	};
 
 	if (!session.userId) {

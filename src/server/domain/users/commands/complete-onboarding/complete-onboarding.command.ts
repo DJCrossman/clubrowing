@@ -1,4 +1,3 @@
-import { clerkClient } from "@clerk/nextjs/server";
 import { mapToAthleteDto } from "@/domain/athletes/common/map-to-athlete-dto";
 import type { OnboardingContext } from "@/domain/common/context";
 import { DomainError } from "@/domain/common/domain-error";
@@ -6,10 +5,9 @@ import type { CompleteOnboarding } from "@/schemas";
 
 export async function completeOnboardingCommand(
 	input: CompleteOnboarding,
-	{ db, user }: OnboardingContext,
+	{ db, user, services }: OnboardingContext,
 ) {
-	const client = await clerkClient();
-	const clerkUser = await client.users.getUser(user.id);
+	const clerkUser = await services.userService.getUser(user.id);
 	const email = clerkUser.primaryEmailAddress?.emailAddress ?? null;
 
 	if (email) {

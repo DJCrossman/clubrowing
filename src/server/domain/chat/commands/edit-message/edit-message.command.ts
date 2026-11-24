@@ -8,7 +8,7 @@ export async function editMessageCommand(
 	input: EditMessage,
 	ctx: ViewerContext,
 ) {
-	const { db, user } = ctx;
+	const { db, user, services } = ctx;
 	const message = await findAccessibleMessage(db, input.messageId, user);
 	if (message.authorUserId !== user.id) {
 		throw new DomainError("FORBIDDEN", "You can only edit your own messages");
@@ -26,6 +26,7 @@ export async function editMessageCommand(
 					deleteMany: {},
 					create: await selectChannelMentions({
 						db,
+						services,
 						channel: message.channel,
 						authorUserId: user.id,
 						mentions: input.mentions ?? [],

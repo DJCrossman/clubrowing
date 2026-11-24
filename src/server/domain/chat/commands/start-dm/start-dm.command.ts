@@ -6,7 +6,7 @@ import type { StartDm } from "@/schemas/chat.schema";
 
 export async function startDmCommand(
 	input: StartDm,
-	{ db, user }: ViewerContext,
+	{ db, user, services }: ViewerContext,
 ) {
 	if (input.userIds.includes(user.id)) {
 		throw new DomainError(
@@ -14,7 +14,7 @@ export async function startDmCommand(
 			"You're already part of the conversation",
 		);
 	}
-	await assertKnownChatUsers(db, input.userIds);
+	await assertKnownChatUsers({ db, services }, input.userIds);
 	const memberIds = [user.id, ...input.userIds];
 	const candidates = await db.channel.findMany({
 		where: {

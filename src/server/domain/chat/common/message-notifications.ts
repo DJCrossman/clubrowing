@@ -56,7 +56,7 @@ export function notifyChannelAfterResponse(
 								select: { name: true },
 							})
 						: null,
-					loadChatUsers(db, [message.authorUserId]),
+					loadChatUsers({ db, services }, [message.authorUserId]),
 					message.parentId
 						? db.message.findMany({
 								where: {

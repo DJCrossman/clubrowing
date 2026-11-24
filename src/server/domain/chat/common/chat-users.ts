@@ -1,12 +1,8 @@
-import { clerkClient } from "@clerk/nextjs/server";
 import type { ViewerContext } from "@/domain/common/context";
 import { DomainError } from "@/domain/common/domain-error";
 import { getGroupMemberIds } from "@/domain/groups/common";
-import { getDefaultOrganizationId } from "@/server/clerk/default-organization";
 import { type AccessibleChannel, canAccessChannel } from "./chat-access";
 import { type ChatUser, toChatUser } from "./chat-user-names";
-
-type Db = ViewerContext["db"];
 
 const CLERK_CACHE_TTL_MS = 5 * 60_000;
 const clerkUserCache = new Map<
@@ -16,7 +12,7 @@ const clerkUserCache = new Map<
 let clerkAdminIdsCache: { ids: string[]; expiresAt: number } | null = null;
 
 export async function loadChatUsers(
-	db: Db,
+	{ db, services }: Pick<ViewerContext, "db" | "services">,
 	userIds: Iterable<string>,
 ): Promise<Map<string, ChatUser>> {
 	const ids = [...new Set(userIds)];
@@ -37,13 +33,16 @@ export async function loadChatUsers(
 		}
 	}
 	const missing = ids.filter((id) => !users.has(id));
-	for (const [id, user] of await loadClerkUsers(missing)) {
+	for (const [id, user] of await loadClerkUsers({ services }, missing)) {
 		users.set(id, user);
 	}
 	return users;
 }
 
-export async function listChatUsers(db: Db, excludeUserId: string) {
+export async function listChatUsers(
+	{ db, services }: Pick<ViewerContext, "db" | "services">,
+	excludeUserId: string,
+) {
 	const athletes = await db.athlete.findMany({
 		where: { userId: { not: null } },
 		select: {
@@ -56,10 +55,10 @@ export async function listChatUsers(db: Db, excludeUserId: string) {
 	const users = athletes.flatMap((athlete) =>
 		athlete.userId ? [toChatUser(athlete.userId, athlete)] : [],
 	);
-	const adminIds = (await loadClerkAdminIds()).filter(
+	const adminIds = (await loadClerkAdminIds({ services })).filter(
 		(id) => !users.some((user) => user.id === id),
 	);
-	const admins = await loadClerkUsers(adminIds);
+	const admins = await loadClerkUsers({ services }, adminIds);
 	return [...users, ...admins.values()]
 		.filter((user) => user.id !== excludeUserId)
 		.sort((a, b) => a.name.localeCompare(b.name));
@@ -67,14 +66,14 @@ export async function listChatUsers(db: Db, excludeUserId: string) {
 
 export async function listChannelChatUsers({
 	db,
+	services,
 	channel,
 	excludeUserId,
-}: {
-	db: Db;
+}: Pick<ViewerContext, "db" | "services"> & {
 	channel: AccessibleChannel;
 	excludeUserId: string;
 }): Promise<ChatUser[]> {
-	const users = await listChatUsers(db, excludeUserId);
+	const users = await listChatUsers({ db, services }, excludeUserId);
 	if (channel.kind !== "group") {
 		return users.filter((user) =>
 			canAccessChannel(channel, {
@@ -91,7 +90,7 @@ export async function listChannelChatUsers({
 			select: { id: true, userId: true, role: true },
 		}),
 		channel.groupId ? getGroupMemberIds(db, channel.groupId) : ([] as string[]),
-		loadClerkAdminIds(),
+		loadClerkAdminIds({ services }),
 	]);
 	const athleteByUserId = new Map(
 		athletes.map((athlete) => [athlete.userId, athlete]),
@@ -110,7 +109,10 @@ export async function listChannelChatUsers({
 	});
 }
 
-async function loadClerkUsers(userIds: string[]) {
+async function loadClerkUsers(
+	{ services }: Pick<ViewerContext, "services">,
+	userIds: string[],
+) {
 	const users = new Map<string, ChatUser>();
 	const now = Date.now();
 	const uncached = userIds.filter((id) => {
@@ -123,11 +125,7 @@ async function loadClerkUsers(userIds: string[]) {
 	});
 	if (uncached.length === 0) return users;
 	try {
-		const client = await clerkClient();
-		const { data } = await client.users.getUserList({
-			userId: uncached,
-			limit: uncached.length,
-		});
+		const data = await services.userService.getUsers(uncached);
 		for (const id of uncached) {
 			const clerkUser = data.find((candidate) => candidate.id === id);
 			const user = clerkUser ? toChatUser(id, clerkUser) : null;
@@ -140,16 +138,14 @@ async function loadClerkUsers(userIds: string[]) {
 	return users;
 }
 
-async function loadClerkAdminIds() {
+async function loadClerkAdminIds({
+	services,
+}: Pick<ViewerContext, "services">) {
 	if (clerkAdminIdsCache && clerkAdminIdsCache.expiresAt > Date.now()) {
 		return clerkAdminIdsCache.ids;
 	}
 	try {
-		const client = await clerkClient();
-		const { data } = await client.organizations.getOrganizationMembershipList({
-			organizationId: getDefaultOrganizationId(),
-			limit: 100,
-		});
+		const data = await services.userService.getOrganizationMemberships();
 		const ids = data.flatMap((membership) =>
 			membership.role === "org:admin" && membership.publicUserData?.userId
 				? [membership.publicUserData.userId]
@@ -163,8 +159,11 @@ async function loadClerkAdminIds() {
 	}
 }
 
-export async function assertKnownChatUsers(db: Db, userIds: string[]) {
-	const users = await loadChatUsers(db, userIds);
+export async function assertKnownChatUsers(
+	{ db, services }: Pick<ViewerContext, "db" | "services">,
+	userIds: string[],
+) {
+	const users = await loadChatUsers({ db, services }, userIds);
 	if (userIds.some((id) => !users.has(id))) {
 		throw new DomainError(
 			"NOT_FOUND",
