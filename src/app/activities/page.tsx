@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { ActivityListScene } from "@/scenes/activities";
 import { createServerCaller } from "@/trpc/caller";
-import { createRequestContext } from "@/trpc/request-context";
 
 const querySchema = z.object({
 	activityId: z.string().optional(),
@@ -21,7 +20,7 @@ export default async function ActivitiesPage({
 		await searchParams,
 	);
 	const caller = await createServerCaller();
-	const { user } = await createRequestContext();
+	const { isAdmin } = await caller.users.getCurrentUser();
 
 	const [
 		[currentAthleteResult, activitiesResult, selectedActivityResult],
@@ -38,7 +37,7 @@ export default async function ActivitiesPage({
 		caller.boats.getBoats(),
 		caller.ergs.getErgs(),
 		caller.workouts.getWorkouts(),
-		user?.isAdmin
+		isAdmin
 			? caller.athletes.getAthletes({ pageSize: 200 })
 			: Promise.resolve({ data: undefined }),
 	]);
