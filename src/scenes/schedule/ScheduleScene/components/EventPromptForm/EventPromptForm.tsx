@@ -25,6 +25,7 @@ import {
 import { getPromptEventFormValues } from "../../utils/getPromptEventFormValues";
 import { EventCreateForm } from "../EventCreateForm/EventCreateForm";
 import { EventTypeBadge } from "../EventTypeBadge/EventTypeBadge";
+import type { ReadWorkoutDescription } from "../WorkoutFields/WorkoutFields";
 import { PromptSummary } from "./PromptSummary";
 
 export type ReadEventsPrompt = (input: {
@@ -57,7 +58,9 @@ interface EventPromptFormProps {
 	startDate: string;
 	afterType?: ReactNode;
 	isReadingEventsPrompt: boolean;
+	isReadingWorkoutDescription: boolean;
 	onReadEventsPrompt: ReadEventsPrompt;
+	onReadWorkoutDescription: ReadWorkoutDescription;
 	onSubmit: (inputs: CreateEvent[]) => Promise<void>;
 	onCancel: () => void;
 }
@@ -66,7 +69,9 @@ export function EventPromptForm({
 	startDate,
 	afterType,
 	isReadingEventsPrompt,
+	isReadingWorkoutDescription,
 	onReadEventsPrompt,
+	onReadWorkoutDescription,
 	onSubmit,
 	onCancel,
 }: EventPromptFormProps) {
@@ -93,6 +98,8 @@ export function EventPromptForm({
 					<EventCreateForm
 						key={editingIndex}
 						defaultValues={items[editingIndex].values}
+						isReadingWorkoutDescription={isReadingWorkoutDescription}
+						onReadWorkoutDescription={onReadWorkoutDescription}
 						onSubmit={async (event, values) => {
 							setItems((current) =>
 								(current ?? []).map((item, index) =>

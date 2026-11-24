@@ -12,6 +12,7 @@ import type { ParseEventsPromptResult } from "@/app/api/v1/events/parse-prompt/r
 import type { ParseDescriptionResult } from "@/app/api/v1/workouts/parse-description/route";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useReadWorkoutDescription } from "@/hooks/useReadWorkoutDescription";
 import { useShareToChat } from "@/hooks/useShareToChat";
 import { routes, type ScheduleRoutes } from "@/lib/routes";
 import { countNotifiable } from "@/lib/schedule/changes";
@@ -41,7 +42,6 @@ import {
 	WeekNavigation,
 } from "./components";
 import { formatNudgeResult } from "./utils/formatNudgeResult";
-import { parseWorkoutDescription } from "./utils/parseWorkoutDescription";
 
 const TYPE_FILTERS = [
 	{ value: "all", label: "All" },
@@ -86,6 +86,8 @@ export const ScheduleView = ({
 	const [sharingEventId, setSharingEventId] = useState<string | null>(null);
 	const isSharingEvent = !!selectedEvent && sharingEventId === selectedEvent.id;
 	const shareToChat = useShareToChat({ isEnabled: isSharingEvent });
+	const { readWorkoutDescription, isReadingWorkoutDescription } =
+		useReadWorkoutDescription();
 	const defaultDay =
 		schedule.days.find((day) => day.isToday)?.date ?? schedule.weekStart;
 
@@ -131,7 +133,7 @@ export const ScheduleView = ({
 			for (const description of new Set(
 				events.flatMap((event) => event.workout?.description ?? []),
 			)) {
-				const parsed = await parseWorkoutDescription(description).catch(
+				const parsed = await readWorkoutDescription(description).catch(
 					() => undefined,
 				);
 				if (parsed) workouts.set(description, parsed);
@@ -320,7 +322,9 @@ export const ScheduleView = ({
 				isOpen={isCreateDrawerOpen && isAdmin}
 				defaultDate={defaultDay}
 				isReadingEventsPrompt={readEventsPrompt.isPending}
+				isReadingWorkoutDescription={isReadingWorkoutDescription}
 				onReadEventsPrompt={readEventsPrompt.mutateAsync}
+				onReadWorkoutDescription={readWorkoutDescription}
 				onClose={closeOverlay}
 				onSubmit={async (input) => {
 					const event = await withErrorToast(createEvent.mutateAsync(input));
@@ -383,6 +387,8 @@ export const ScheduleView = ({
 				isSharing={isSharingEvent}
 				shareTargets={shareToChat.targets}
 				isLoadingShareTargets={shareToChat.isLoadingTargets}
+				isReadingWorkoutDescription={isReadingWorkoutDescription}
+				onReadWorkoutDescription={readWorkoutDescription}
 				onSharingChange={(isSharing) =>
 					setSharingEventId(isSharing ? (selectedEvent?.id ?? null) : null)
 				}

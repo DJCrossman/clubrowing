@@ -18,13 +18,16 @@ import {
 	EventPromptForm,
 	type ReadEventsPrompt,
 } from "../EventPromptForm/EventPromptForm";
+import type { ReadWorkoutDescription } from "../WorkoutFields/WorkoutFields";
 
 interface EventCreateDrawerProps {
 	isOpen: boolean;
 	defaultDate: string;
 	defaultValues?: EventFormInput;
 	isReadingEventsPrompt?: boolean;
+	isReadingWorkoutDescription: boolean;
 	onReadEventsPrompt?: ReadEventsPrompt;
+	onReadWorkoutDescription: ReadWorkoutDescription;
 	onClose: () => void;
 	onSubmit: (input: CreateEvent) => Promise<void>;
 	onSubmitMany?: (inputs: CreateEvent[]) => Promise<void>;
@@ -35,7 +38,9 @@ export const EventCreateDrawer = ({
 	defaultDate,
 	defaultValues,
 	isReadingEventsPrompt,
+	isReadingWorkoutDescription,
 	onReadEventsPrompt,
+	onReadWorkoutDescription,
 	onClose,
 	onSubmit,
 	onSubmitMany,
@@ -61,7 +66,9 @@ export const EventCreateDrawer = ({
 						defaultDate={defaultDate}
 						defaultValues={defaultValues}
 						isReadingEventsPrompt={isReadingEventsPrompt}
+						isReadingWorkoutDescription={isReadingWorkoutDescription}
 						onReadEventsPrompt={onReadEventsPrompt}
+						onReadWorkoutDescription={onReadWorkoutDescription}
 						onClose={onClose}
 						onSubmit={onSubmit}
 						onSubmitMany={onSubmitMany}
@@ -78,7 +85,9 @@ const EventCreateBody = ({
 	defaultDate,
 	defaultValues,
 	isReadingEventsPrompt = false,
+	isReadingWorkoutDescription,
 	onReadEventsPrompt,
+	onReadWorkoutDescription,
 	onClose,
 	onSubmit,
 	onSubmitMany,
@@ -99,7 +108,9 @@ const EventCreateBody = ({
 				</Button>
 			}
 			isReadingEventsPrompt={isReadingEventsPrompt}
+			isReadingWorkoutDescription={isReadingWorkoutDescription}
 			onReadEventsPrompt={onReadEventsPrompt}
+			onReadWorkoutDescription={onReadWorkoutDescription}
 			onSubmit={onSubmitMany}
 			onCancel={onClose}
 		/>
@@ -120,6 +131,8 @@ const EventCreateBody = ({
 					</Button>
 				)
 			}
+			isReadingWorkoutDescription={isReadingWorkoutDescription}
+			onReadWorkoutDescription={onReadWorkoutDescription}
 			onSubmit={onSubmit}
 			onCancel={onClose}
 		/>

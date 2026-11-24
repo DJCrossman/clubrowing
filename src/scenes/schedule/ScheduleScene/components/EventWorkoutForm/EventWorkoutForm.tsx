@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -12,20 +11,26 @@ import {
 	eventFormSchema,
 } from "@/schemas";
 import { getEventFormValues } from "../../utils/getEventFormValues";
-import { WorkoutFields } from "../WorkoutFields/WorkoutFields";
+import {
+	type ReadWorkoutDescription,
+	WorkoutFields,
+} from "../WorkoutFields/WorkoutFields";
 
 interface EventWorkoutFormProps {
 	event: ScheduleEvent;
+	isReadingWorkoutDescription: boolean;
+	onReadWorkoutDescription: ReadWorkoutDescription;
 	onSubmit: (input: CreateEvent) => Promise<void>;
 	onCancel: () => void;
 }
 
 export function EventWorkoutForm({
 	event,
+	isReadingWorkoutDescription,
+	onReadWorkoutDescription,
 	onSubmit,
 	onCancel,
 }: EventWorkoutFormProps) {
-	const [isParsing, setIsParsing] = useState(false);
 	const form = useForm<EventFormInput>({
 		resolver: zodResolver(eventFormSchema, undefined, { raw: true }),
 		defaultValues: { ...getEventFormValues(event), hasWorkout: true },
@@ -39,14 +44,19 @@ export function EventWorkoutForm({
 				)}
 				className="space-y-6"
 			>
-				<WorkoutFields onParsingChange={setIsParsing} />
+				<WorkoutFields
+					isReadingWorkoutDescription={isReadingWorkoutDescription}
+					onReadWorkoutDescription={onReadWorkoutDescription}
+				/>
 				<div className="flex items-center justify-between gap-4">
 					<Button type="button" variant="outline" onClick={onCancel}>
 						Cancel
 					</Button>
 					<Button
 						type="submit"
-						disabled={form.formState.isSubmitting || isParsing}
+						disabled={
+							form.formState.isSubmitting || isReadingWorkoutDescription
+						}
 					>
 						Save
 					</Button>

@@ -1,6 +1,20 @@
+"use client";
+
+import { useMutation } from "@tanstack/react-query";
 import type { ParseDescriptionResult } from "@/app/api/v1/workouts/parse-description/route";
 
-export async function parseWorkoutDescription(
+export function useReadWorkoutDescription() {
+	const { mutateAsync, isPending } = useMutation({
+		mutationFn: parseWorkoutDescription,
+	});
+
+	return {
+		readWorkoutDescription: mutateAsync,
+		isReadingWorkoutDescription: isPending,
+	};
+}
+
+async function parseWorkoutDescription(
 	description: string,
 ): Promise<ParseDescriptionResult> {
 	const response = await fetch("/api/v1/workouts/parse-description", {
@@ -12,5 +26,5 @@ export async function parseWorkoutDescription(
 		const body = await response.json().catch(() => ({}));
 		throw new Error(body?.error || "Failed to parse description");
 	}
-	return (await response.json()) as ParseDescriptionResult;
+	return response.json();
 }

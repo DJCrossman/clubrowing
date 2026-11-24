@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -15,17 +14,21 @@ import {
 import { Form } from "@/components/ui/form";
 import type { CreateWorkoutFragment, EventFormInput } from "@/schemas";
 import { FragmentFields } from "../../ScheduleScene/components/FragmentFields/FragmentFields";
-import { parseWorkoutDescription } from "../../ScheduleScene/utils/parseWorkoutDescription";
+import type { ReadWorkoutDescription } from "../../ScheduleScene/components/WorkoutFields/WorkoutFields";
 import type { BulkRow } from "../utils/trainingRows";
 
 interface TrainingFragmentsDrawerProps {
 	row: BulkRow;
+	isReadingWorkoutDescription: boolean;
+	onReadWorkoutDescription: ReadWorkoutDescription;
 	onSave: (fragments: CreateWorkoutFragment[]) => void;
 	onClose: () => void;
 }
 
 export const TrainingFragmentsDrawer = ({
 	row,
+	isReadingWorkoutDescription,
+	onReadWorkoutDescription,
 	onSave,
 	onClose,
 }: TrainingFragmentsDrawerProps) => {
@@ -37,14 +40,15 @@ export const TrainingFragmentsDrawer = ({
 			workout: { workoutType: row.workoutType, fragments: row.fragments ?? [] },
 		},
 	});
-	const { mutate: readDescription, isPending } = useMutation({
-		mutationFn: parseWorkoutDescription,
-		onSuccess: (parsed) => {
+	const readDescription = async (description: string) => {
+		try {
+			const parsed = await onReadWorkoutDescription(description);
 			form.setValue("workout.fragments", parsed.fragments ?? []);
 			setStatus("read");
-		},
-		onError: () => setStatus("failed"),
-	});
+		} catch {
+			setStatus("failed");
+		}
+	};
 	const description = row.description?.trim() ?? "";
 
 	return (
@@ -72,7 +76,7 @@ export const TrainingFragmentsDrawer = ({
 										type="button"
 										variant="outline"
 										size="sm"
-										disabled={isPending}
+										disabled={isReadingWorkoutDescription}
 										onClick={() => readDescription(description)}
 									>
 										Read intervals from the description
@@ -82,7 +86,7 @@ export const TrainingFragmentsDrawer = ({
 						)}
 						<FragmentFields
 							status={status}
-							isReading={isPending}
+							isReading={isReadingWorkoutDescription}
 							onEdit={() => setStatus("edited")}
 							onReread={() => readDescription(description)}
 						/>
@@ -90,7 +94,7 @@ export const TrainingFragmentsDrawer = ({
 							<Button type="button" variant="outline" onClick={onClose}>
 								Cancel
 							</Button>
-							<Button type="submit" disabled={isPending}>
+							<Button type="submit" disabled={isReadingWorkoutDescription}>
 								Save
 							</Button>
 						</div>

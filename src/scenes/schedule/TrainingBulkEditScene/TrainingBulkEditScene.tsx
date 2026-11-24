@@ -8,6 +8,7 @@ import type { z } from "zod";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useReadWorkoutDescription } from "@/hooks/useReadWorkoutDescription";
 import { useShareToChat } from "@/hooks/useShareToChat";
 import { routes } from "@/lib/routes";
 import { CLUB_TIMEZONE } from "@/lib/schedule/week";
@@ -75,6 +76,8 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 	const [fragmentsRowId, setFragmentsRowId] = useState<string | null>(null);
 	const [isSharing, setIsSharing] = useState(false);
 	const shareToChat = useShareToChat({ isEnabled: isSharing });
+	const { readWorkoutDescription, isReadingWorkoutDescription } =
+		useReadWorkoutDescription();
 	const isDirtyRef = useRef(false);
 	const seededWeekRef = useRef(currentWeekIsoDate);
 	const awaitingSavedDataRef = useRef(false);
@@ -292,6 +295,8 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 				isSharing={isSharing}
 				shareTargets={shareToChat.targets}
 				isLoadingShareTargets={shareToChat.isLoadingTargets}
+				isReadingWorkoutDescription={isReadingWorkoutDescription}
+				onReadWorkoutDescription={readWorkoutDescription}
 				onChange={(updated) => {
 					setRows((prev) =>
 						prev.map((row) => (row.__id === updated.__id ? updated : row)),
@@ -309,6 +314,8 @@ export const TrainingBulkEditScene = ({ week }: TrainingBulkEditSceneProps) => {
 			{fragmentsRow && (
 				<TrainingFragmentsDrawer
 					row={fragmentsRow}
+					isReadingWorkoutDescription={isReadingWorkoutDescription}
+					onReadWorkoutDescription={readWorkoutDescription}
 					onSave={(fragments) => {
 						setRows((prev) =>
 							prev.map((row) =>

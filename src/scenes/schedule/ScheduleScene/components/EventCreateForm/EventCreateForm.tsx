@@ -21,7 +21,10 @@ import {
 	eventFormSchema,
 } from "@/schemas";
 import { EventDetailsFields } from "../EventDetailsFields/EventDetailsFields";
-import { WorkoutFields } from "../WorkoutFields/WorkoutFields";
+import {
+	type ReadWorkoutDescription,
+	WorkoutFields,
+} from "../WorkoutFields/WorkoutFields";
 
 const EVENT_FIELDS = [
 	"type",
@@ -39,19 +42,22 @@ const EVENT_FIELDS = [
 
 interface EventCreateFormProps {
 	defaultValues: EventFormInput;
+	afterType?: ReactNode;
+	isReadingWorkoutDescription: boolean;
+	onReadWorkoutDescription: ReadWorkoutDescription;
 	onSubmit: (input: CreateEvent, values: EventFormInput) => Promise<void>;
 	onCancel: () => void;
-	afterType?: ReactNode;
 }
 
 export function EventCreateForm({
 	defaultValues,
+	afterType,
+	isReadingWorkoutDescription,
+	onReadWorkoutDescription,
 	onSubmit,
 	onCancel,
-	afterType,
 }: EventCreateFormProps) {
 	const [step, setStep] = useState<"event" | "workout">("event");
-	const [isParsing, setIsParsing] = useState(false);
 	const form = useForm<EventFormInput>({
 		resolver: zodResolver(eventFormSchema, undefined, { raw: true }),
 		defaultValues,
@@ -102,7 +108,10 @@ export function EventCreateForm({
 					<EventDetailsFields />
 				</div>
 				<div hidden={step !== "workout"} className="space-y-6">
-					<WorkoutFields onParsingChange={setIsParsing} />
+					<WorkoutFields
+						isReadingWorkoutDescription={isReadingWorkoutDescription}
+						onReadWorkoutDescription={onReadWorkoutDescription}
+					/>
 				</div>
 				<div className="flex items-center justify-between gap-4">
 					<Button
@@ -117,7 +126,9 @@ export function EventCreateForm({
 							type="button"
 							variant="ghost"
 							className="ml-auto"
-							disabled={form.formState.isSubmitting || isParsing}
+							disabled={
+								form.formState.isSubmitting || isReadingWorkoutDescription
+							}
 							onClick={(event) => {
 								form.setValue("hasWorkout", false);
 								event.currentTarget.form?.requestSubmit();
@@ -143,7 +154,9 @@ export function EventCreateForm({
 							key="save"
 							type="submit"
 							onClick={() => form.setValue("hasWorkout", true)}
-							disabled={form.formState.isSubmitting || isParsing}
+							disabled={
+								form.formState.isSubmitting || isReadingWorkoutDescription
+							}
 						>
 							Save
 						</Button>

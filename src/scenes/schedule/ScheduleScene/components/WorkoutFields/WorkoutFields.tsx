@@ -1,9 +1,9 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
+import type { ParseDescriptionResult } from "@/app/api/v1/workouts/parse-description/route";
 import {
 	FormControl,
 	FormField,
@@ -26,8 +26,11 @@ import {
 	intensityActiveSelectorMap,
 	intensityColorMap,
 } from "../../utils/intensityColorMap";
-import { parseWorkoutDescription } from "../../utils/parseWorkoutDescription";
 import { FragmentFields } from "../FragmentFields/FragmentFields";
+
+export type ReadWorkoutDescription = (
+	description: string,
+) => Promise<ParseDescriptionResult>;
 
 const INTENSITY_VALUES: IntensityCategory[] = [
 	"C1",
@@ -39,10 +42,14 @@ const INTENSITY_VALUES: IntensityCategory[] = [
 ];
 
 interface WorkoutFieldsProps {
-	onParsingChange: (isParsing: boolean) => void;
+	isReadingWorkoutDescription: boolean;
+	onReadWorkoutDescription: ReadWorkoutDescription;
 }
 
-export const WorkoutFields = ({ onParsingChange }: WorkoutFieldsProps) => {
+export const WorkoutFields = ({
+	isReadingWorkoutDescription,
+	onReadWorkoutDescription,
+}: WorkoutFieldsProps) => {
 	const [status, setStatus] = useState<
 		"untouched" | "read" | "edited" | "failed"
 	>("untouched");
@@ -50,10 +57,9 @@ export const WorkoutFields = ({ onParsingChange }: WorkoutFieldsProps) => {
 		useFormContext<EventFormInput>();
 	const lastReadDescription = useRef(getValues("workout.description").trim());
 	const workoutType = watch("workout.workoutType");
-	const { mutate: readDescription, isPending } = useMutation({
-		mutationFn: parseWorkoutDescription,
-		onMutate: () => onParsingChange(true),
-		onSuccess: (parsed, description) => {
+	const readDescription = async (description: string) => {
+		try {
+			const parsed = await onReadWorkoutDescription(description);
 			setValue("workout.workoutType", parsed.workoutType, {
 				shouldValidate: true,
 			});
@@ -63,10 +69,10 @@ export const WorkoutFields = ({ onParsingChange }: WorkoutFieldsProps) => {
 			setValue("workout.fragments", parsed.fragments ?? []);
 			lastReadDescription.current = description;
 			setStatus("read");
-		},
-		onError: () => setStatus("failed"),
-		onSettled: () => onParsingChange(false),
-	});
+		} catch {
+			setStatus("failed");
+		}
+	};
 
 	return (
 		<>
@@ -105,7 +111,7 @@ export const WorkoutFields = ({ onParsingChange }: WorkoutFieldsProps) => {
 					<FormItem>
 						<FormLabel>
 							Workout
-							{isPending && (
+							{isReadingWorkoutDescription && (
 								<span className="flex items-center gap-1 text-xs leading-none font-normal text-muted-foreground">
 									<IconLoader2 aria-hidden className="size-3 animate-spin" />
 									Reading…
@@ -134,7 +140,7 @@ export const WorkoutFields = ({ onParsingChange }: WorkoutFieldsProps) => {
 			/>
 			<FragmentFields
 				status={status}
-				isReading={isPending}
+				isReading={isReadingWorkoutDescription}
 				onEdit={() => setStatus("edited")}
 				onReread={() =>
 					readDescription(getValues("workout.description").trim())

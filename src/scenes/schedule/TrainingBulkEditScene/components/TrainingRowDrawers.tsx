@@ -11,6 +11,7 @@ import {
 	EventCreateDrawer,
 	EventDetailsDrawer,
 } from "../../ScheduleScene/components";
+import type { ReadWorkoutDescription } from "../../ScheduleScene/components/WorkoutFields/WorkoutFields";
 import {
 	applyEventToRow,
 	type BulkRow,
@@ -26,6 +27,8 @@ interface TrainingRowDrawersProps {
 	isSharing: boolean;
 	shareTargets: ChatTarget[];
 	isLoadingShareTargets: boolean;
+	isReadingWorkoutDescription: boolean;
+	onReadWorkoutDescription: ReadWorkoutDescription;
 	onChange: (row: BulkRow) => void;
 	onRemove: () => void;
 	onClose: () => void;
@@ -42,6 +45,8 @@ export const TrainingRowDrawers = ({
 	isSharing,
 	shareTargets,
 	isLoadingShareTargets,
+	isReadingWorkoutDescription,
+	onReadWorkoutDescription,
 	onChange,
 	onRemove,
 	onClose,
@@ -84,6 +89,8 @@ export const TrainingRowDrawers = ({
 				isSharing={isSharing}
 				shareTargets={shareTargets}
 				isLoadingShareTargets={isLoadingShareTargets}
+				isReadingWorkoutDescription={isReadingWorkoutDescription}
+				onReadWorkoutDescription={onReadWorkoutDescription}
 				onClose={onClose}
 				onSubmit={applyFormResult}
 				onDelete={async () => onRemove()}
@@ -96,6 +103,8 @@ export const TrainingRowDrawers = ({
 					weekStart.plus({ days: row?.dayIndex ?? 0 }).toISODate() ?? ""
 				}
 				defaultValues={row ? rowToFormValues(row, weekStart) : undefined}
+				isReadingWorkoutDescription={isReadingWorkoutDescription}
+				onReadWorkoutDescription={onReadWorkoutDescription}
 				onClose={onClose}
 				onSubmit={applyFormResult}
 			/>

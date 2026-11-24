@@ -47,6 +47,7 @@ import {
 	NotifyToggle,
 	notifyAthletesLabel,
 } from "../NotifyToggle/NotifyToggle";
+import type { ReadWorkoutDescription } from "../WorkoutFields/WorkoutFields";
 
 interface EventDetailsDrawerProps {
 	event: ScheduleEvent | null;
@@ -58,6 +59,8 @@ interface EventDetailsDrawerProps {
 	isSharing: boolean;
 	shareTargets: ChatTarget[];
 	isLoadingShareTargets: boolean;
+	isReadingWorkoutDescription: boolean;
+	onReadWorkoutDescription: ReadWorkoutDescription;
 	onClose: () => void;
 	onSubmit: (input: CreateEvent, options: { notify: boolean }) => Promise<void>;
 	onDelete: (eventId: string, options: { notify: boolean }) => Promise<void>;
@@ -74,6 +77,8 @@ export const EventDetailsDrawer = ({
 	isSharing,
 	shareTargets,
 	isLoadingShareTargets,
+	isReadingWorkoutDescription,
+	onReadWorkoutDescription,
 	onClose,
 	onSubmit,
 	onDelete,
@@ -266,6 +271,8 @@ export const EventDetailsDrawer = ({
 							{editing === "workout" ? (
 								<EventWorkoutForm
 									event={event}
+									isReadingWorkoutDescription={isReadingWorkoutDescription}
+									onReadWorkoutDescription={onReadWorkoutDescription}
 									onSubmit={async (input) => {
 										// Workout edits never notify, so there's no choice to offer.
 										await onSubmit(input, { notify: true });
