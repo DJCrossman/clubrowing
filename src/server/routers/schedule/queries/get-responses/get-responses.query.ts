@@ -12,7 +12,7 @@ import {
 } from "@/server/domain/athletes/common/map-to-athlete-dto";
 import type { ViewerContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
-import { canSeeGroup, getViewerGroups } from "@/server/routers/groups/common";
+import { canSeeGroup, getViewerGroups } from "@/server/domain/groups/common";
 import { countResponses } from "@/server/routers/schedule/common/count-responses";
 import { getEventAudiences } from "@/server/routers/schedule/common/event-audience";
 import {

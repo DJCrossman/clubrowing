@@ -1,6 +1,6 @@
 import { mapToAthleteWithGroups } from "@/server/domain/athletes/common/map-to-athlete-with-groups";
 import type { ViewerContext } from "@/server/domain/common/context";
-import { findGroupRules } from "@/server/routers/groups/common";
+import { findGroupRules } from "@/server/domain/groups/common";
 
 export async function getCurrentAthleteQuery(
 	_input: undefined,

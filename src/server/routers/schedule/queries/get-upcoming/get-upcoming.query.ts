@@ -6,7 +6,7 @@ import {
 } from "@/lib/schedule/week";
 import type { GetUpcomingInput } from "@/schemas";
 import type { ViewerContext } from "@/server/domain/common/context";
-import { getViewerGroups } from "@/server/routers/groups/common";
+import { getViewerGroups } from "@/server/domain/groups/common";
 import {
 	eventInclude,
 	mapToVisibleEventDtos,

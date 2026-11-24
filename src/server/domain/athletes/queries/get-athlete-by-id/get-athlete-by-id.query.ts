@@ -2,7 +2,7 @@ import type { GetAthleteByIdInput } from "@/schemas";
 import { athleteInclude } from "@/server/domain/athletes/common/map-to-athlete-dto";
 import { mapToAthleteWithGroups } from "@/server/domain/athletes/common/map-to-athlete-with-groups";
 import type { Context } from "@/server/domain/common/context";
-import { findGroupRules } from "@/server/routers/groups/common";
+import { findGroupRules } from "@/server/domain/groups/common";
 
 export async function getAthleteByIdQuery(
 	input: GetAthleteByIdInput,

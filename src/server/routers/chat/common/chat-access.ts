@@ -8,7 +8,7 @@ import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	isViewerAdmin,
 	resolveViewerGroups,
-} from "@/server/routers/groups/common";
+} from "@/server/domain/groups/common";
 
 type Db = ViewerContext["db"];
 

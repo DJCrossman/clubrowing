@@ -7,7 +7,7 @@ import {
 } from "@/lib/notifications";
 import { routes } from "@/lib/routes";
 import type { ViewerContext } from "@/server/domain/common/context";
-import { getGroupMemberIds } from "@/server/routers/groups/common";
+import { getGroupMemberIds } from "@/server/domain/groups/common";
 import { canAccessChannel } from "./chat-access";
 import { getChatUser } from "./chat-user-names";
 import { loadChatUsers } from "./chat-users";

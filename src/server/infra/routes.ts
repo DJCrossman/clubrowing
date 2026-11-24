@@ -20,6 +20,12 @@ import { updateErgProcedure } from "@/server/infra/trpc/ergs/commands/update-erg
 import { getErgByIdProcedure } from "@/server/infra/trpc/ergs/queries/get-erg-by-id.procedure";
 import { getErgsProcedure } from "@/server/infra/trpc/ergs/queries/get-ergs.procedure";
 import { submitProcedure } from "@/server/infra/trpc/feedback/commands/submit.procedure";
+import { createGroupProcedure } from "@/server/infra/trpc/groups/commands/create-group.procedure";
+import { deleteGroupProcedure } from "@/server/infra/trpc/groups/commands/delete-group.procedure";
+import { updateGroupProcedure } from "@/server/infra/trpc/groups/commands/update-group.procedure";
+import { getGroupByIdProcedure } from "@/server/infra/trpc/groups/queries/get-group-by-id.procedure";
+import { getGroupsProcedure } from "@/server/infra/trpc/groups/queries/get-groups.procedure";
+import { getMyGroupsProcedure } from "@/server/infra/trpc/groups/queries/get-my-groups.procedure";
 import { router } from "@/server/infra/trpc/init";
 import { inviteMembersProcedure } from "@/server/infra/trpc/members/commands/invite-members.procedure";
 import { resendInvitationProcedure } from "@/server/infra/trpc/members/commands/resend-invitation.procedure";
@@ -83,12 +89,6 @@ import { getChannelsProcedure } from "@/server/routers/chat/queries/get-channels
 import { getMembersProcedure as getChatMembersProcedure } from "@/server/routers/chat/queries/get-members/get-members.procedure";
 import { getMessagesProcedure } from "@/server/routers/chat/queries/get-messages/get-messages.procedure";
 import { getThreadProcedure } from "@/server/routers/chat/queries/get-thread/get-thread.procedure";
-import { createGroupProcedure } from "@/server/routers/groups/commands/create-group/create-group.procedure";
-import { deleteGroupProcedure } from "@/server/routers/groups/commands/delete-group/delete-group.procedure";
-import { updateGroupProcedure } from "@/server/routers/groups/commands/update-group/update-group.procedure";
-import { getGroupByIdProcedure } from "@/server/routers/groups/queries/get-group-by-id/get-group-by-id.procedure";
-import { getGroupsProcedure } from "@/server/routers/groups/queries/get-groups/get-groups.procedure";
-import { getMyGroupsProcedure } from "@/server/routers/groups/queries/get-my-groups/get-my-groups.procedure";
 import { createEventProcedure } from "@/server/routers/schedule/commands/create-event/create-event.procedure";
 import { createEventsProcedure } from "@/server/routers/schedule/commands/create-events/create-events.procedure";
 import { deleteEventProcedure } from "@/server/routers/schedule/commands/delete-event/delete-event.procedure";

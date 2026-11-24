@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import { paginate } from "@/lib/pagination";
 import type { ViewerContext } from "@/server/domain/common/context";
+import { getMemberIdsByGroup } from "@/server/domain/groups/common";
 import {
 	canAccessChannel,
 	ensureEveryoneChannel,
@@ -17,7 +18,6 @@ import {
 	buildUnreadMessageWhere,
 	toUnreadCounts,
 } from "@/server/routers/chat/common/unread";
-import { getMemberIdsByGroup } from "@/server/routers/groups/common";
 
 type Db = ViewerContext["db"];
 

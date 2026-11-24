@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import type { GetGroupByIdInput } from "@/schemas";
 import type { ViewerContext } from "@/server/domain/common/context";
-import { getGroupMemberIds } from "@/server/routers/groups/common";
+import { getGroupMemberIds } from "@/server/domain/groups/common";
 import { toMetersTimeSeries } from "../../common/to-meters-time-series";
 
 const SERIES_DAYS = 90;

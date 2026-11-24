@@ -6,11 +6,11 @@ import {
 	formatGroupLabel,
 } from "@/lib/schedule/event-labels";
 import type { Context, ViewerContext } from "@/server/domain/common/context";
+import { canSeeGroup, type ViewerGroups } from "@/server/domain/groups/common";
 import {
 	mapToWorkoutDto,
 	workoutInclude,
 } from "@/server/domain/workouts/common/map-to-workout-dto";
-import { canSeeGroup, type ViewerGroups } from "@/server/routers/groups/common";
 import { countResponses } from "./count-responses";
 import { getEventAudiences } from "./event-audience";
 

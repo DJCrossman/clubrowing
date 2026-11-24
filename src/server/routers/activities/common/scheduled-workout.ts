@@ -7,7 +7,7 @@ import type { Context } from "@/server/domain/common/context";
 import {
 	type GroupsDb,
 	getAthleteGroupIds,
-} from "@/server/routers/groups/common";
+} from "@/server/domain/groups/common";
 
 export async function findScheduledWorkoutForActivity({
 	db,
