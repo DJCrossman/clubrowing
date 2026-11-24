@@ -1,6 +1,6 @@
 import { getErgByIdInputSchema } from "@/schemas";
+import { getErgByIdQuery } from "@/server/domain/ergs/queries/get-erg-by-id/get-erg-by-id.query";
 import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
-import { getErgByIdQuery } from "./get-erg-by-id.query";
 
 export const getErgByIdProcedure = viewerProcedure
 	.input(getErgByIdInputSchema)

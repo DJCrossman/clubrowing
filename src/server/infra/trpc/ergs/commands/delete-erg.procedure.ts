@@ -1,6 +1,6 @@
 import { deleteErgInputSchema } from "@/schemas";
+import { deleteErgCommand } from "@/server/domain/ergs/commands/delete-erg/delete-erg.command";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { deleteErgCommand } from "./delete-erg.command";
 
 export const deleteErgProcedure = adminProcedure
 	.input(deleteErgInputSchema)

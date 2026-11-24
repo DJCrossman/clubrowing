@@ -3,6 +3,12 @@ import { createBoatProcedure } from "@/server/infra/trpc/boats/commands/create-b
 import { updateBoatProcedure } from "@/server/infra/trpc/boats/commands/update-boat.procedure";
 import { getBoatByIdProcedure } from "@/server/infra/trpc/boats/queries/get-boat-by-id.procedure";
 import { getBoatsProcedure } from "@/server/infra/trpc/boats/queries/get-boats.procedure";
+import { createErgProcedure } from "@/server/infra/trpc/ergs/commands/create-erg.procedure";
+import { deleteErgProcedure } from "@/server/infra/trpc/ergs/commands/delete-erg.procedure";
+import { markErgProcedure } from "@/server/infra/trpc/ergs/commands/mark-erg.procedure";
+import { updateErgProcedure } from "@/server/infra/trpc/ergs/commands/update-erg.procedure";
+import { getErgByIdProcedure } from "@/server/infra/trpc/ergs/queries/get-erg-by-id.procedure";
+import { getErgsProcedure } from "@/server/infra/trpc/ergs/queries/get-ergs.procedure";
 import { router } from "@/server/infra/trpc/init";
 import { attachActivityScreenshotProcedure } from "@/server/routers/activities/commands/attach-activity-screenshot/attach-activity-screenshot.procedure";
 import { connectConcept2Procedure } from "@/server/routers/activities/commands/connect-concept2/connect-concept2.procedure";
@@ -57,12 +63,6 @@ import { getChannelsProcedure } from "@/server/routers/chat/queries/get-channels
 import { getMembersProcedure as getChatMembersProcedure } from "@/server/routers/chat/queries/get-members/get-members.procedure";
 import { getMessagesProcedure } from "@/server/routers/chat/queries/get-messages/get-messages.procedure";
 import { getThreadProcedure } from "@/server/routers/chat/queries/get-thread/get-thread.procedure";
-import { createErgProcedure } from "@/server/routers/ergs/commands/create-erg/create-erg.procedure";
-import { deleteErgProcedure } from "@/server/routers/ergs/commands/delete-erg/delete-erg.procedure";
-import { markErgProcedure } from "@/server/routers/ergs/commands/mark-erg/mark-erg.procedure";
-import { updateErgProcedure } from "@/server/routers/ergs/commands/update-erg/update-erg.procedure";
-import { getErgByIdProcedure } from "@/server/routers/ergs/queries/get-erg-by-id/get-erg-by-id.procedure";
-import { getErgsProcedure } from "@/server/routers/ergs/queries/get-ergs/get-ergs.procedure";
 import { submitProcedure } from "@/server/routers/feedback/commands/submit/submit.procedure";
 import { createGroupProcedure } from "@/server/routers/groups/commands/create-group/create-group.procedure";
 import { deleteGroupProcedure } from "@/server/routers/groups/commands/delete-group/delete-group.procedure";

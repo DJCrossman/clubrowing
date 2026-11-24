@@ -3,7 +3,7 @@ import type { Context } from "@/server/domain/common/context";
 import {
 	ergInclude,
 	mapToErgDto,
-} from "@/server/routers/ergs/common/map-to-erg-dto";
+} from "@/server/domain/ergs/common/map-to-erg-dto";
 
 export async function createErgCommand(input: CreateErg, { db }: Context) {
 	const erg = await db.erg.create({

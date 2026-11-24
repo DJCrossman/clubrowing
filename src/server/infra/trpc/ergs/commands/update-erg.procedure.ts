@@ -1,6 +1,6 @@
 import { updateErgSchema } from "@/schemas";
+import { updateErgCommand } from "@/server/domain/ergs/commands/update-erg/update-erg.command";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { updateErgCommand } from "./update-erg.command";
 
 export const updateErgProcedure = adminProcedure
 	.input(updateErgSchema)

@@ -2,11 +2,11 @@ import type { z } from "zod";
 import { paginate } from "@/lib/pagination";
 import { withPagination } from "@/schemas";
 import type { ViewerContext } from "@/server/domain/common/context";
-import { ergsVisibleTo } from "@/server/routers/ergs/common/ergs-visible-to";
+import { ergsVisibleTo } from "@/server/domain/ergs/common/ergs-visible-to";
 import {
 	ergInclude,
 	mapToErgDto,
-} from "@/server/routers/ergs/common/map-to-erg-dto";
+} from "@/server/domain/ergs/common/map-to-erg-dto";
 
 export const getErgsInputSchema = withPagination({
 	columns: ["name", "manufacturer", "serialNumber", "firmwareVersion"] as const,
