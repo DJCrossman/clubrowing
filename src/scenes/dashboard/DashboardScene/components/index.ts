@@ -1,4 +1,5 @@
 export * from "./ClubWeek";
+export * from "./InstallAppAlert/InstallAppAlert";
 export * from "./IntegrationAlert/IntegrationAlert";
 export * from "./LeaderboardTable/LeaderboardTable";
 export * from "./LeaderboardTable/LeaderboardTableSkeleton";

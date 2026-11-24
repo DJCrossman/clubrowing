@@ -6,10 +6,20 @@ import { Button } from "@/components/ui/button";
 interface DoneStepProps {
 	isAdmin: boolean;
 	isFinishing: boolean;
+	canInstall: boolean;
+	canInstallFromShareMenu: boolean;
+	onInstall: () => Promise<boolean>;
 	onFinish: () => void;
 }
 
-export function DoneStep({ isAdmin, isFinishing, onFinish }: DoneStepProps) {
+export function DoneStep({
+	isAdmin,
+	isFinishing,
+	canInstall,
+	canInstallFromShareMenu,
+	onInstall,
+	onFinish,
+}: DoneStepProps) {
 	return (
 		<div className="space-y-6 text-center">
 			<div className="flex justify-center">
@@ -23,7 +33,27 @@ export function DoneStep({ isAdmin, isFinishing, onFinish }: DoneStepProps) {
 						: "Your profile is ready. You can connect more apps any time from Settings → Apps."}
 				</p>
 			</div>
-			<div className="flex items-center justify-center">
+			{canInstall && (
+				<p className="text-sm text-muted-foreground">
+					Install the app to open it from your home screen like any other app.
+				</p>
+			)}
+			{canInstallFromShareMenu && (
+				<p className="text-sm text-muted-foreground">
+					To install the app, tap Share, then Add to Home Screen.
+				</p>
+			)}
+			<div className="flex items-center justify-center gap-2">
+				{canInstall && (
+					<Button
+						variant="outline"
+						onClick={async () => {
+							if (await onInstall()) onFinish();
+						}}
+					>
+						Install app
+					</Button>
+				)}
 				<Button onClick={onFinish} disabled={isFinishing}>
 					{isFinishing ? "Finishing…" : "Go to app"}
 				</Button>

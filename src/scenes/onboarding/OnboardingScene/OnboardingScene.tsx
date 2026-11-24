@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useNotifications } from "@/hooks/useNotifications";
 import { generateQueryKey } from "@/lib/keygen";
 import { trpcClient } from "@/lib/trpc/client";
@@ -78,6 +79,7 @@ export function OnboardingScene({
 	const notifications = useNotifications({
 		enabled: currentStepId === "notifications",
 	});
+	const installPrompt = useInstallPrompt();
 
 	const goTo = (id: OnboardingStepId) => {
 		setActiveStep(id);
@@ -197,7 +199,14 @@ export function OnboardingScene({
 						onSkip: goNext,
 						onBack: goBack,
 					}}
-					done={{ isAdmin, isFinishing, onFinish: finishOnboarding }}
+					done={{
+						isAdmin,
+						isFinishing,
+						canInstall: installPrompt.canInstall,
+						canInstallFromShareMenu: installPrompt.canInstallFromShareMenu,
+						onInstall: installPrompt.install,
+						onFinish: finishOnboarding,
+					}}
 				/>
 			</div>
 		</div>

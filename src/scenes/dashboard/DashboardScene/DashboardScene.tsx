@@ -8,11 +8,13 @@ import { NotificationsBanner } from "@/components/notifications-banner";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useNotifications } from "@/hooks/useNotifications";
 import { trpcClient } from "@/lib/trpc/client";
 import { AthleteDetailsDrawer } from "@/scenes/athletes/AthleteListScene/components";
 import {
 	ClubWeekSection,
+	InstallAppAlert,
 	IntegrationAlert,
 	LeaderboardTable,
 	LeaderboardTableSkeleton,
@@ -33,6 +35,7 @@ export const DashboardScene = () => {
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const [clubWeekGroupId, setClubWeekGroupId] = useState<string | null>(null);
 	const notifications = useNotifications({ enabled: hasAthlete });
+	const installPrompt = useInstallPrompt();
 	const analyticsQuery = trpcClient.analytics.getAnalytics.useQuery();
 	const groupsQuery = trpcClient.groups.getGroups.useQuery();
 	const leaderboardQuery = trpcClient.analytics.getLeaderboard.useQuery(
@@ -108,6 +111,11 @@ export const DashboardScene = () => {
 								</div>
 							)}
 							<IntegrationAlert />
+							<InstallAppAlert
+								canInstall={installPrompt.canInstall}
+								canInstallFromShareMenu={installPrompt.canInstallFromShareMenu}
+								onInstall={installPrompt.install}
+							/>
 							{analyticsQuery.isPending ? (
 								<AnalyticMetricCardsSkeleton />
 							) : analyticsQuery.data ? (
