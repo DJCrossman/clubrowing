@@ -1,8 +1,8 @@
 import { createLogger } from "@/lib/logger";
 import type { ConnectConcept2Input } from "@/schemas";
 import type { AuthenticatedContext } from "@/server/domain/common/context";
+import { mapToUserDto } from "@/server/domain/users/common/map-to-user-dto";
 import { encryptToken } from "@/server/integration-token-crypto";
-import { mapToUserDto } from "@/server/routers/users/common/map-to-user-dto";
 
 const logger = createLogger("concept2.connect");
 

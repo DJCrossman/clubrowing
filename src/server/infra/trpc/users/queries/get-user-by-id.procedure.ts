@@ -1,6 +1,6 @@
 import { getUserByIdInputSchema } from "@/schemas";
+import { getUserByIdQuery } from "@/server/domain/users/queries/get-user-by-id/get-user-by-id.query";
 import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
-import { getUserByIdQuery } from "./get-user-by-id.query";
 
 export const getUserByIdProcedure = viewerProcedure
 	.input(getUserByIdInputSchema)

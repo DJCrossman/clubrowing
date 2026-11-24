@@ -1,6 +1,6 @@
 import { athleteProfileSchema } from "@/schemas";
+import { updateUserProfileCommand } from "@/server/domain/users/commands/update-user-profile/update-user-profile.command";
 import { protectedProcedure } from "@/server/infra/trpc/procedures/protected.procedure";
-import { updateUserProfileCommand } from "./update-user-profile.command";
 
 export const updateUserProfileProcedure = protectedProcedure
 	.input(athleteProfileSchema)

@@ -31,6 +31,11 @@ import { subscribeProcedure } from "@/server/infra/trpc/notifications/commands/s
 import { unsubscribeProcedure } from "@/server/infra/trpc/notifications/commands/unsubscribe.procedure";
 import { getStatusProcedure } from "@/server/infra/trpc/notifications/queries/get-status.procedure";
 import { getProgramsProcedure } from "@/server/infra/trpc/programs/queries/get-programs.procedure";
+import { completeOnboardingProcedure } from "@/server/infra/trpc/users/commands/complete-onboarding.procedure";
+import { updateUserProfileProcedure } from "@/server/infra/trpc/users/commands/update-user-profile.procedure";
+import { getCurrentUserProcedure } from "@/server/infra/trpc/users/queries/get-current-user.procedure";
+import { getUserByIdProcedure } from "@/server/infra/trpc/users/queries/get-user-by-id.procedure";
+import { getUserByUserIdProcedure } from "@/server/infra/trpc/users/queries/get-user-by-user-id.procedure";
 import { createWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/create-workout.procedure";
 import { updateWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/update-workout.procedure";
 import { getWorkoutByIdProcedure } from "@/server/infra/trpc/workouts/queries/get-workout-by-id.procedure";
@@ -97,11 +102,6 @@ import { getEventByIdProcedure } from "@/server/routers/schedule/queries/get-eve
 import { getResponsesProcedure } from "@/server/routers/schedule/queries/get-responses/get-responses.procedure";
 import { getUpcomingProcedure } from "@/server/routers/schedule/queries/get-upcoming/get-upcoming.procedure";
 import { getWeekProcedure } from "@/server/routers/schedule/queries/get-week/get-week.procedure";
-import { completeOnboardingProcedure } from "@/server/routers/users/commands/complete-onboarding/complete-onboarding.procedure";
-import { updateUserProfileProcedure } from "@/server/routers/users/commands/update-user-profile/update-user-profile.procedure";
-import { getCurrentUserProcedure } from "@/server/routers/users/queries/get-current-user/get-current-user.procedure";
-import { getUserByIdProcedure } from "@/server/routers/users/queries/get-user-by-id/get-user-by-id.procedure";
-import { getUserByUserIdProcedure } from "@/server/routers/users/queries/get-user-by-user-id/get-user-by-user-id.procedure";
 
 export const appRouter = router({
 	athletes: router({
