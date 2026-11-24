@@ -203,6 +203,50 @@ Container is `clubrowing-<name>-app`; compose project is `clubrowing-<name>`.
   registry is `<git-common-dir>/clubrowing-instances.json`, shared across worktrees so ports never
   collide.
 
+## Architecture
+
+### Client: data calls live in scenes
+
+- A scene root (`XScene.tsx`, or the view it wraps, like `ScheduleView.tsx`) owns every
+  TanStack query and mutation, directly or through a hook in `src/hooks/`. Components below it
+  never import `trpcClient`, `useQuery`, `useMutation` or `fetch`. They take data, flags and
+  callbacks as props.
+- Every async call goes through TanStack Query; a `fetch` sits inside a `queryFn` or `mutationFn`.
+- Props are explicit: name each value, flag and callback (`isSyncing`, `onSync`), and never pass a
+  hook's whole result or a `ReturnType`/`Pick` of one. Values and flags come first, then every
+  `on…` action, in the interface, the destructuring and the call site. A layout component that
+  would only relay a child's many props takes the child as a slot.
+- A lookup that runs only while a widget is open (a dialog, a picker, an @-mention) still belongs
+  to the scene. The scene holds the open state, enables the hook with it, and clears stale state
+  during render. No `useEffect` syncs state upward.
+- Shell widgets with no scene above them (sidebar chat list, tab bar, feedback drawer, confetti)
+  keep their calls in their own top component.
+- List tables get page, sort, filters and search from `useTable`.
+- Pages read the current user through the caller (`caller.users.getCurrentUser()`), never
+  `createRequestContext()`.
+
+### Server: domain and infra
+
+- Handlers live in `src/server/domain/<feature>/{commands,queries,common}`, imported as
+  `@/domain/...`. Shared domain code, including the context types and `DomainError`, is in
+  `src/server/domain/common/`.
+- Procedures live in `src/server/infra/trpc/<feature>/{commands,queries}/<name>.procedure.ts`,
+  imported as `@/trpc/...`. The tRPC core (init, builder, caller, request context, middleware,
+  base procedures) sits at the top of `src/server/infra/trpc/`. `src/server/infra/routes.ts`
+  builds the app router.
+- A procedure is a thin wrapper: base procedure, `.input(schema)`, an optional `.permission(...)`,
+  then a call to its handler. Any other logic belongs in the handler. A member-only check on a
+  handler that admins or webhooks share goes in a `<name>.member.command.ts` /
+  `.member.query.ts` beside it.
+- Domain code imports nothing from Next.js, tRPC, Clerk or Vercel, apart from types. It reaches
+  infrastructure only through the context: `ctx.db`, `ctx.origin` and `ctx.services.*`
+  (`taskManager.runAfterResponse`, `userService`, `fileStorage`, plus the Strava, Concept2, RCA,
+  push and GitHub services). Service implementations are in `src/server/services/`. They are
+  built in `createRequestContext` and in the Strava and Concept2 webhook routes.
+- Handlers throw `DomainError` (`@/domain/common/domain-error`, using tRPC's code strings), never
+  `TRPCError`. The base procedure maps it back, so statuses and client checks don't change.
+- There is no repository layer. Data access stays in handlers and in `domain/<feature>/common`.
+
 ## Conventions
 
 - Match surrounding code; Biome tabs. Keep changes surgical — don't rewrite working code or
