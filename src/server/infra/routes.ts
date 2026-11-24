@@ -1,3 +1,8 @@
+import { bulkCreateBoatsProcedure } from "@/server/infra/trpc/boats/commands/bulk-create-boats.procedure";
+import { createBoatProcedure } from "@/server/infra/trpc/boats/commands/create-boat.procedure";
+import { updateBoatProcedure } from "@/server/infra/trpc/boats/commands/update-boat.procedure";
+import { getBoatByIdProcedure } from "@/server/infra/trpc/boats/queries/get-boat-by-id.procedure";
+import { getBoatsProcedure } from "@/server/infra/trpc/boats/queries/get-boats.procedure";
 import { router } from "@/server/infra/trpc/init";
 import { attachActivityScreenshotProcedure } from "@/server/routers/activities/commands/attach-activity-screenshot/attach-activity-screenshot.procedure";
 import { connectConcept2Procedure } from "@/server/routers/activities/commands/connect-concept2/connect-concept2.procedure";
@@ -37,11 +42,6 @@ import { getAthleteByIdProcedure } from "@/server/routers/athletes/queries/get-a
 import { getAthleteStatsProcedure } from "@/server/routers/athletes/queries/get-athlete-stats/get-athlete-stats.procedure";
 import { getAthletesProcedure } from "@/server/routers/athletes/queries/get-athletes/get-athletes.procedure";
 import { getCurrentAthleteProcedure } from "@/server/routers/athletes/queries/get-current-athlete/get-current-athlete.procedure";
-import { bulkCreateBoatsProcedure } from "@/server/routers/boats/commands/bulk-create-boats/bulk-create-boats.procedure";
-import { createBoatProcedure } from "@/server/routers/boats/commands/create-boat/create-boat.procedure";
-import { updateBoatProcedure } from "@/server/routers/boats/commands/update-boat/update-boat.procedure";
-import { getBoatByIdProcedure } from "@/server/routers/boats/queries/get-boat-by-id/get-boat-by-id.procedure";
-import { getBoatsProcedure } from "@/server/routers/boats/queries/get-boats/get-boats.procedure";
 import { addDmMembersProcedure } from "@/server/routers/chat/commands/add-dm-members/add-dm-members.procedure";
 import { deleteMessageProcedure } from "@/server/routers/chat/commands/delete-message/delete-message.procedure";
 import { editMessageProcedure } from "@/server/routers/chat/commands/edit-message/edit-message.procedure";

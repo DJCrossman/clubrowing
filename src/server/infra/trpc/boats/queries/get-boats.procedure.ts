@@ -1,5 +1,8 @@
+import {
+	getBoatsInputSchema,
+	getBoatsQuery,
+} from "@/server/domain/boats/queries/get-boats/get-boats.query";
 import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
-import { getBoatsInputSchema, getBoatsQuery } from "./get-boats.query";
 
 export const getBoatsProcedure = viewerProcedure
 	.input(getBoatsInputSchema.optional())

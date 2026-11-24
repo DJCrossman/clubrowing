@@ -1,6 +1,6 @@
 import { bulkCreateBoatsSchema } from "@/schemas";
+import { bulkCreateBoatsCommand } from "@/server/domain/boats/commands/bulk-create-boats/bulk-create-boats.command";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { bulkCreateBoatsCommand } from "./bulk-create-boats.command";
 
 export const bulkCreateBoatsProcedure = adminProcedure
 	.input(bulkCreateBoatsSchema)

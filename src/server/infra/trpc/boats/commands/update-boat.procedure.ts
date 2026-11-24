@@ -1,6 +1,6 @@
 import { updateBoatSchema } from "@/schemas";
+import { updateBoatCommand } from "@/server/domain/boats/commands/update-boat/update-boat.command";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { updateBoatCommand } from "./update-boat.command";
 
 export const updateBoatProcedure = adminProcedure
 	.input(updateBoatSchema)
