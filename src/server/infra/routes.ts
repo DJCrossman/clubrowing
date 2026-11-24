@@ -10,6 +10,7 @@ import { updateErgProcedure } from "@/server/infra/trpc/ergs/commands/update-erg
 import { getErgByIdProcedure } from "@/server/infra/trpc/ergs/queries/get-erg-by-id.procedure";
 import { getErgsProcedure } from "@/server/infra/trpc/ergs/queries/get-ergs.procedure";
 import { router } from "@/server/infra/trpc/init";
+import { getProgramsProcedure } from "@/server/infra/trpc/programs/queries/get-programs.procedure";
 import { createWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/create-workout.procedure";
 import { updateWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/update-workout.procedure";
 import { getWorkoutByIdProcedure } from "@/server/infra/trpc/workouts/queries/get-workout-by-id.procedure";
@@ -83,7 +84,6 @@ import { setPreferenceProcedure } from "@/server/routers/notifications/commands/
 import { subscribeProcedure } from "@/server/routers/notifications/commands/subscribe/subscribe.procedure";
 import { unsubscribeProcedure } from "@/server/routers/notifications/commands/unsubscribe/unsubscribe.procedure";
 import { getStatusProcedure } from "@/server/routers/notifications/queries/get-status/get-status.procedure";
-import { getProgramsProcedure } from "@/server/routers/programs/queries/get-programs/get-programs.procedure";
 import { createEventProcedure } from "@/server/routers/schedule/commands/create-event/create-event.procedure";
 import { createEventsProcedure } from "@/server/routers/schedule/commands/create-events/create-events.procedure";
 import { deleteEventProcedure } from "@/server/routers/schedule/commands/delete-event/delete-event.procedure";
