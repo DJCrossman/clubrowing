@@ -1,5 +1,4 @@
 import type { AdminContext } from "@/domain/common/context";
-import { getRequestOrigin } from "@/domain/common/request-origin";
 import type { InviteMembers } from "@/schemas";
 import {
 	describeClerkError,
@@ -14,12 +13,11 @@ type InviteOutcome = { sent: PendingInvitation } | { skipped: SkippedInvite };
 
 export async function inviteMembersCommand(
 	{ emails, role }: InviteMembers,
-	{ user }: AdminContext,
+	{ user, origin }: AdminContext,
 ) {
-	const [members, invitations, origin] = await Promise.all([
+	const [members, invitations] = await Promise.all([
 		listOrganizationMembers(),
 		listPendingInvitations(),
-		getRequestOrigin(),
 	]);
 	const memberEmails = new Set(
 		members.flatMap((member) =>

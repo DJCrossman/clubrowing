@@ -17,6 +17,7 @@ type BaseContext = {
 		github: ReturnType<typeof createGitHubService>;
 		taskManager: ReturnType<typeof createTaskManager>;
 	};
+	origin: string;
 };
 
 export type SessionUser = {
