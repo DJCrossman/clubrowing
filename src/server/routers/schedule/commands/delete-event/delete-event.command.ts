@@ -1,6 +1,6 @@
-import { TRPCError } from "@trpc/server";
 import type { DeleteEventInput } from "@/schemas";
 import type { AdminContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	notifiableEventSelect,
 	planChangeNotifications,
@@ -15,7 +15,7 @@ export async function deleteEventCommand(
 		select: { ...notifiableEventSelect, workoutId: true },
 	});
 	if (!event) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+		throw new DomainError("NOT_FOUND", "Event not found");
 	}
 	await db.$transaction(async (tx) => {
 		await tx.event.delete({ where: { id } });

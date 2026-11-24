@@ -1,4 +1,4 @@
-import { TRPCError } from "@trpc/server";
+import { DomainError } from "@/server/domain/common/domain-error";
 import type { GroupsDb } from "./group-members";
 
 export async function findGroupOrThrow(db: GroupsDb, groupId: string) {
@@ -7,7 +7,7 @@ export async function findGroupOrThrow(db: GroupsDb, groupId: string) {
 		select: { id: true },
 	});
 	if (!group) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+		throw new DomainError("NOT_FOUND", "Group not found");
 	}
 	return group;
 }

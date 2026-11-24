@@ -1,6 +1,6 @@
-import { TRPCError } from "@trpc/server";
 import type { UpdateActivity } from "@/schemas";
 import type { Context } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	activityInclude,
 	mapToActivityDto,
@@ -16,10 +16,10 @@ export async function updateActivityCommand(
 			select: { conceptTwoId: true },
 		});
 		if (existing?.conceptTwoId != null) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: "A Concept2 result is always an erg activity.",
-			});
+			throw new DomainError(
+				"BAD_REQUEST",
+				"A Concept2 result is always an erg activity.",
+			);
 		}
 	}
 	const row = await db.activity.update({

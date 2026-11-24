@@ -1,8 +1,8 @@
 import { type AddDmMembers, MAX_DM_MEMBERS } from "@/schemas/chat.schema";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { findMyDm } from "@/server/routers/chat/common/chat-access";
 import { assertKnownChatUsers } from "@/server/routers/chat/common/chat-users";
-import { TRPCError } from "@/server/trpc";
 
 export async function addDmMembersCommand(
 	input: AddDmMembers,
@@ -12,10 +12,10 @@ export async function addDmMembersCommand(
 	const current = new Set(channel.members.map((member) => member.userId));
 	const newIds = input.userIds.filter((id) => !current.has(id));
 	if (current.size + newIds.length > MAX_DM_MEMBERS) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: `A conversation can have at most ${MAX_DM_MEMBERS} people`,
-		});
+		throw new DomainError(
+			"BAD_REQUEST",
+			`A conversation can have at most ${MAX_DM_MEMBERS} people`,
+		);
 	}
 	await assertKnownChatUsers(db, newIds);
 	const visibleFrom = input.shareHistory ? null : new Date();

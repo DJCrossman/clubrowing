@@ -1,29 +1,28 @@
-import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
 import type { AuthenticatedContext } from "@/server/context";
-import type { FinalizeCallback } from "@/server/procedures";
 import { getStravaAccessToken } from "../../common/get-strava-access-token";
 import { processStravaInboxBatchCommand } from "../process-strava-inbox-batch/process-strava-inbox-batch.command";
 import type { syncStravaActivitiesCommand } from "./sync-strava-activities.command";
 
 const logger = createLogger("sync.strava");
 
-export const syncStravaActivitiesFinalizeCallback: FinalizeCallback<
-	AuthenticatedContext,
-	undefined,
-	Awaited<ReturnType<typeof syncStravaActivitiesCommand>>
-> = async ({ ctx, result }) => {
+export const syncStravaActivitiesFinalizeCallback = async ({
+	ctx,
+	result,
+}: {
+	ctx: AuthenticatedContext;
+	result: PromiseSettledResult<
+		Awaited<ReturnType<typeof syncStravaActivitiesCommand>>
+	>;
+}) => {
 	if (result.status !== "fulfilled") return;
 	const { batchId } = result.value;
 	const { db, services } = ctx;
 	try {
 		const accessToken = await getStravaAccessToken(ctx);
 		if (!accessToken) {
-			throw new TRPCError({
-				code: "UNAUTHORIZED",
-				message: "Strava authentication required",
-			});
+			throw new Error("Strava authentication required");
 		}
 		const [stravaResult] = await Promise.allSettled([
 			services.strava.fetchAllRowingActivities(accessToken),
@@ -35,7 +34,7 @@ export const syncStravaActivitiesFinalizeCallback: FinalizeCallback<
 					? stravaResult.reason.message
 					: String(stravaResult.reason);
 			logger.error("upstream fetch failed", { error: message });
-			throw new TRPCError({ code: "BAD_GATEWAY", message });
+			throw new Error(message);
 		}
 		const rowingItems = stravaResult.value;
 		await db.activity_inbox.update({
@@ -52,7 +51,7 @@ export const syncStravaActivitiesFinalizeCallback: FinalizeCallback<
 					? batchResult.reason.message
 					: String(batchResult.reason);
 			logger.error("batch failed", { batchId, error: message });
-			throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+			throw new Error(message);
 		}
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);

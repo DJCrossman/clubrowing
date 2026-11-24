@@ -1,7 +1,7 @@
-import { TRPCError } from "@trpc/server";
 import type { InvitationIdInput } from "@/schemas";
 import { listPendingInvitations } from "@/server/clerk/organization-members";
 import type { AdminContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { inviteMembersCommand } from "../invite-members/invite-members.command";
 import { revokeInvitationCommand } from "../revoke-invitation/revoke-invitation.command";
 
@@ -13,10 +13,7 @@ export async function resendInvitationCommand(
 		(candidate) => candidate.id === invitationId,
 	);
 	if (!invitation) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "That invitation is no longer pending",
-		});
+		throw new DomainError("NOT_FOUND", "That invitation is no longer pending");
 	}
 	await revokeInvitationCommand({ invitationId }, ctx);
 	const { sent, skipped } = await inviteMembersCommand(
@@ -25,10 +22,10 @@ export async function resendInvitationCommand(
 	);
 	const resent = sent[0];
 	if (!resent) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: skipped[0]?.reason ?? "Could not resend the invitation",
-		});
+		throw new DomainError(
+			"BAD_REQUEST",
+			skipped[0]?.reason ?? "Could not resend the invitation",
+		);
 	}
 	return resent;
 }

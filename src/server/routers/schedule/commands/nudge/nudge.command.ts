@@ -1,6 +1,6 @@
-import { TRPCError } from "@trpc/server";
 import type { EventIdInput } from "@/schemas";
 import type { AdminContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { getEventAudiences } from "@/server/routers/schedule/common/event-audience";
 import { sendNudge } from "@/server/routers/schedule/common/send-nudge";
 
@@ -9,10 +9,10 @@ export async function nudgeCommand(
 	{ db, services }: AdminContext,
 ) {
 	if (!services.push.isConfigured) {
-		throw new TRPCError({
-			code: "PRECONDITION_FAILED",
-			message: "Push notifications are not configured on the server.",
-		});
+		throw new DomainError(
+			"PRECONDITION_FAILED",
+			"Push notifications are not configured on the server.",
+		);
 	}
 	const event = await db.event.findUnique({
 		where: { id: eventId },
@@ -22,7 +22,7 @@ export async function nudgeCommand(
 		},
 	});
 	if (!event) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+		throw new DomainError("NOT_FOUND", "Event not found");
 	}
 	const audience = (await getEventAudiences(db, [event])).get(event.id) ?? [];
 	const responded = new Set(event.rsvps.map(({ athleteId }) => athleteId));

@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import { createLogger } from "@/lib/logger";
 import {
 	makeRcaProgramSignature,
@@ -12,6 +11,7 @@ import {
 	type RcaMembershipItem,
 } from "@/schemas";
 import type { AuthenticatedContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { RcaSessionExpiredError } from "@/server/services/rca-service";
 import {
 	clearRcaCredentials,
@@ -34,11 +34,10 @@ export async function syncRcaCommand(
 	const session = await getRcaSession(ctx);
 	if (!session) {
 		await clearRcaCredentials(ctx);
-		throw new TRPCError({
-			code: "UNAUTHORIZED",
-			message:
-				"RCA is not connected or credentials are invalid. Please reconnect.",
-		});
+		throw new DomainError(
+			"UNAUTHORIZED",
+			"RCA is not connected or credentials are invalid. Please reconnect.",
+		);
 	}
 
 	const settled = await Promise.allSettled([
@@ -52,10 +51,10 @@ export async function syncRcaCommand(
 		if (result.status === "rejected") {
 			if (result.reason instanceof RcaSessionExpiredError) {
 				await clearRcaCredentials(ctx);
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "RCA session expired. Please reconnect.",
-				});
+				throw new DomainError(
+					"UNAUTHORIZED",
+					"RCA session expired. Please reconnect.",
+				);
 			}
 			logger.warn("membership endpoint failed", {
 				source: sources[i],

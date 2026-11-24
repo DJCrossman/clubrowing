@@ -1,5 +1,5 @@
-import { TRPCError } from "@trpc/server";
 import { db } from "@/lib/db";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { replyFromCalendarCommand } from "@/server/routers/schedule/commands/reply-from-calendar/reply-from-calendar.command";
 import {
 	describeReply,
@@ -54,7 +54,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 			}),
 		);
 	} catch (error) {
-		if (!(error instanceof TRPCError)) {
+		if (!(error instanceof DomainError)) {
 			throw error;
 		}
 		const reply = await getCalendarReplyQuery({ token, eventId }, { db });

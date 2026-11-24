@@ -3,12 +3,12 @@ import { Prisma } from "@/generated/prisma/client";
 import type { SendMessage } from "@/schemas/chat.schema";
 import { storedFileMatches } from "@/server/common/stored-file-matches";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { findAccessibleChannel } from "@/server/routers/chat/common/chat-access";
 import { loadMessageDtos } from "@/server/routers/chat/common/load-message-dtos";
 import { messageInclude } from "@/server/routers/chat/common/map-to-message-dto";
 import { selectChannelMentions } from "@/server/routers/chat/common/message-mentions";
 import { notifyChannelAfterResponse } from "@/server/routers/chat/common/message-notifications";
-import { TRPCError } from "@/server/trpc";
 
 export async function sendMessageCommand(
 	input: SendMessage,
@@ -57,10 +57,10 @@ export async function sendMessageCommand(
 				error instanceof Prisma.PrismaClientKnownRequestError &&
 				error.code === "P2018"
 			) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Those files can't be added. Try adding them again.",
-				});
+				throw new DomainError(
+					"BAD_REQUEST",
+					"Those files can't be added. Try adding them again.",
+				);
 			}
 			throw error;
 		});
@@ -79,10 +79,10 @@ async function assertQuotable(
 		select: { channelId: true, deletedAt: true },
 	});
 	if (!quoted || quoted.channelId !== channelId || quoted.deletedAt) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "The quoted message is no longer available",
-		});
+		throw new DomainError(
+			"BAD_REQUEST",
+			"The quoted message is no longer available",
+		);
 	}
 }
 
@@ -99,10 +99,10 @@ async function confirmPendingUploads({
 	for (const upload of pending) {
 		const stored = await head(upload.url).catch(() => null);
 		if (!stored || !storedFileMatches({ stored, upload })) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: "That video didn't finish uploading. Try adding it again.",
-			});
+			throw new DomainError(
+				"BAD_REQUEST",
+				"That video didn't finish uploading. Try adding it again.",
+			);
 		}
 		await db.upload.update({
 			where: { id: upload.id },

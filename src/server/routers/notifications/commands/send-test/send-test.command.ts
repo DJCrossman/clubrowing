@@ -1,16 +1,16 @@
-import { TRPCError } from "@trpc/server";
 import { routes } from "@/lib/routes";
 import type { AuthenticatedContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 
 export async function sendTestCommand(
 	_input: undefined,
 	{ athlete, services }: AuthenticatedContext,
 ) {
 	if (!services.push.isConfigured) {
-		throw new TRPCError({
-			code: "PRECONDITION_FAILED",
-			message: "Push notifications are not configured on the server.",
-		});
+		throw new DomainError(
+			"PRECONDITION_FAILED",
+			"Push notifications are not configured on the server.",
+		);
 	}
 
 	return services.push.sendPush([athlete.id], {

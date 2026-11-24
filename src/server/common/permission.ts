@@ -1,6 +1,6 @@
-import type { TRPC_ERROR_CODE_KEY } from "@trpc/server";
+import type { DomainError } from "@/server/domain/common/domain-error";
 
-type PermissionError = { code: TRPC_ERROR_CODE_KEY; message: string };
+type PermissionError = { code: DomainError["code"]; message: string };
 
 /**
  * A reusable access rule for a procedure, checked after its input is parsed

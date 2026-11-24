@@ -1,7 +1,7 @@
 import type { ToggleReaction } from "@/schemas/chat.schema";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { findAccessibleMessage } from "@/server/routers/chat/common/chat-access";
-import { TRPCError } from "@/server/trpc";
 
 export async function toggleReactionCommand(
 	input: ToggleReaction,
@@ -9,10 +9,7 @@ export async function toggleReactionCommand(
 ) {
 	const message = await findAccessibleMessage(db, input.messageId, user);
 	if (message.deletedAt) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "This message was deleted",
-		});
+		throw new DomainError("BAD_REQUEST", "This message was deleted");
 	}
 	const reaction = {
 		messageId: message.id,

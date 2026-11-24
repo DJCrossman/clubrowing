@@ -1,4 +1,4 @@
-import { TRPCError } from "@trpc/server";
+import { DomainError } from "@/server/domain/common/domain-error";
 
 export function resolveActivityAthleteIds({
 	isAdmin,
@@ -13,10 +13,7 @@ export function resolveActivityAthleteIds({
 		return requestedAthleteIds?.length ? requestedAthleteIds : undefined;
 	}
 	if (!currentAthleteId) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Athlete account required",
-		});
+		throw new DomainError("FORBIDDEN", "Athlete account required");
 	}
 	return [currentAthleteId];
 }

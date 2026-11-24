@@ -1,5 +1,6 @@
 import { resolveViewerAccess } from "@/server/common/middleware/viewer-access";
 import type { Context, SessionUser } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { athleteInclude } from "@/server/routers/athletes/common/map-to-athlete-dto";
 import { findAccessibleMessage } from "@/server/routers/chat/common/chat-access";
 import { TRPCError } from "@/server/trpc";
@@ -37,7 +38,7 @@ export async function findViewableAttachment({
 		const message = await findAccessibleMessage(db, messageId, user);
 		return message.deletedAt ? null : upload;
 	} catch (error) {
-		if (error instanceof TRPCError) {
+		if (error instanceof TRPCError || error instanceof DomainError) {
 			return null;
 		}
 		throw error;

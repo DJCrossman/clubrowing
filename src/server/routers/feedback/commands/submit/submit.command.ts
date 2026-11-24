@@ -1,6 +1,6 @@
-import { TRPCError } from "@trpc/server";
 import type { FeedbackType, SubmitFeedback } from "@/schemas";
 import type { UnauthenticatedContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 
 const LABELS: Record<FeedbackType, string> = {
 	bug: "bug",
@@ -13,16 +13,13 @@ export async function submitCommand(
 	{ user, db, services }: UnauthenticatedContext,
 ) {
 	if (!user) {
-		throw new TRPCError({
-			code: "UNAUTHORIZED",
-			message: "Sign in to send feedback.",
-		});
+		throw new DomainError("UNAUTHORIZED", "Sign in to send feedback.");
 	}
 	if (!services.github.isConfigured) {
-		throw new TRPCError({
-			code: "PRECONDITION_FAILED",
-			message: "Feedback isn't set up on this server yet.",
-		});
+		throw new DomainError(
+			"PRECONDITION_FAILED",
+			"Feedback isn't set up on this server yet.",
+		);
 	}
 
 	const athlete = await db.athlete.findUnique({

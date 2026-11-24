@@ -1,8 +1,8 @@
-import { TRPCError } from "@trpc/server";
 import { after } from "next/server";
 import type { SessionSnapshot } from "@/lib/schedule/changes";
 import type { SaveTrainingWeek } from "@/schemas";
 import type { AdminContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { attachLoggedActivitiesToWorkout } from "@/server/routers/activities/common/scheduled-workout";
 import {
 	createEventRow,
@@ -96,19 +96,19 @@ function assertTrainingOnly(
 	for (const id of touchedIds) {
 		const event = existingById.get(id);
 		if (!event) {
-			throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+			throw new DomainError("NOT_FOUND", "Event not found");
 		}
 		if (event.type !== "training") {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: "Only training sessions can be bulk edited",
-			});
+			throw new DomainError(
+				"BAD_REQUEST",
+				"Only training sessions can be bulk edited",
+			);
 		}
 	}
 	if ([...input.creates, ...input.updates].some((e) => e.type !== "training")) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "Only training sessions can be bulk edited",
-		});
+		throw new DomainError(
+			"BAD_REQUEST",
+			"Only training sessions can be bulk edited",
+		);
 	}
 }

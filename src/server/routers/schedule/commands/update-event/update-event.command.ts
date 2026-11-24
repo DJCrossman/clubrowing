@@ -1,7 +1,7 @@
-import { TRPCError } from "@trpc/server";
 import { after } from "next/server";
 import type { UpdateEventInput } from "@/schemas";
 import type { AdminContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { attachLoggedActivitiesToWorkout } from "@/server/routers/activities/common/scheduled-workout";
 import { updateEventRow } from "@/server/routers/schedule/common/event-writes";
 import { mapToEventDtos } from "@/server/routers/schedule/common/map-to-event-dto";
@@ -24,20 +24,17 @@ export async function updateEventCommand(
 		},
 	});
 	if (!existing) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+		throw new DomainError("NOT_FOUND", "Event not found");
 	}
 	if (input.type !== existing.type) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "An event's type can't be changed",
-		});
+		throw new DomainError("BAD_REQUEST", "An event's type can't be changed");
 	}
 	const signedUp = existing._count.rsvps;
 	if (input.type === "volunteer" && (input.volunteerSpots ?? 0) < signedUp) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: `${signedUp} people already signed up for this shift`,
-		});
+		throw new DomainError(
+			"BAD_REQUEST",
+			`${signedUp} people already signed up for this shift`,
+		);
 	}
 
 	const row = await db.$transaction((tx) =>

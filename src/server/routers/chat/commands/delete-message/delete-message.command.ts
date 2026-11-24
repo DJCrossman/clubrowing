@@ -2,11 +2,11 @@ import { createLogger } from "@/lib/logger";
 import type { DeleteMessage } from "@/schemas/chat.schema";
 import { removeUploads } from "@/server/common/remove-uploads";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	findAccessibleMessage,
 	isChatAdmin,
 } from "@/server/routers/chat/common/chat-access";
-import { TRPCError } from "@/server/trpc";
 
 const logger = createLogger("chat.delete-message");
 
@@ -17,10 +17,7 @@ export async function deleteMessageCommand(
 	const { db, user } = ctx;
 	const message = await findAccessibleMessage(db, input.messageId, user);
 	if (message.authorUserId !== user.id && !isChatAdmin(ctx)) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "You can only delete your own messages",
-		});
+		throw new DomainError("FORBIDDEN", "You can only delete your own messages");
 	}
 	if (!message.deletedAt) {
 		await db.message.update({

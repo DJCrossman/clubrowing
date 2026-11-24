@@ -1,7 +1,7 @@
 import { clerkClient } from "@clerk/nextjs/server";
-import { TRPCError } from "@trpc/server";
 import type { CompleteOnboarding } from "@/schemas";
 import type { OnboardingContext } from "@/server/common/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { mapToAthleteDto } from "@/server/routers/athletes/common/map-to-athlete-dto";
 
 export async function completeOnboardingCommand(
@@ -15,11 +15,10 @@ export async function completeOnboardingCommand(
 	if (email) {
 		const existingByEmail = await db.athlete.findUnique({ where: { email } });
 		if (existingByEmail) {
-			throw new TRPCError({
-				code: "CONFLICT",
-				message:
-					"An athlete with your email already exists; please contact a club admin to link it.",
-			});
+			throw new DomainError(
+				"CONFLICT",
+				"An athlete with your email already exists; please contact a club admin to link it.",
+			);
 		}
 	}
 

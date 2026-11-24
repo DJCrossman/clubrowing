@@ -1,8 +1,8 @@
 import type { EditMessage } from "@/schemas/chat.schema";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { findAccessibleMessage } from "@/server/routers/chat/common/chat-access";
 import { selectChannelMentions } from "@/server/routers/chat/common/message-mentions";
-import { TRPCError } from "@/server/trpc";
 
 export async function editMessageCommand(
 	input: EditMessage,
@@ -11,16 +11,10 @@ export async function editMessageCommand(
 	const { db, user } = ctx;
 	const message = await findAccessibleMessage(db, input.messageId, user);
 	if (message.authorUserId !== user.id) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "You can only edit your own messages",
-		});
+		throw new DomainError("FORBIDDEN", "You can only edit your own messages");
 	}
 	if (message.deletedAt) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "This message was deleted",
-		});
+		throw new DomainError("BAD_REQUEST", "This message was deleted");
 	}
 	if (message.text !== input.text) {
 		await db.message.update({

@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import {
 	EVENT_TYPE_LABELS,
 	formatEventDate,
@@ -7,6 +6,7 @@ import {
 } from "@/lib/schedule/event-labels";
 import type { EventIdInput } from "@/schemas";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	type AthleteRow,
 	athleteInclude,
@@ -33,12 +33,12 @@ export async function getResponsesQuery(
 		getViewerGroups(ctx),
 	]);
 	if (!event) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+		throw new DomainError("NOT_FOUND", "Event not found");
 	}
 	const audienceIds = (await getEventAudiences(db, [event])).get(event.id);
 	const audience: ReadonlySet<string> = audienceIds ?? new Set();
 	if (!viewer.isAdmin && !(athlete && audience.has(athlete.id))) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+		throw new DomainError("NOT_FOUND", "Event not found");
 	}
 	const statusByAthlete = new Map(
 		event.rsvps.map(({ athleteId, status }) => [athleteId, status]),

@@ -1,6 +1,6 @@
-import { TRPCError } from "@trpc/server";
 import sharp from "sharp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DomainError } from "@/server/domain/common/domain-error";
 
 const env = {
 	BLOB_READ_WRITE_TOKEN: "blob-token" as string | undefined,
@@ -83,7 +83,7 @@ describe("GET /api/v1/chat/attachments/[id]", () => {
 
 	it("answers 404 when the viewer cannot read the message", async () => {
 		findAccessibleMessage.mockRejectedValue(
-			new TRPCError({ code: "NOT_FOUND", message: "Message not found" }),
+			new DomainError("NOT_FOUND", "Message not found"),
 		);
 
 		await expectUnavailable(await GET(...photoRequest()));
@@ -319,7 +319,7 @@ describe("GET /api/v1/chat/attachments/[id]", () => {
 			previewOf: { messageId: "msg_1" },
 		});
 		findAccessibleMessage.mockRejectedValue(
-			new TRPCError({ code: "NOT_FOUND", message: "Message not found" }),
+			new DomainError("NOT_FOUND", "Message not found"),
 		);
 
 		await expectUnavailable(await GET(...photoRequest()));

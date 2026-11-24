@@ -1,8 +1,6 @@
-import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { createLogger } from "@/lib/logger";
 import type { AuthenticatedContext } from "@/server/context";
-import type { FinalizeCallback } from "@/server/procedures";
 import { getConcept2AccessToken } from "../../common/get-concept2-access-token";
 import { processConcept2InboxBatchCommand } from "../process-concept2-inbox-batch/process-concept2-inbox-batch.command";
 import type { syncConcept2ActivitiesCommand } from "./sync-concept2-activities.command";
@@ -12,24 +10,25 @@ const logger = createLogger("sync.concept2");
 function raiseGatewayError(err: unknown): never {
 	const message = err instanceof Error ? err.message : String(err);
 	logger.error("upstream fetch failed", { error: message });
-	throw new TRPCError({ code: "BAD_GATEWAY", message });
+	throw new Error(message);
 }
 
-export const syncConcept2ActivitiesFinalizeCallback: FinalizeCallback<
-	AuthenticatedContext,
-	undefined,
-	Awaited<ReturnType<typeof syncConcept2ActivitiesCommand>>
-> = async ({ ctx, result }) => {
+export const syncConcept2ActivitiesFinalizeCallback = async ({
+	ctx,
+	result,
+}: {
+	ctx: AuthenticatedContext;
+	result: PromiseSettledResult<
+		Awaited<ReturnType<typeof syncConcept2ActivitiesCommand>>
+	>;
+}) => {
 	if (result.status !== "fulfilled") return;
 	const { batchId } = result.value;
 	const { db, services } = ctx;
 	try {
 		const accessToken = await getConcept2AccessToken(ctx);
 		if (!accessToken) {
-			throw new TRPCError({
-				code: "UNAUTHORIZED",
-				message: "Concept2 is not connected. Please reconnect.",
-			});
+			throw new Error("Concept2 is not connected. Please reconnect.");
 		}
 		const [ergResults, waterResults] = await Promise.allSettled([
 			services.concept2
@@ -48,7 +47,7 @@ export const syncConcept2ActivitiesFinalizeCallback: FinalizeCallback<
 						: String(ergResults.reason)
 					: "Unknown error";
 			logger.error("upstream fetch failed", { error: message });
-			throw new TRPCError({ code: "BAD_GATEWAY", message });
+			throw new Error(message);
 		}
 
 		if (waterResults.status === "rejected") {
@@ -59,7 +58,7 @@ export const syncConcept2ActivitiesFinalizeCallback: FinalizeCallback<
 						: String(waterResults.reason)
 					: "Unknown error";
 			logger.error("upstream fetch failed", { error: message });
-			throw new TRPCError({ code: "BAD_GATEWAY", message });
+			throw new Error(message);
 		}
 
 		const rowingItems = [...ergResults.value, ...waterResults.value];
@@ -85,7 +84,7 @@ export const syncConcept2ActivitiesFinalizeCallback: FinalizeCallback<
 					errorMessage: message,
 				},
 			});
-			throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+			throw new Error(message);
 		}
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);

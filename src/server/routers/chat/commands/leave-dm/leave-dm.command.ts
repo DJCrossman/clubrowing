@@ -1,7 +1,7 @@
 import type { LeaveDm } from "@/schemas/chat.schema";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { findMyDm } from "@/server/routers/chat/common/chat-access";
-import { TRPCError } from "@/server/trpc";
 
 const MIN_MEMBERS_TO_LEAVE = 3;
 
@@ -11,10 +11,10 @@ export async function leaveDmCommand(
 ) {
 	const channel = await findMyDm(db, input.channelId, user.id);
 	if (channel.members.length < MIN_MEMBERS_TO_LEAVE) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "You can't leave a conversation between two people",
-		});
+		throw new DomainError(
+			"BAD_REQUEST",
+			"You can't leave a conversation between two people",
+		);
 	}
 	await db.$transaction([
 		db.channel_member.delete({

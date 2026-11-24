@@ -1,11 +1,11 @@
 import type { ChannelKind } from "@/generated/prisma/client";
 import { EVERYONE_CHANNEL_ID } from "@/schemas/chat.schema";
 import type { SessionUser, ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import {
 	isViewerAdmin,
 	resolveViewerGroups,
 } from "@/server/routers/groups/common";
-import { TRPCError } from "@/server/trpc";
 
 type Db = ViewerContext["db"];
 
@@ -40,7 +40,7 @@ export async function findAccessibleChannel(
 			? await ensureEveryoneChannel(db)
 			: null);
 	if (!channel || !(await canViewerAccess(db, user, channel))) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Channel not found" });
+		throw new DomainError("NOT_FOUND", "Channel not found");
 	}
 	return channel;
 }
@@ -65,7 +65,7 @@ export async function findAccessibleMessage(
 			getVisibleFrom(message.channel, user.id),
 		)
 	) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+		throw new DomainError("NOT_FOUND", "Message not found");
 	}
 	return message;
 }
@@ -82,13 +82,13 @@ export async function findMyDm(db: Db, channelId: string, userId: string) {
 		(channel.kind === "direct_message" &&
 			!channel.members.some((member) => member.userId === userId))
 	) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Channel not found" });
+		throw new DomainError("NOT_FOUND", "Channel not found");
 	}
 	if (channel.kind !== "direct_message") {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "Only direct messages have their own members",
-		});
+		throw new DomainError(
+			"BAD_REQUEST",
+			"Only direct messages have their own members",
+		);
 	}
 	return channel;
 }

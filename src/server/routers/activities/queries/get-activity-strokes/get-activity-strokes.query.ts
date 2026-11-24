@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import { createLogger } from "@/lib/logger";
 import {
 	type Concept2Strokes,
@@ -7,6 +6,7 @@ import {
 	type GetActivityStrokesInput,
 } from "@/schemas";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { canViewActivity } from "@/server/routers/activities/common/can-view-activity";
 import { parseStoredJson } from "@/server/routers/activities/common/cross-source-activity";
 import { getConcept2AccessTokenForAthlete } from "@/server/routers/activities/common/get-concept2-access-token-for-athlete";
@@ -35,10 +35,10 @@ export async function getActivityStrokesQuery(
 	});
 	if (!row) return null;
 	if (!canViewActivity({ activity: row, user, athlete })) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Cannot view another athlete's activity",
-		});
+		throw new DomainError(
+			"FORBIDDEN",
+			"Cannot view another athlete's activity",
+		);
 	}
 
 	const stored = row.strokes

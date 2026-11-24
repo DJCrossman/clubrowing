@@ -1,18 +1,18 @@
 import type { StartDm } from "@/schemas/chat.schema";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { findExactDm } from "@/server/routers/chat/common/chat-access";
 import { assertKnownChatUsers } from "@/server/routers/chat/common/chat-users";
-import { TRPCError } from "@/server/trpc";
 
 export async function startDmCommand(
 	input: StartDm,
 	{ db, user }: ViewerContext,
 ) {
 	if (input.userIds.includes(user.id)) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "You're already part of the conversation",
-		});
+		throw new DomainError(
+			"BAD_REQUEST",
+			"You're already part of the conversation",
+		);
 	}
 	await assertKnownChatUsers(db, input.userIds);
 	const memberIds = [user.id, ...input.userIds];

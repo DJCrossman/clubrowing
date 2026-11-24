@@ -1,7 +1,7 @@
-import { TRPCError } from "@trpc/server";
 import { createLogger } from "@/lib/logger";
 import type { ConnectRcaInput } from "@/schemas";
 import type { AuthenticatedContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 import { encryptToken } from "@/server/integration-token-crypto";
 import { mapToUserDto } from "@/server/routers/users/common/map-to-user-dto";
 
@@ -14,13 +14,10 @@ export async function connectRcaCommand(
 	const result = await services.rca.login(input);
 	if (!result.ok) {
 		logger.warn("RCA login rejected", { reason: result.reason });
-		throw new TRPCError({
-			code:
-				result.reason === "invalid_credentials"
-					? "UNAUTHORIZED"
-					: "BAD_GATEWAY",
-			message: result.reason,
-		});
+		throw new DomainError(
+			result.reason === "invalid_credentials" ? "UNAUTHORIZED" : "BAD_GATEWAY",
+			result.reason,
+		);
 	}
 
 	const updated = await db.athlete.update({
