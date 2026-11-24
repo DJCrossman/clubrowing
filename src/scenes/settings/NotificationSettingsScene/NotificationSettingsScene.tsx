@@ -15,7 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { useNotifications } from "@/hooks/useNotifications";
+import {
+	type NotificationPermissionState,
+	useNotifications,
+} from "@/hooks/useNotifications";
 import {
 	NOTIFICATION_SCOPE_ACTIVITIES,
 	NOTIFICATION_SCOPE_ALL,
@@ -66,13 +69,7 @@ export const NotificationSettingsScene = () => {
 		notifications.permission === "granted" &&
 		notifications.subscribed &&
 		notifications.isEnabled();
-	const blocker = !notifications.supported
-		? "This browser doesn't support push notifications."
-		: !notifications.configured
-			? "Push notifications haven't been configured on the server yet."
-			: notifications.permission === "denied"
-				? "Notifications are blocked for this site. Allow them in your browser settings, then try again."
-				: null;
+	const blocker = getPushBlocker(notifications);
 	const isBusy = notifications.isLoading || notifications.isPending;
 
 	const onToggleAll = async (checked: boolean) => {
@@ -151,6 +148,32 @@ export const NotificationSettingsScene = () => {
 		</Card>
 	);
 };
+
+function getPushBlocker({
+	needsHomeScreen,
+	supported,
+	configured,
+	permission,
+}: {
+	needsHomeScreen: boolean;
+	supported: boolean;
+	configured: boolean;
+	permission: NotificationPermissionState;
+}) {
+	if (needsHomeScreen) {
+		return "Notifications only work from the app on your home screen. Tap Share, then Add to Home Screen, and turn them on there.";
+	}
+	if (!supported) {
+		return "This browser doesn't support push notifications.";
+	}
+	if (!configured) {
+		return "Push notifications haven't been configured on the server yet.";
+	}
+	if (permission === "denied") {
+		return "Notifications are blocked for this site. Allow them in your browser settings, then try again.";
+	}
+	return null;
+}
 
 function PreferenceRow({
 	id,

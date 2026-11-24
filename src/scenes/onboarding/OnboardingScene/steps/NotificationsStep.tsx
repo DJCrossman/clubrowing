@@ -20,6 +20,7 @@ interface NotificationsStepProps {
 	isLoading: boolean;
 	isError: boolean;
 	isSupported: boolean;
+	needsHomeScreen: boolean;
 	isConfigured: boolean;
 	permission: NotificationPermissionState;
 	isSubscribed: boolean;
@@ -34,6 +35,7 @@ export function NotificationsStep({
 	isLoading,
 	isError,
 	isSupported,
+	needsHomeScreen,
 	isConfigured,
 	permission,
 	isSubscribed,
@@ -44,17 +46,14 @@ export function NotificationsStep({
 	onBack,
 }: NotificationsStepProps) {
 	const isOn = permission === "granted" && isSubscribed;
-	const unavailableReason = isLoading
-		? null
-		: isError
-			? "Notifications can't be turned on right now. You can turn them on later in Settings."
-			: !isSupported
-				? "This browser doesn't support notifications. You can turn them on later from another device."
-				: !isConfigured
-					? "Notifications haven't been set up for the club yet. You can turn them on later in Settings."
-					: permission === "denied"
-						? "Notifications are blocked for this site. Allow them in your browser settings to turn them on."
-						: null;
+	const unavailableReason = getUnavailableReason({
+		isLoading,
+		isError,
+		needsHomeScreen,
+		isSupported,
+		isConfigured,
+		permission,
+	});
 
 	return (
 		<div className="space-y-6">
@@ -128,4 +127,40 @@ export function NotificationsStep({
 			</div>
 		</div>
 	);
+}
+
+function getUnavailableReason({
+	isLoading,
+	isError,
+	needsHomeScreen,
+	isSupported,
+	isConfigured,
+	permission,
+}: {
+	isLoading: boolean;
+	isError: boolean;
+	needsHomeScreen: boolean;
+	isSupported: boolean;
+	isConfigured: boolean;
+	permission: NotificationPermissionState;
+}) {
+	if (isLoading) {
+		return null;
+	}
+	if (isError) {
+		return "Notifications can't be turned on right now. You can turn them on later in Settings.";
+	}
+	if (needsHomeScreen) {
+		return "Notifications only work from the app on your home screen. Tap Share, then Add to Home Screen, and turn them on there.";
+	}
+	if (!isSupported) {
+		return "This browser doesn't support notifications. You can turn them on later from another device.";
+	}
+	if (!isConfigured) {
+		return "Notifications haven't been set up for the club yet. You can turn them on later in Settings.";
+	}
+	if (permission === "denied") {
+		return "Notifications are blocked for this site. Allow them in your browser settings to turn them on.";
+	}
+	return null;
 }

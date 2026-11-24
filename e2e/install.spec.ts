@@ -81,6 +81,29 @@ test(
 );
 
 test(
+	"on iPhone Safari the notifications step says to turn them on from the home screen app",
+	{ tag: "@desktop" },
+	async ({ page }) => {
+		await page.addInitScript(() => {
+			Object.defineProperty(navigator, "standalone", { value: false });
+			// A Safari tab has no Notification; only the home screen app does.
+			Reflect.deleteProperty(window, "Notification");
+		});
+		await signInAs(page, "member");
+		await page.goto("/onboarding?step=notifications");
+
+		await expect(
+			page.getByText(
+				"Notifications only work from the app on your home screen. Tap Share, then Add to Home Screen, and turn them on there.",
+			),
+		).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: "Turn on notifications" }),
+		).toBeDisabled();
+	},
+);
+
+test(
 	"the dashboard offers to install the app until the member dismisses it",
 	{ tag: "@desktop" },
 	async ({ page }) => {
@@ -150,5 +173,27 @@ test(
 		await expect(page.getByRole("button", { name: "Install app" })).toHaveCount(
 			0,
 		);
+	},
+);
+
+test(
+	"on iPhone Safari the notification settings say to turn them on from the home screen app",
+	{ tag: "@phone" },
+	async ({ page }) => {
+		await page.addInitScript(() => {
+			Object.defineProperty(navigator, "standalone", { value: false });
+			Reflect.deleteProperty(window, "Notification");
+		});
+		await signInAs(page, "member");
+		await page.goto("/settings/notifications");
+
+		await expect(
+			page.getByText(
+				"Notifications only work from the app on your home screen. Tap Share, then Add to Home Screen, and turn them on there.",
+			),
+		).toBeVisible();
+		await expect(
+			page.getByRole("switch", { name: "Push notifications" }),
+		).toBeDisabled();
 	},
 );

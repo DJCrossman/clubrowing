@@ -190,6 +190,7 @@ export function OnboardingScene({
 						isLoading: notifications.isLoading,
 						isError: notifications.isError,
 						isSupported: notifications.supported,
+						needsHomeScreen: notifications.needsHomeScreen,
 						isConfigured: notifications.configured,
 						permission: notifications.permission,
 						isSubscribed: notifications.subscribed,

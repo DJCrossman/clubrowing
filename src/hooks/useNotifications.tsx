@@ -17,6 +17,7 @@ export type NotificationPermissionState =
 
 type BrowserPushState = {
 	supported: boolean;
+	needsHomeScreen: boolean;
 	permission: NotificationPermissionState;
 	endpoint: string | null;
 };
@@ -106,6 +107,7 @@ export function useNotifications({
 			}
 			setBrowserState({
 				supported: true,
+				needsHomeScreen: false,
 				permission,
 				endpoint: subscription.endpoint,
 			});
@@ -149,6 +151,7 @@ export function useNotifications({
 		isError: statusQuery.isError,
 		isPending,
 		supported: browser?.supported ?? false,
+		needsHomeScreen: browser?.needsHomeScreen ?? false,
 		configured: status?.configured ?? false,
 		permission: browser?.permission ?? "default",
 		subscribed,
@@ -162,7 +165,14 @@ export function useNotifications({
 
 async function readBrowserPushState(): Promise<BrowserPushState> {
 	if (!isPushSupported()) {
-		return { supported: false, permission: "unsupported", endpoint: null };
+		return {
+			supported: false,
+			// Safari on iPhone and iPad only offers push to an app added to the home screen.
+			needsHomeScreen:
+				"standalone" in navigator && navigator.standalone === false,
+			permission: "unsupported",
+			endpoint: null,
+		};
 	}
 	const permission = Notification.permission;
 	try {
@@ -170,11 +180,17 @@ async function readBrowserPushState(): Promise<BrowserPushState> {
 		const subscription = await registration?.pushManager.getSubscription();
 		return {
 			supported: true,
+			needsHomeScreen: false,
 			permission,
 			endpoint: subscription?.endpoint ?? null,
 		};
 	} catch {
-		return { supported: true, permission, endpoint: null };
+		return {
+			supported: true,
+			needsHomeScreen: false,
+			permission,
+			endpoint: null,
+		};
 	}
 }
 
