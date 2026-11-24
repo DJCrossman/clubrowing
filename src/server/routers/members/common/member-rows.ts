@@ -2,7 +2,7 @@ import type {
 	OrganizationMember,
 	PendingInvitation,
 } from "@/server/clerk/organization-members";
-import type { mapToAthleteWithGroups } from "@/server/routers/athletes/common/map-to-athlete-with-groups";
+import type { mapToAthleteWithGroups } from "@/server/domain/athletes/common/map-to-athlete-with-groups";
 import { getDisplayName } from "@/server/routers/chat/common/chat-user-names";
 
 export type MemberAthlete = ReturnType<typeof mapToAthleteWithGroups>;

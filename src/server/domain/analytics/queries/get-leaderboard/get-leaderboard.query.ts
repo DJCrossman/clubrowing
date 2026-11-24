@@ -1,8 +1,8 @@
 import { DateTime } from "luxon";
 import { paginate } from "@/lib/pagination";
 import { AnalyticsPeriodDays, type GetLeaderboardInput } from "@/schemas";
+import { mapToAthleteWithGroups } from "@/server/domain/athletes/common/map-to-athlete-with-groups";
 import type { Context } from "@/server/domain/common/context";
-import { mapToAthleteWithGroups } from "@/server/routers/athletes/common/map-to-athlete-with-groups";
 import { findGroupRules } from "@/server/routers/groups/common";
 import { getWeekStreak } from "../../common/get-week-streak";
 import { isErgTest } from "../../common/is-erg-test";

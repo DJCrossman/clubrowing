@@ -1,5 +1,5 @@
 import type { db } from "@/lib/db";
-import type { AthleteRow } from "@/server/routers/athletes/common/map-to-athlete-dto";
+import type { AthleteRow } from "@/server/domain/athletes/common/map-to-athlete-dto";
 import type { createConcept2Service } from "@/server/services/concept2-service";
 import type { createGitHubService } from "@/server/services/github-service";
 import type { createPushService } from "@/server/services/push-service";

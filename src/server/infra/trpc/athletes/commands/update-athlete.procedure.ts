@@ -1,6 +1,6 @@
 import { updateAthleteSchema } from "@/schemas/athlete.schema";
+import { updateAthleteCommand } from "@/server/domain/athletes/commands/update-athlete/update-athlete.command";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { updateAthleteCommand } from "./update-athlete.command";
 
 export const updateAthleteProcedure = adminProcedure
 	.input(updateAthleteSchema)

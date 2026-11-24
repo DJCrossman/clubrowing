@@ -1,6 +1,13 @@
 import { getAnalyticsProcedure } from "@/server/infra/trpc/analytics/queries/get-analytics.procedure";
 import { getGroupMetersProcedure } from "@/server/infra/trpc/analytics/queries/get-group-meters.procedure";
 import { getLeaderboardProcedure } from "@/server/infra/trpc/analytics/queries/get-leaderboard.procedure";
+import { bulkCreateAthletesProcedure } from "@/server/infra/trpc/athletes/commands/bulk-create-athletes.procedure";
+import { createAthleteProcedure } from "@/server/infra/trpc/athletes/commands/create-athlete.procedure";
+import { updateAthleteProcedure } from "@/server/infra/trpc/athletes/commands/update-athlete.procedure";
+import { getAthleteByIdProcedure } from "@/server/infra/trpc/athletes/queries/get-athlete-by-id.procedure";
+import { getAthleteStatsProcedure } from "@/server/infra/trpc/athletes/queries/get-athlete-stats.procedure";
+import { getAthletesProcedure } from "@/server/infra/trpc/athletes/queries/get-athletes.procedure";
+import { getCurrentAthleteProcedure } from "@/server/infra/trpc/athletes/queries/get-current-athlete.procedure";
 import { bulkCreateBoatsProcedure } from "@/server/infra/trpc/boats/commands/bulk-create-boats.procedure";
 import { createBoatProcedure } from "@/server/infra/trpc/boats/commands/create-boat.procedure";
 import { updateBoatProcedure } from "@/server/infra/trpc/boats/commands/update-boat.procedure";
@@ -52,13 +59,6 @@ import { getConcept2UserProcedure } from "@/server/routers/activities/queries/ge
 import { getPendingInboxBatchesProcedure } from "@/server/routers/activities/queries/get-pending-inbox-batches/get-pending-inbox-batches.procedure";
 import { getStravaActivitiesProcedure } from "@/server/routers/activities/queries/get-strava-activities/get-strava-activities.procedure";
 import { getStravaAthleteProcedure } from "@/server/routers/activities/queries/get-strava-athlete/get-strava-athlete.procedure";
-import { bulkCreateAthletesProcedure } from "@/server/routers/athletes/commands/bulk-create-athletes/bulk-create-athletes.procedure";
-import { createAthleteProcedure } from "@/server/routers/athletes/commands/create-athlete/create-athlete.procedure";
-import { updateAthleteProcedure } from "@/server/routers/athletes/commands/update-athlete/update-athlete.procedure";
-import { getAthleteByIdProcedure } from "@/server/routers/athletes/queries/get-athlete-by-id/get-athlete-by-id.procedure";
-import { getAthleteStatsProcedure } from "@/server/routers/athletes/queries/get-athlete-stats/get-athlete-stats.procedure";
-import { getAthletesProcedure } from "@/server/routers/athletes/queries/get-athletes/get-athletes.procedure";
-import { getCurrentAthleteProcedure } from "@/server/routers/athletes/queries/get-current-athlete/get-current-athlete.procedure";
 import { addDmMembersProcedure } from "@/server/routers/chat/commands/add-dm-members/add-dm-members.procedure";
 import { deleteMessageProcedure } from "@/server/routers/chat/commands/delete-message/delete-message.procedure";
 import { editMessageProcedure } from "@/server/routers/chat/commands/edit-message/edit-message.procedure";

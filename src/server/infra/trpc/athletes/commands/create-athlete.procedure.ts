@@ -1,6 +1,6 @@
 import { createAthleteSchema } from "@/schemas/athlete.schema";
+import { createAthleteCommand } from "@/server/domain/athletes/commands/create-athlete/create-athlete.command";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { createAthleteCommand } from "./create-athlete.command";
 
 export const createAthleteProcedure = adminProcedure
 	.input(createAthleteSchema)

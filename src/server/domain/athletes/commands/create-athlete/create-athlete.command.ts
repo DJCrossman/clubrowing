@@ -1,16 +1,15 @@
-import type { UpdateAthlete } from "@/schemas/athlete.schema";
-import type { Context } from "@/server/domain/common/context";
+import type { CreateAthlete } from "@/schemas/athlete.schema";
 import {
 	athleteInclude,
 	mapToAthleteDto,
-} from "@/server/routers/athletes/common/map-to-athlete-dto";
+} from "@/server/domain/athletes/common/map-to-athlete-dto";
+import type { Context } from "@/server/domain/common/context";
 
-export async function updateAthleteCommand(
-	input: UpdateAthlete,
+export async function createAthleteCommand(
+	input: CreateAthlete,
 	{ db }: Context,
 ) {
-	const row = await db.athlete.update({
-		where: { id: input.id },
+	const row = await db.athlete.create({
 		data: {
 			firstName: input.firstName,
 			lastName: input.lastName,

@@ -1,8 +1,8 @@
-import type { Context } from "@/server/domain/common/context";
 import {
 	type AthleteRow,
 	athleteInclude,
-} from "@/server/routers/athletes/common/map-to-athlete-dto";
+} from "@/server/domain/athletes/common/map-to-athlete-dto";
+import type { Context } from "@/server/domain/common/context";
 import {
 	resolveAthleteGroupIds,
 	resolveGroupMemberIds,

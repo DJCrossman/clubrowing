@@ -1,8 +1,8 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import type { CompleteOnboarding } from "@/schemas";
+import { mapToAthleteDto } from "@/server/domain/athletes/common/map-to-athlete-dto";
 import type { OnboardingContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
-import { mapToAthleteDto } from "@/server/routers/athletes/common/map-to-athlete-dto";
 
 export async function completeOnboardingCommand(
 	input: CompleteOnboarding,

@@ -1,6 +1,6 @@
 import { bulkCreateAthletesSchema } from "@/schemas/athlete.schema";
+import { bulkCreateAthletesCommand } from "@/server/domain/athletes/commands/bulk-create-athletes/bulk-create-athletes.command";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { bulkCreateAthletesCommand } from "./bulk-create-athletes.command";
 
 export const bulkCreateAthletesProcedure = adminProcedure
 	.input(bulkCreateAthletesSchema)
