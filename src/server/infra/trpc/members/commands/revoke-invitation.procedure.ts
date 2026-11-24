@@ -1,6 +1,6 @@
 import { invitationIdSchema } from "@/schemas";
+import { revokeInvitationCommand } from "@/server/domain/members/commands/revoke-invitation/revoke-invitation.command";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { revokeInvitationCommand } from "./revoke-invitation.command";
 
 export const revokeInvitationProcedure = adminProcedure
 	.input(invitationIdSchema)

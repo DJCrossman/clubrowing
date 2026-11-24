@@ -1,6 +1,6 @@
 import { getMembersInputSchema } from "@/schemas";
+import { getMembersQuery } from "@/server/domain/members/queries/get-members/get-members.query";
 import { adminProcedure } from "@/server/infra/trpc/procedures/admin.procedure";
-import { getMembersQuery } from "./get-members.query";
 
 export const getMembersProcedure = adminProcedure
 	.input(getMembersInputSchema.optional())

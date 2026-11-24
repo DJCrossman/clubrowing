@@ -21,6 +21,10 @@ import { getErgByIdProcedure } from "@/server/infra/trpc/ergs/queries/get-erg-by
 import { getErgsProcedure } from "@/server/infra/trpc/ergs/queries/get-ergs.procedure";
 import { submitProcedure } from "@/server/infra/trpc/feedback/commands/submit.procedure";
 import { router } from "@/server/infra/trpc/init";
+import { inviteMembersProcedure } from "@/server/infra/trpc/members/commands/invite-members.procedure";
+import { resendInvitationProcedure } from "@/server/infra/trpc/members/commands/resend-invitation.procedure";
+import { revokeInvitationProcedure } from "@/server/infra/trpc/members/commands/revoke-invitation.procedure";
+import { getMembersProcedure } from "@/server/infra/trpc/members/queries/get-members.procedure";
 import { sendTestProcedure } from "@/server/infra/trpc/notifications/commands/send-test.procedure";
 import { setPreferenceProcedure } from "@/server/infra/trpc/notifications/commands/set-preference.procedure";
 import { subscribeProcedure } from "@/server/infra/trpc/notifications/commands/subscribe.procedure";
@@ -80,10 +84,6 @@ import { updateGroupProcedure } from "@/server/routers/groups/commands/update-gr
 import { getGroupByIdProcedure } from "@/server/routers/groups/queries/get-group-by-id/get-group-by-id.procedure";
 import { getGroupsProcedure } from "@/server/routers/groups/queries/get-groups/get-groups.procedure";
 import { getMyGroupsProcedure } from "@/server/routers/groups/queries/get-my-groups/get-my-groups.procedure";
-import { inviteMembersProcedure } from "@/server/routers/members/commands/invite-members/invite-members.procedure";
-import { resendInvitationProcedure } from "@/server/routers/members/commands/resend-invitation/resend-invitation.procedure";
-import { revokeInvitationProcedure } from "@/server/routers/members/commands/revoke-invitation/revoke-invitation.procedure";
-import { getMembersProcedure } from "@/server/routers/members/queries/get-members/get-members.procedure";
 import { createEventProcedure } from "@/server/routers/schedule/commands/create-event/create-event.procedure";
 import { createEventsProcedure } from "@/server/routers/schedule/commands/create-events/create-events.procedure";
 import { deleteEventProcedure } from "@/server/routers/schedule/commands/delete-event/delete-event.procedure";
