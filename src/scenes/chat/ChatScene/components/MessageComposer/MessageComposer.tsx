@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { MentionRange } from "@/lib/chat/mentions";
-import type { ChatMessage } from "@/lib/trpc/types";
+import type { ChatMembers, ChatMessage } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import {
 	type MessageComposerValues,
@@ -40,7 +40,7 @@ import { GifPicker } from "../GifPicker/GifPicker";
 import { useGiphy } from "../GifPicker/useGiphy";
 import { ComposerFileStrip } from "./ComposerFileStrip";
 import { MentionList } from "./MentionList";
-import { useMentions } from "./useMentions";
+import { useMentionPicker } from "./useMentionPicker";
 
 export type ComposerSubmission = {
 	text?: string;
@@ -53,13 +53,15 @@ export type ComposerSubmission = {
 export type MessageComposerHandle = { addFiles: (added: File[]) => void };
 
 interface MessageComposerProps {
-	channelId: string;
 	placeholder: string;
 	alsoSendToLabel?: string;
 	quotedMessage?: ChatMessage | null;
+	editingMessage?: ChatMessage | null;
+	videoUploadProgress?: number | null;
+	mentionableMembers: ChatMembers;
+	ref?: Ref<MessageComposerHandle>;
 	onCancelQuote?: () => void;
 	onSubmit: (submission: ComposerSubmission) => Promise<unknown>;
-	editingMessage?: ChatMessage | null;
 	onCancelEdit?: () => void;
 	onSaveEdit?: (
 		message: ChatMessage,
@@ -67,23 +69,23 @@ interface MessageComposerProps {
 		mentions: MentionRange[],
 	) => Promise<unknown>;
 	onEditLastMessage?: () => void;
-	videoUploadProgress?: number | null;
-	ref?: Ref<MessageComposerHandle>;
+	onMentioningChange: (isMentioning: boolean) => void;
 }
 
 export function MessageComposer({
-	channelId,
 	placeholder,
 	alsoSendToLabel,
 	quotedMessage,
+	editingMessage,
+	videoUploadProgress = null,
+	mentionableMembers,
+	ref,
 	onCancelQuote,
 	onSubmit,
-	editingMessage,
 	onCancelEdit,
 	onSaveEdit,
 	onEditLastMessage,
-	videoUploadProgress = null,
-	ref,
+	onMentioningChange,
 }: MessageComposerProps) {
 	const alsoSendToId = useId();
 	const isThread = !!alsoSendToLabel;
@@ -102,7 +104,12 @@ export function MessageComposer({
 	const isSending = form.formState.isSubmitting && files.length > 0;
 	const { ref: registerTextRef, ...textField } = form.register("text");
 	const { canUseGifs, isPaused: gifsPaused } = useGiphy();
-	const mentions = useMentions({ channelId, form, textareaRef });
+	const mentions = useMentionPicker({
+		members: mentionableMembers,
+		form,
+		textareaRef,
+		onMentioningChange,
+	});
 
 	useEffect(() => {
 		if (quotedMessage) {
@@ -121,14 +128,14 @@ export function MessageComposer({
 	}, [editingMessage, form, mentions.startEditing]);
 
 	const finishEditing = () => {
-		form.reset(
-			draftBeforeEdit.current ?? {
-				text: "",
-				alsoSendToChannel: false,
-				files: [],
-			},
-		);
+		const draft = draftBeforeEdit.current ?? {
+			text: "",
+			alsoSendToChannel: false,
+			files: [],
+		};
+		form.reset(draft);
 		draftBeforeEdit.current = null;
+		onMentioningChange(mentions.hasMentionAtCaret(draft.text));
 		onCancelEdit?.();
 	};
 
@@ -155,12 +162,16 @@ export function MessageComposer({
 				...values,
 				mentions: mentions.locate(values.text),
 			}).then(
-				() => form.reset({ text: "", alsoSendToChannel: false, files: [] }),
+				() => {
+					form.reset({ text: "", alsoSendToChannel: false, files: [] });
+					onMentioningChange(false);
+				},
 				() => undefined,
 			);
 			return;
 		}
 		form.reset({ text: "", alsoSendToChannel: false, files: [] });
+		onMentioningChange(false);
 		try {
 			await onSubmit({ ...values, mentions: mentions.locate(values.text) });
 		} catch {

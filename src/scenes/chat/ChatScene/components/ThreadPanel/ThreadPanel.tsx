@@ -11,7 +11,7 @@ import {
 	DrawerTitle,
 } from "@/components/ui/drawer";
 import type { MentionRange } from "@/lib/chat/mentions";
-import type { ChatMessage, ChatThread } from "@/lib/trpc/types";
+import type { ChatMembers, ChatMessage, ChatThread } from "@/lib/trpc/types";
 import { useScrollToOwnMessage } from "../../hooks/useScrollToOwnMessage";
 import {
 	type ComposerSubmission,
@@ -32,6 +32,7 @@ interface ThreadPanelProps
 	isUnavailable: boolean;
 	isMobile: boolean;
 	videosPausedUntil: string | null;
+	mentionableMembers: ChatMembers;
 	onClose: () => void;
 	onReply: (submission: ComposerSubmission) => Promise<unknown>;
 	onSaveEdit: (
@@ -41,6 +42,7 @@ interface ThreadPanelProps
 	) => Promise<unknown>;
 	onVideoError: () => void;
 	onOpenFile: (file: ChatMessage["files"][number]) => void;
+	onMentioningChange: (isMentioning: boolean) => void;
 }
 
 export function ThreadPanel({ isMobile, ...props }: ThreadPanelProps) {
@@ -84,12 +86,14 @@ function ThreadContent({
 	isLoading,
 	isUnavailable,
 	videosPausedUntil,
+	mentionableMembers,
 	header,
 	onClose,
 	onReply,
 	onSaveEdit,
 	onVideoError,
 	onOpenFile,
+	onMentioningChange,
 	...handlers
 }: Omit<ThreadPanelProps, "isMobile"> & { header?: ReactNode }) {
 	const [editing, setEditing] = useState<ChatMessage | null>(null);
@@ -172,11 +176,11 @@ function ThreadContent({
 				<div className="shrink-0 px-4 pt-2 pb-4">
 					<MessageComposer
 						key={thread.root.id}
-						channelId={thread.root.channelId}
 						placeholder="Reply…"
 						alsoSendToLabel={`Also send to ${channelName}`}
-						onSubmit={onReply}
 						editingMessage={editingMessage}
+						mentionableMembers={mentionableMembers}
+						onSubmit={onReply}
 						onCancelEdit={() => setEditing(null)}
 						onSaveEdit={onSaveEdit}
 						onEditLastMessage={() =>
@@ -184,6 +188,7 @@ function ThreadContent({
 								threadMessages.findLast((message) => message.canEdit) ?? null,
 							)
 						}
+						onMentioningChange={onMentioningChange}
 					/>
 				</div>
 			)}

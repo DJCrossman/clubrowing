@@ -8,18 +8,19 @@ import {
 } from "react";
 import { type UseFormReturn, useWatch } from "react-hook-form";
 import { getMentionQuery, locateMentions } from "@/lib/chat/mentions";
-import { trpcClient } from "@/lib/trpc/client";
 import type { ChatMembers, ChatMessage } from "@/lib/trpc/types";
 import type { MessageComposerValues } from "@/schemas/chat.schema";
 
-export function useMentions({
-	channelId,
+export function useMentionPicker({
+	members,
 	form,
 	textareaRef,
+	onMentioningChange,
 }: {
-	channelId: string;
+	members: ChatMembers;
 	form: UseFormReturn<MessageComposerValues>;
 	textareaRef: RefObject<HTMLTextAreaElement | null>;
+	onMentioningChange: (isMentioning: boolean) => void;
 }) {
 	const listId = useId();
 	const picked = useRef<{ userId: string; label: string }[]>([]);
@@ -33,13 +34,9 @@ export function useMentions({
 	const text = useWatch({ control: form.control, name: "text" }) ?? "";
 	const mentionQuery = caret === null ? null : getMentionQuery({ text, caret });
 
-	const membersQuery = trpcClient.chat.getMembers.useQuery(
-		{ channelId },
-		{ enabled: mentionQuery !== null },
-	);
 	const needle = mentionQuery?.query.toLowerCase() ?? "";
 	const suggestions = mentionQuery
-		? (membersQuery.data?.data ?? []).filter((person) => {
+		? members.filter((person) => {
 				const name = person.name.toLowerCase();
 				return (
 					name.startsWith(needle) ||
@@ -77,14 +74,14 @@ export function useMentions({
 		const label = `@${person.name}`;
 		const value = form.getValues("text");
 		const position = mentionQuery.start + label.length + 1;
+		const nextValue = `${value.slice(0, mentionQuery.start)}${label} ${value.slice(caret)}`;
 		picked.current.push({ userId: person.id, label });
-		form.setValue(
-			"text",
-			`${value.slice(0, mentionQuery.start)}${label} ${value.slice(caret)}`,
-			{ shouldDirty: true },
-		);
+		form.setValue("text", nextValue, { shouldDirty: true });
 		setDismissed({ start: mentionQuery.start, query: person.name });
 		setCaret(position);
+		onMentioningChange(
+			getMentionQuery({ text: nextValue, caret: position }) !== null,
+		);
 		element?.focus();
 		element?.setSelectionRange(position, position);
 	};
@@ -103,8 +100,19 @@ export function useMentions({
 			if (!getMentionQuery({ text: value, caret: selectionStart })) {
 				setDismissed(null);
 			}
+			// The form's text, not the box's: Escape ending an edit resets the form
+			// in this same keypress, before the box shows the draft.
+			onMentioningChange(
+				getMentionQuery({
+					text: form.getValues("text"),
+					caret: selectionStart,
+				}) !== null,
+			);
 		},
-		onBlur: () => setCaret(null),
+		onBlur: () => {
+			setCaret(null);
+			onMentioningChange(false);
+		},
 		onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => {
 			if (!mentionQuery || !isOpen || !highlighted) return false;
 			if (event.nativeEvent.isComposing) return false;
@@ -138,16 +146,18 @@ export function useMentions({
 			const end = element?.selectionEnd ?? value.length;
 			const inserted = start > 0 && !/\s/.test(value[start - 1]) ? " @" : "@";
 			const position = start + inserted.length;
-			form.setValue(
-				"text",
-				`${value.slice(0, start)}${inserted}${value.slice(end)}`,
-				{ shouldDirty: true },
-			);
+			const nextValue = `${value.slice(0, start)}${inserted}${value.slice(end)}`;
+			form.setValue("text", nextValue, { shouldDirty: true });
 			setCaret(position);
+			onMentioningChange(
+				getMentionQuery({ text: nextValue, caret: position }) !== null,
+			);
 			element?.focus();
 			element?.setSelectionRange(position, position);
 		},
 		startEditing,
 		locate: (text: string) => locateMentions({ text, picked: picked.current }),
+		hasMentionAtCaret: (text: string) =>
+			caret !== null && getMentionQuery({ text, caret }) !== null,
 	};
 }

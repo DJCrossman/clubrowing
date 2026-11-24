@@ -17,6 +17,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useChatFile } from "@/hooks/useChatFile";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useMentions } from "@/hooks/useMentions";
 import { useNotifications } from "@/hooks/useNotifications";
 import { getViewableKind } from "@/lib/chat/attachments";
 import { fitPhotoToUploadLimit } from "@/lib/fit-photo-to-upload-limit";
@@ -63,6 +64,12 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 		fileId: string;
 		threadMessageId: string | null;
 	} | null>(null);
+	const [mentioningChannelId, setMentioningChannelId] = useState<string | null>(
+		null,
+	);
+	const [mentioningThreadId, setMentioningThreadId] = useState<string | null>(
+		null,
+	);
 	const composerRef = useRef<MessageComposerHandle>(null);
 	const {
 		channels,
@@ -113,6 +120,25 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 	const editingMessage = editing?.channelId === channelId ? editing : null;
 	const channelName = channel?.name ?? "";
 	const isUnavailable = messagesQuery.error?.data?.code === "NOT_FOUND";
+	// A composer that goes away without a blur, as when Escape closes the
+	// thread drawer, can't report that its mention ended.
+	if (
+		mentioningChannelId &&
+		(mentioningChannelId !== channelId || isUnavailable)
+	) {
+		setMentioningChannelId(null);
+	}
+	if (mentioningThreadId && mentioningThreadId !== threadQuery.data?.root.id) {
+		setMentioningThreadId(null);
+	}
+	const channelMentions = useMentions({
+		channelId,
+		isEnabled: mentioningChannelId === channelId,
+	});
+	const threadMentions = useMentions({
+		channelId: threadQuery.data?.root.channelId ?? channelId,
+		isEnabled: mentioningThreadId === threadQuery.data?.root.id,
+	});
 	const fileDrop = useFileDrop({
 		isDisabled: !!editingMessage || isUnavailable,
 		onDrop: (files) => composerRef.current?.addFiles(files),
@@ -248,12 +274,12 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 									<MessageComposer
 										key={channelId}
 										ref={composerRef}
-										channelId={channelId}
 										placeholder={`Message ${channelName}`.trim()}
 										quotedMessage={quotedMessage}
-										onCancelQuote={() => setQuote(null)}
 										videoUploadProgress={videoUploadProgress}
 										editingMessage={editingMessage}
+										mentionableMembers={channelMentions.members}
+										onCancelQuote={() => setQuote(null)}
 										onCancelEdit={() => setEditing(null)}
 										onSaveEdit={(message, text, mentions) =>
 											editMessage.mutateAsync({
@@ -290,6 +316,9 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 											});
 											setQuote(null);
 										}}
+										onMentioningChange={(isMentioning) =>
+											setMentioningChannelId(isMentioning ? channelId : null)
+										}
 									/>
 								</div>
 							</>
@@ -303,6 +332,7 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							isUnavailable={threadQuery.isError && !threadQuery.data}
 							isMobile={isMobile}
 							videosPausedUntil={videosPausedUntil}
+							mentionableMembers={threadMentions.members}
 							onVideoError={() => void refreshMessages()}
 							onClose={() =>
 								router.push(routes.chat.channel(channelId), { scroll: false })
@@ -330,6 +360,11 @@ export const ChatScene = ({ channelId, threadMessageId }: ChatSceneProps) => {
 							}
 							onOpenFile={(file) =>
 								setViewing({ fileId: file.id, threadMessageId })
+							}
+							onMentioningChange={(isMentioning) =>
+								setMentioningThreadId(
+									isMentioning ? (threadQuery.data?.root.id ?? null) : null,
+								)
 							}
 						/>
 					)}
