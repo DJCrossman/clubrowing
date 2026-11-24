@@ -1,16 +1,13 @@
-import { TRPCError } from "@trpc/server";
 import type { MarkErg } from "@/schemas";
 import type { ViewerContext } from "@/server/context";
+import { DomainError } from "@/server/domain/common/domain-error";
 
 export async function markErgCommand(
 	input: MarkErg,
 	{ db, athlete }: ViewerContext,
 ): Promise<boolean> {
 	if (!athlete) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: "Athlete account required",
-		});
+		throw new DomainError("FORBIDDEN", "Athlete account required");
 	}
 
 	// One conditional write, so two people marking the same erg can't both win.
@@ -23,7 +20,7 @@ export async function markErgCommand(
 		data: { ownership: "personal", ownerId: athlete.id },
 	});
 	if (count === 0) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Erg not found" });
+		throw new DomainError("NOT_FOUND", "Erg not found");
 	}
 	return true;
 }
