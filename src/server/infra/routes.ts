@@ -9,6 +9,7 @@ import { markErgProcedure } from "@/server/infra/trpc/ergs/commands/mark-erg.pro
 import { updateErgProcedure } from "@/server/infra/trpc/ergs/commands/update-erg.procedure";
 import { getErgByIdProcedure } from "@/server/infra/trpc/ergs/queries/get-erg-by-id.procedure";
 import { getErgsProcedure } from "@/server/infra/trpc/ergs/queries/get-ergs.procedure";
+import { submitProcedure } from "@/server/infra/trpc/feedback/commands/submit.procedure";
 import { router } from "@/server/infra/trpc/init";
 import { getProgramsProcedure } from "@/server/infra/trpc/programs/queries/get-programs.procedure";
 import { createWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/create-workout.procedure";
@@ -68,7 +69,6 @@ import { getChannelsProcedure } from "@/server/routers/chat/queries/get-channels
 import { getMembersProcedure as getChatMembersProcedure } from "@/server/routers/chat/queries/get-members/get-members.procedure";
 import { getMessagesProcedure } from "@/server/routers/chat/queries/get-messages/get-messages.procedure";
 import { getThreadProcedure } from "@/server/routers/chat/queries/get-thread/get-thread.procedure";
-import { submitProcedure } from "@/server/routers/feedback/commands/submit/submit.procedure";
 import { createGroupProcedure } from "@/server/routers/groups/commands/create-group/create-group.procedure";
 import { deleteGroupProcedure } from "@/server/routers/groups/commands/delete-group/delete-group.procedure";
 import { updateGroupProcedure } from "@/server/routers/groups/commands/update-group/update-group.procedure";
