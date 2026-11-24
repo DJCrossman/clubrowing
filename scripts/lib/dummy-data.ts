@@ -1,4 +1,4 @@
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 import {
 	type ErgOwnership,
 	type EventType,
@@ -504,12 +504,19 @@ const CHATS: {
 ];
 
 /**
- * Empty every table of the database at `unpooledUrl` and fill it with the
- * invented dataset above. Only ever call this on a throwaway branch.
+ * Empty every table of the database at `url` and fill it with the invented
+ * dataset above. Refuses any database that is not on this machine, which a
+ * dummy instance's Postgres container always is and production never is.
  */
-export async function replaceWithDummyData(unpooledUrl: string) {
+export async function replaceWithDummyData(url: string) {
+	const { hostname } = new URL(url);
+	if (hostname !== "127.0.0.1" && hostname !== "localhost") {
+		throw new Error(
+			`refusing to wipe the database on ${hostname}: dummy data only goes into a local Postgres container`,
+		);
+	}
 	const db = new PrismaClient({
-		adapter: new PrismaNeon({ connectionString: unpooledUrl }),
+		adapter: new PrismaPg({ connectionString: url }),
 	});
 	try {
 		const tables = await db.$queryRaw<{ tablename: string }[]>`

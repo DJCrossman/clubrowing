@@ -262,7 +262,7 @@ bun run instance:reset     # Re-fork an instance's Neon branch from its parent
 bun run instance:down      # Pause an instance (keeps its Neon branch)
 bun run instance:destroy   # Remove an instance + delete its Neon branch
 
-bun run instance:create --dummy   # Same, but with invented data and a local Clerk emulator
+bun run instance:create --dummy   # On a Postgres container instead of a Neon branch, with invented data and a local Clerk emulator
 bun run instance:e2e              # Headless Playwright suite (e2e/) against a dummy instance
 ```
 
@@ -296,9 +296,10 @@ edits reload live) that connects out to its own Neon branch. The host's native
 Ollama is shared via `host.docker.internal`, so no Ollama container is needed.
 
 **Prerequisites:** Docker Desktop running, and a populated `.env` with the shared
-secrets + `NEON_*` credentials. The `.env` can live in the current worktree or in
-the primary worktree — the CLI auto-loads it, so a fresh worktree needs no local
-`.env` of its own. Each instance's env file is generated from it.
+secrets + `NEON_*` credentials (a dummy instance needs no `NEON_*`). The `.env` can
+live in the current worktree or in the primary worktree — the CLI auto-loads it, so
+a fresh worktree needs no local `.env` of its own. Each instance's env file is
+generated from it.
 
 ```bash
 # From inside a git worktree/branch — the instance name is auto-derived from the
@@ -324,6 +325,14 @@ bun run instance:logs
 - `instance:down` is a pause: it stops the container but keeps the branch (Neon
   auto-suspends idle compute, so a paused branch costs nothing). Restart it by
   running `instance:create` again.
+
+**Dummy instances** (`instance:create --dummy`) never touch Neon. Their database is a
+Postgres 17 container beside the app (the `postgres` service in `docker-compose.yml`,
+loopback port = app port + 30000), held in memory and filled with the invented data in
+`scripts/lib/dummy-data.ts`. `instance:reset` gives one a fresh container and re-seeds it,
+`instance:down` drops its data until the next `create` re-seeds it, and `instance:destroy`
+removes it. Use a dummy instance for e2e tests, recordings and screenshots; a plain instance
+holds real members' data.
 
 **Testing migrations:**
 
@@ -351,7 +360,7 @@ bun run instance:migrate
   If edits don't reload during focused work on one instance, set
   `DEV_COMMAND="bunx --bun next dev --webpack -p 3000 -H 0.0.0.0"` in that
   instance's env file, or use `docker compose watch`.
-- Each instance holds an open Neon branch; mind your plan's branch quota and
+- Each plain instance holds an open Neon branch; mind your plan's branch quota and
   `instance:destroy` ones you're done with.
 - The base `.env`'s `INTEGRATION_TOKEN_ENCRYPTION_KEY` is reused so that
   integration tokens forked from `main` remain decryptable.

@@ -36,7 +36,8 @@ if [[ "${OLLAMA_HOST:-}" == http://127.0.0.1:* ]]; then
 	bun scripts/ollama-emulator.ts &
 fi
 
-# 3. Apply migrations to this instance's Neon branch. prisma.config.ts reads
+# 3. Apply migrations to this instance's Neon branch, or a dummy instance's
+#    Postgres container. prisma.config.ts reads
 #    DATABASE_URL, so we override it with the UNPOOLED endpoint for this command
 #    only — Neon's pooled (PgBouncer) connection can't run DDL/advisory locks.
 #    The runtime keeps using the pooled DATABASE_URL from the env file.

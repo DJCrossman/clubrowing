@@ -9,7 +9,7 @@ Club Rowing — the Regina Rowing Club's app for athletes, workouts, activities,
 
 - **Next.js 16** (App Router, Turbopack) + React 19 + TypeScript
 - **Bun** is the runtime and package manager — always use `bun` / `bunx`, never npm/yarn/pnpm
-- **Prisma 7** on **Neon** Postgres via the serverless adapter (`@prisma/adapter-neon`) — the DB is Neon cloud, not a local Postgres
+- **Prisma 7** on **Neon** Postgres via the serverless adapter (`@prisma/adapter-neon`) — the DB is Neon cloud, not a local Postgres. Only a dummy instance's database is a local Postgres container, reached through `@prisma/adapter-pg`
 - **Clerk** auth, **tRPC** API, **Ollama** (local vision model) for screenshot parsing
 - Lint/format: **Biome** (tabs, not spaces)
 
@@ -38,7 +38,8 @@ This repo is developed with **git worktrees** — the primary checkout is at
 `…/rrc-app`, and each branch gets its own worktree under `…/rrc-app-worktrees/<name>`.
 
 Any worktree can run as a fully **isolated instance**: its own Docker container at its own
-`localhost` port, backed by its own **forked Neon database branch**. Use this to test
+`localhost` port, backed by its own **forked Neon database branch** (a dummy instance: its
+own Postgres container instead). Use this to test
 migrations, run a version live, or compare branches — without touching `main` or other
 instances. Implemented by [scripts/instance.ts](scripts/instance.ts) +
 [docker-compose.yml](docker-compose.yml); see the README "Multiple instances" section for
@@ -50,32 +51,37 @@ the human-facing version.
   (`open -a Docker`) and wait until `docker info` succeeds before running `instance:*`.
 - **No per-worktree `.env` is needed.** The CLI auto-loads `NEON_*` creds and shared
   secrets from the **primary worktree's `.env`** when the current worktree has none. (Only
-  create a local `.env` if you also want to run `bun dev` natively here.)
+  create a local `.env` if you also want to run `bun dev` natively here.) A dummy instance
+  needs no `NEON_*` creds.
 
 ### Commands — all auto-derive the instance name from the current git branch
 
 Run these from inside the worktree you want to containerize. The name comes from the
-branch (sanitized), the host port is auto-allocated from 3001, and the Neon branch is
-`inst/<name>`.
+branch (sanitized), the host port is auto-allocated from 3001, and a plain instance's Neon
+branch is `inst/<name>`.
 
 | Command | Effect |
 |---|---|
 | `bun run instance:create` | Fork Neon branch off `main` **and** build + start the container (up). `--parent=<branch>` / `--port=<n>` to override. Idempotent. |
-| `bun run instance:list` | All instances (across worktrees): name, URL, branch, status, dir. |
+| `bun run instance:list` | All instances (across worktrees): name, URL, Neon branch or Postgres container, status, dir. |
 | `bun run instance:logs` | Tail the container logs. |
-| `bun run instance:migrate` | Apply migrations to this instance's Neon branch only. |
-| `bun run instance:reset` | Re-fork this instance's Neon branch from its parent (clean slate for re-testing migrations). |
-| `bun run instance:down` | Pause: stop the container but **keep** the Neon branch + volumes. |
+| `bun run instance:migrate` | Apply migrations to this instance's Neon branch (or Postgres container) only. |
+| `bun run instance:reset` | Re-fork this instance's Neon branch from its parent (clean slate for re-testing migrations). A dummy instance gets a fresh Postgres container, migrated and re-seeded. |
+| `bun run instance:down` | Pause: stop the container but **keep** the Neon branch + volumes. A dummy instance's database goes with it; the next `create` re-seeds it. |
 | `bun run instance:destroy` | Full teardown: remove container + volumes + image + **delete the Neon branch** + env file. |
-| `bun run instance:create --dummy` | Same as `create`, then replace every row with invented data and swap Clerk for a local emulator. Use it for anything you record, screenshot or browser-test. |
+| `bun run instance:create --dummy` | Like `create`, but on a Postgres container beside the app instead of a Neon branch: migrated, filled with invented data, and Clerk swapped for a local emulator. Never calls Neon. Use it for anything you record, screenshot or browser-test. |
 | `bun run instance:e2e` | Run the headless Playwright suite in `e2e/` against a production build of this worktree inside its dummy instance. Refuses any other instance. Extra args go to Playwright. |
 
 ### Lifecycle rule (the Neon branch is bound to the container)
 
+For a plain instance:
+
 - `create` = **up**: branch created with the container.
 - `destroy` = **down**: branch deleted with the container. One live instance ⇄ one live Neon branch.
 - `down` is only a pause (branch kept; Neon auto-suspends idle compute, so it's free).
-- **Always `instance:destroy` when you're done** — each instance holds an open Neon branch, and branch quota is finite.
+- **Always `instance:destroy` when you're done** — each plain instance holds an open Neon branch, and branch quota is finite.
+
+A dummy instance has no Neon branch: its Postgres container starts and stops with the app.
 
 ### Starting work in a fresh worktree
 
@@ -98,9 +104,8 @@ bun run instance:migrate
 
 **Neon is for worktree previews only**: a plain instance forks production so you can look
 at a branch, and nothing else gets a Neon branch. End-to-end tests, recordings and dummy
-data belong on a Docker Postgres container, locally and in any CI. Until
-`instance:create --dummy` runs on that container, it still forks an `inst/` Neon branch:
-keep one dummy instance per thread and destroy it as soon as you are done.
+data belong on a Docker Postgres container, locally and in any CI. `instance:create --dummy`
+runs on that container and never calls Neon.
 
 A plain instance is a fork of production: real members' names, results and push
 subscriptions. **Never record, screenshot or browser-test one.** Use a dummy instance:
@@ -110,9 +115,13 @@ bun run instance:create --dummy   # invented athletes, activities, events and ch
 bun run instance:e2e              # desktop + 390px phone, in parallel, results in e2e/.output/
 ```
 
-- The data is `scripts/lib/dummy-data.ts`. The wipe only runs on an `inst/` branch whose
-  host differs from `main`'s. `instance:reset` re-seeds, and the instance stays dummy until
+- The data is `scripts/lib/dummy-data.ts`. The database is the `postgres` service in
+  `docker-compose.yml` (Postgres 17, as on Neon), held in memory and published on the app
+  port + 30000 (loopback only). The seed refuses any database that is not on this machine.
+  `instance:reset` starts a fresh container and re-seeds, and the instance stays dummy until
   destroyed.
+- A dummy instance created before the move still keeps its data on an `inst/` Neon branch.
+  `create` and `reset` refuse it; `destroy` it (which deletes the branch) and create it again.
 - Clerk is `@emulators/clerk`, started inside the container (`scripts/clerk-emulator.ts`).
   It has no Frontend API, so `/login` does not work and nobody can sign in by hand. Tests
   sign in with `signInAs(page, "admin" | "member")` from `e2e/sign-in.ts`, using a session

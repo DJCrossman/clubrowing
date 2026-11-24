@@ -15,6 +15,9 @@
  * One live instance ⇄ one live Neon branch: `create` forks the branch and starts
  * the container together; `destroy` deletes the branch and removes the container
  * together. `down` is a pause that keeps the branch.
+ *
+ * A dummy instance (`create --dummy`) never touches Neon: its database is a
+ * Postgres container beside the app, filled with invented data.
  */
 
 import { basename, isAbsolute, join, resolve } from "node:path";
@@ -24,23 +27,27 @@ import {
 	connectionStrings,
 	createBranch,
 	deleteBranch,
-	type NeonEnv,
 	requireNeonEnv,
 	resetBranch,
 } from "./lib/neon";
 
 const FIRST_PORT = 3001;
 const DEFAULT_PARENT = "main";
+// The `postgres` service in docker-compose.yml, as the app container sees it.
+const DUMMY_DATABASE_URL =
+	"postgresql://postgres:postgres@postgres:5432/clubrowing";
 
-interface InstanceRecord {
+// A dummy instance created before its database moved to a Postgres container
+// still has a Neon branch, which only `destroy` deals with.
+type InstanceRecord = {
 	name: string;
 	port: number;
-	branch: string;
-	parent: string;
 	projectDir: string;
 	createdAt: string;
-	dummy?: boolean;
-}
+} & (
+	| { dummy?: undefined; branch: string; parent: string }
+	| { dummy: true; branch?: string; parent?: string }
+);
 
 type Registry = Record<string, InstanceRecord>;
 
@@ -316,7 +323,11 @@ function composeEnv(rec: InstanceRecord): Record<string, string> {
 		APP_PORT: String(rec.port),
 		BLOB_PORT: String(rec.port + 10000),
 		E2E_PORT: String(rec.port + 20000),
-		...(rec.dummy && { OLLAMA_HOST: "http://127.0.0.1:11434/api" }),
+		DB_PORT: String(rec.port + 30000),
+		...(rec.dummy && {
+			OLLAMA_HOST: "http://127.0.0.1:11434/api",
+			COMPOSE_PROFILES: "dummy",
+		}),
 	};
 }
 
@@ -352,7 +363,6 @@ async function cmdCreate(positional: string[], flags: Record<string, string>) {
 	const parent = flags.parent ?? DEFAULT_PARENT;
 	const projectDir = process.cwd();
 	await loadBaseEnv(flags["base-env"]);
-	const neon = requireNeonEnv();
 	const reg = await readRegistry();
 
 	const existing = reg[name];
@@ -362,6 +372,49 @@ async function cmdCreate(positional: string[], flags: Record<string, string>) {
 	const branch = existing?.branch ?? `inst/${name}`;
 	const dummy = flags.dummy === "true" || existing?.dummy === true;
 
+	if (dummy) {
+		if (existing?.branch) {
+			console.error(
+				`❌ '${name}' keeps its data on the Neon branch '${existing.branch}', but a dummy instance now runs on a Postgres container.\n` +
+					`   Run 'bun run instance:destroy ${name}', then create it again with --dummy.`,
+			);
+			process.exit(1);
+		}
+		const rec: InstanceRecord = {
+			name,
+			port,
+			projectDir,
+			createdAt: existing?.createdAt ?? new Date().toISOString(),
+			dummy: true,
+		};
+		// Compose reads the env file even to start the database alone.
+		const envPath = await generateEnvFile(
+			projectDir,
+			name,
+			port,
+			DUMMY_DATABASE_URL,
+			DUMMY_DATABASE_URL,
+			await resolveBaseEnv(flags["base-env"]),
+			true,
+		);
+		console.log(`📝 Wrote ${envPath}`);
+		reg[name] = rec;
+		await writeRegistry(reg);
+		await fillDatabaseWithDummyData(rec);
+
+		console.log(`🐳 Starting container '${project(name)}' on port ${port}...`);
+		const code = await compose(rec, ["up", "-d", "--build"]);
+		if (code !== 0) process.exit(code);
+
+		console.log(
+			`\n✅ Instance '${name}' is up at http://localhost:${port}\n` +
+				`   Database: Postgres container on 127.0.0.1:${port + 30000}\n` +
+				`   Logs: bun run instance:logs ${name}`,
+		);
+		return;
+	}
+
+	const neon = requireNeonEnv();
 	// Spin the Neon branch up alongside the container.
 	if (await branchExists(branch, neon)) {
 		console.log(`🌱 Neon branch '${branch}' already exists — reusing it.`);
@@ -378,7 +431,6 @@ async function cmdCreate(positional: string[], flags: Record<string, string>) {
 	const { pooled, unpooled } = await connectionStrings(branch, neon);
 
 	const baseEnvPath = await resolveBaseEnv(flags["base-env"]);
-	if (dummy) await replaceBranchWithDummyData(branch, unpooled, neon);
 	const envPath = await generateEnvFile(
 		projectDir,
 		name,
@@ -397,7 +449,6 @@ async function cmdCreate(positional: string[], flags: Record<string, string>) {
 		parent,
 		projectDir,
 		createdAt: existing?.createdAt ?? new Date().toISOString(),
-		...(dummy && { dummy: true }),
 	};
 	reg[name] = rec;
 	await writeRegistry(reg);
@@ -414,25 +465,15 @@ async function cmdCreate(positional: string[], flags: Record<string, string>) {
 }
 
 /**
- * Migrate the instance's branch, then swap every row in it for invented data so
- * no real member ever shows up in a demo or an e2e run. Exits on any failure.
+ * Start the dummy instance's Postgres container, migrate it, then swap every row
+ * in it for invented data so no real member ever shows up in a demo or an e2e
+ * run. Exits on any failure.
  */
-async function replaceBranchWithDummyData(
-	branch: string,
-	unpooled: string,
-	neon: NeonEnv,
-) {
-	const main = await connectionStrings("main", neon);
-	const mainHosts = [main.pooled, main.unpooled].map(
-		(url) => new URL(url).host,
-	);
-	const targetHost = new URL(unpooled).host;
-	if (!branch.startsWith("inst/") || mainHosts.includes(targetHost)) {
-		console.error(
-			`❌ Refusing to wipe '${branch}' (host ${targetHost}): only an inst/ branch that is not on main's host can hold dummy data.`,
-		);
-		process.exit(1);
-	}
+async function fillDatabaseWithDummyData(rec: InstanceRecord) {
+	console.log(`🐘 Starting the Postgres container...`);
+	const upCode = await compose(rec, ["up", "-d", "--wait", "postgres"]);
+	if (upCode !== 0) process.exit(upCode);
+	const url = `postgresql://postgres:postgres@127.0.0.1:${rec.port + 30000}/clubrowing`;
 
 	// The migrate and the seed below need the dependencies and a Prisma client
 	// generated from this checkout's schema. A fresh worktree has neither, and
@@ -445,19 +486,21 @@ async function replaceBranchWithDummyData(
 	const generateCode = await inherit(["bunx", "prisma", "generate"]);
 	if (generateCode !== 0) process.exit(generateCode);
 
-	console.log(`▶ Applying migrations to '${branch}'...`);
+	console.log(`▶ Applying migrations to the Postgres container...`);
 	const migrateCode = await inherit(
 		["bunx", "--bun", "prisma", "migrate", "deploy"],
-		{ env: { DATABASE_URL: unpooled, DATABASE_URL_UNPOOLED: unpooled } },
+		{ env: { DATABASE_URL: url, DATABASE_URL_UNPOOLED: url } },
 	);
 	if (migrateCode !== 0) process.exit(migrateCode);
 
-	console.log(`🧹 Replacing every row on '${branch}' with dummy data...`);
+	console.log(
+		`🧹 Replacing every row in the Postgres container with dummy data...`,
+	);
 	try {
-		await (await import("./lib/dummy-data")).replaceWithDummyData(unpooled);
+		await (await import("./lib/dummy-data")).replaceWithDummyData(url);
 	} catch (error) {
 		console.error(
-			`❌ Failed to fill '${branch}' with dummy data: ${error instanceof Error ? error.message : error}`,
+			`❌ Failed to fill the Postgres container with dummy data: ${error instanceof Error ? error.message : error}`,
 		);
 		process.exit(1);
 	}
@@ -485,7 +528,7 @@ async function cmdList() {
 		console.log(
 			`  ${rec.name}\n` +
 				`    url:     http://localhost:${rec.port}\n` +
-				`    branch:  ${rec.branch} (parent ${rec.parent})\n` +
+				`    ${rec.branch ? `branch:  ${rec.branch} (parent ${rec.parent})` : `db:      Postgres container on 127.0.0.1:${rec.port + 30000}`}\n` +
 				`    status:  ${status}\n` +
 				`    dir:     ${rec.projectDir}\n`,
 		);
@@ -513,7 +556,9 @@ async function cmdLogs(positional: string[]) {
 
 async function cmdMigrate(positional: string[]) {
 	const rec = await requireRecord(positional);
-	console.log(`▶ Applying migrations to '${rec.branch}'...`);
+	console.log(
+		`▶ Applying migrations to '${rec.branch ?? "the Postgres container"}'...`,
+	);
 	const code = await compose(rec, [
 		"exec",
 		"app",
@@ -526,27 +571,31 @@ async function cmdMigrate(positional: string[]) {
 
 async function cmdReset(positional: string[]) {
 	const rec = await requireRecord(positional);
-	await loadBaseEnv();
-	const neon = requireNeonEnv();
-	console.log(`♻️  Resetting Neon branch '${rec.branch}' to '${rec.parent}'...`);
 	if (rec.dummy) {
-		console.log(
-			`⏸  Stopping '${project(rec.name)}' so it never serves the re-forked data...`,
-		);
+		if (rec.branch) {
+			console.error(
+				`❌ '${rec.name}' keeps its data on the Neon branch '${rec.branch}', but a dummy instance now runs on a Postgres container.\n` +
+					`   Run 'bun run instance:destroy ${rec.name}', then create it again with --dummy.`,
+			);
+			process.exit(1);
+		}
+		// Removing the container empties its in-memory database, so the app
+		// never serves half-filled data.
+		console.log(`⏸  Stopping '${project(rec.name)}' for a fresh database...`);
 		await compose(rec, ["down"]);
-	}
-	const code = await resetBranch(rec.branch, neon);
-	if (code !== 0) process.exit(code);
-	if (rec.dummy) {
-		const { unpooled } = await connectionStrings(rec.branch, neon);
-		await replaceBranchWithDummyData(rec.branch, unpooled, neon);
+		await fillDatabaseWithDummyData(rec);
 		const upCode = await compose(rec, ["up", "-d"]);
 		if (upCode !== 0) process.exit(upCode);
 		console.log(
-			`✅ '${rec.branch}' re-forked from '${rec.parent}', migrated and refilled with dummy data.`,
+			`✅ '${rec.name}' has a fresh Postgres container, migrated and refilled with dummy data.`,
 		);
 		return;
 	}
+	await loadBaseEnv();
+	const neon = requireNeonEnv();
+	console.log(`♻️  Resetting Neon branch '${rec.branch}' to '${rec.parent}'...`);
+	const code = await resetBranch(rec.branch, neon);
+	if (code !== 0) process.exit(code);
 	console.log(
 		`✅ '${rec.branch}' re-forked from '${rec.parent}'.\n` +
 			`   Run 'bun run instance:migrate ${rec.name}' to re-apply migrations.`,
@@ -555,7 +604,9 @@ async function cmdReset(positional: string[]) {
 
 async function cmdDown(positional: string[]) {
 	const rec = await requireRecord(positional);
-	console.log(`⏸  Stopping '${project(rec.name)}' (Neon branch kept)...`);
+	console.log(
+		`⏸  Stopping '${project(rec.name)}' (${rec.dummy ? "the next create refills its dummy data" : "Neon branch kept"})...`,
+	);
 	await compose(rec, ["down"]);
 	console.log(
 		`✅ Paused. Restart with 'bun run instance:create ${rec.name}', ` +
@@ -566,7 +617,6 @@ async function cmdDown(positional: string[]) {
 async function cmdDestroy(positional: string[]) {
 	const rec = await requireRecord(positional);
 	await loadBaseEnv();
-	const neon = requireNeonEnv();
 
 	console.log(`🧨 Destroying instance '${rec.name}'...`);
 	await compose(rec, ["down", "-v"]);
@@ -578,13 +628,15 @@ async function cmdDestroy(positional: string[]) {
 	const img = await capture(["docker", "image", "rm", "-f", image]);
 	if (img.exitCode === 0) console.log(`   ✓ Image '${image}' removed`);
 
-	const code = await deleteBranch(rec.branch, neon);
-	if (code !== 0) {
-		console.error(
-			`   ⚠️  Failed to delete Neon branch '${rec.branch}' (exit ${code}). Remove it manually.`,
-		);
-	} else {
-		console.log(`   ✓ Neon branch '${rec.branch}' deleted`);
+	if (rec.branch) {
+		const code = await deleteBranch(rec.branch, requireNeonEnv());
+		if (code !== 0) {
+			console.error(
+				`   ⚠️  Failed to delete Neon branch '${rec.branch}' (exit ${code}). Remove it manually.`,
+			);
+		} else {
+			console.log(`   ✓ Neon branch '${rec.branch}' deleted`);
+		}
 	}
 
 	const envPath = join(rec.projectDir, "docker", "env", `${rec.name}.env`);

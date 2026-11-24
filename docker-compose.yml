@@ -46,6 +46,28 @@ services:
       - next_cache:/app/.next
       - prisma_client:/app/src/generated
 
+  # A dummy instance's database; plain instances use their Neon branch instead.
+  # instance.ts turns the `dummy` profile on. The data lives in memory, since
+  # every `instance:create --dummy` seeds it again anyway.
+  postgres:
+    image: postgres:17
+    profiles: ["dummy"]
+    container_name: clubrowing-${INSTANCE}-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=clubrowing
+    ports:
+      # instance.ts migrates and seeds through this from the host; loopback only.
+      - "127.0.0.1:${DB_PORT}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      # Over TCP: the image's first-boot setup server only listens on the socket.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "clubrowing"]
+      interval: 1s
+      retries: 30
+
 volumes:
   node_modules:
   next_cache:
