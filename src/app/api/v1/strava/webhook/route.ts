@@ -5,7 +5,7 @@ import {
 	processStravaWebhookEventCommand,
 	type StravaWebhookEvent,
 	stravaWebhookEventSchema,
-} from "@/server/routers/activities/commands/process-strava-webhook-event/process-strava-webhook-event.command";
+} from "@/server/domain/activities/commands/process-strava-webhook-event/process-strava-webhook-event.command";
 import { createConcept2Service } from "@/server/services/concept2-service";
 import { createGitHubService } from "@/server/services/github-service";
 import { createPushService } from "@/server/services/push-service";

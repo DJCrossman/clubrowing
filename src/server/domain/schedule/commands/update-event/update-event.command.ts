@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import type { UpdateEventInput } from "@/schemas";
+import { attachLoggedActivitiesToWorkout } from "@/server/domain/activities/common/scheduled-workout";
 import type { AdminContext } from "@/server/domain/common/context";
 import { DomainError } from "@/server/domain/common/domain-error";
 import { updateEventRow } from "@/server/domain/schedule/common/event-writes";
@@ -10,7 +11,6 @@ import {
 	sendAfterResponse,
 	toEventSnapshot,
 } from "@/server/domain/schedule/common/schedule-change-notifications";
-import { attachLoggedActivitiesToWorkout } from "@/server/routers/activities/common/scheduled-workout";
 
 export async function updateEventCommand(
 	{ id, notify, ...input }: UpdateEventInput,
