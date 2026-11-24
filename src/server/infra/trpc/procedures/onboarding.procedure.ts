@@ -1,9 +1,9 @@
 import type { OnboardingContext } from "@/domain/common/context";
-import { type AfterableBuilder, wrapBuilder } from "../builder";
+import { type PermissionBuilder, wrapBuilder } from "../builder";
 import { baseProcedure } from "../init";
 import { requireAuthAndNoAthlete } from "../middleware/auth";
 
-export const onboardingProcedure: AfterableBuilder<
+export const onboardingProcedure: PermissionBuilder<
 	OnboardingContext,
 	undefined
 > = wrapBuilder<OnboardingContext, undefined>(
