@@ -1,15 +1,16 @@
-import type { CreateWorkout } from "@/schemas";
+import type { UpdateWorkout } from "@/schemas";
 import type { Context } from "@/server/domain/common/context";
 import {
 	mapToWorkoutDto,
 	workoutInclude,
-} from "@/server/routers/workouts/common/map-to-workout-dto";
+} from "@/server/domain/workouts/common/map-to-workout-dto";
 
-export async function createWorkoutCommand(
-	input: CreateWorkout,
+export async function updateWorkoutCommand(
+	input: UpdateWorkout,
 	{ db }: Context,
 ) {
-	const workout = await db.workout.create({
+	const workout = await db.workout.update({
+		where: { id: input.id },
 		data: {
 			description: input.description,
 			startDate: new Date(input.startDate),
@@ -19,14 +20,19 @@ export async function createWorkoutCommand(
 			distance: input.distance,
 			intervalCount: input.intervalCount ?? 1,
 			intensityCategory: input.intensityCategory,
-			fragments: input.fragments?.length
-				? {
-						create: input.fragments.map((fragment, position) => ({
-							...fragment,
-							position,
-						})),
-					}
-				: undefined,
+			fragments: {
+				deleteMany: {},
+				...(input.fragments?.length
+					? {
+							create: input.fragments.map(
+								({ id: _id, workoutId: _wid, ...f }, position) => ({
+									...f,
+									position,
+								}),
+							),
+						}
+					: {}),
+			},
 		},
 		include: workoutInclude,
 	});

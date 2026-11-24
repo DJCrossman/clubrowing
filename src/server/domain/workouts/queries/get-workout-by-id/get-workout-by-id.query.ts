@@ -3,7 +3,7 @@ import type { Context } from "@/server/domain/common/context";
 import {
 	mapToWorkoutDto,
 	workoutInclude,
-} from "@/server/routers/workouts/common/map-to-workout-dto";
+} from "@/server/domain/workouts/common/map-to-workout-dto";
 
 export async function getWorkoutByIdQuery(
 	input: GetWorkoutByIdInput,

@@ -10,6 +10,10 @@ import { updateErgProcedure } from "@/server/infra/trpc/ergs/commands/update-erg
 import { getErgByIdProcedure } from "@/server/infra/trpc/ergs/queries/get-erg-by-id.procedure";
 import { getErgsProcedure } from "@/server/infra/trpc/ergs/queries/get-ergs.procedure";
 import { router } from "@/server/infra/trpc/init";
+import { createWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/create-workout.procedure";
+import { updateWorkoutProcedure } from "@/server/infra/trpc/workouts/commands/update-workout.procedure";
+import { getWorkoutByIdProcedure } from "@/server/infra/trpc/workouts/queries/get-workout-by-id.procedure";
+import { getWorkoutsProcedure } from "@/server/infra/trpc/workouts/queries/get-workouts.procedure";
 import { attachActivityScreenshotProcedure } from "@/server/routers/activities/commands/attach-activity-screenshot/attach-activity-screenshot.procedure";
 import { connectConcept2Procedure } from "@/server/routers/activities/commands/connect-concept2/connect-concept2.procedure";
 import { connectRcaProcedure } from "@/server/routers/activities/commands/connect-rca/connect-rca.procedure";
@@ -98,10 +102,6 @@ import { updateUserProfileProcedure } from "@/server/routers/users/commands/upda
 import { getCurrentUserProcedure } from "@/server/routers/users/queries/get-current-user/get-current-user.procedure";
 import { getUserByIdProcedure } from "@/server/routers/users/queries/get-user-by-id/get-user-by-id.procedure";
 import { getUserByUserIdProcedure } from "@/server/routers/users/queries/get-user-by-user-id/get-user-by-user-id.procedure";
-import { createWorkoutProcedure } from "@/server/routers/workouts/commands/create-workout/create-workout.procedure";
-import { updateWorkoutProcedure } from "@/server/routers/workouts/commands/update-workout/update-workout.procedure";
-import { getWorkoutByIdProcedure } from "@/server/routers/workouts/queries/get-workout-by-id/get-workout-by-id.procedure";
-import { getWorkoutsProcedure } from "@/server/routers/workouts/queries/get-workouts/get-workouts.procedure";
 
 export const appRouter = router({
 	athletes: router({

@@ -1,6 +1,6 @@
 import { getWorkoutByIdInputSchema } from "@/schemas";
+import { getWorkoutByIdQuery } from "@/server/domain/workouts/queries/get-workout-by-id/get-workout-by-id.query";
 import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
-import { getWorkoutByIdQuery } from "./get-workout-by-id.query";
 
 export const getWorkoutByIdProcedure = viewerProcedure
 	.input(getWorkoutByIdInputSchema)
