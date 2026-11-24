@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import type { AuthenticatedContext } from "@/domain/common/context";
 import { createLogger } from "@/lib/logger";
 import { syncStravaActivitiesFinalizeCallback } from "./sync-strava-activities.finalize";
@@ -20,7 +19,7 @@ export async function syncStravaActivitiesCommand(
 		},
 	});
 
-	after(() =>
+	services.taskManager.runAfterResponse(() =>
 		syncStravaActivitiesFinalizeCallback({
 			ctx: { db, athlete, services },
 			batchId: batch.id,

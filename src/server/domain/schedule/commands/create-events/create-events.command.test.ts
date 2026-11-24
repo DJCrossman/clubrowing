@@ -3,11 +3,6 @@ import type { CreateEvent } from "@/schemas";
 
 const after = vi.fn();
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	after,
-}));
-
 const { createEventsCommand } = await import("./create-events.command");
 
 const MONDAY_6AM = "2030-01-07T06:00:00.000-06:00";
@@ -253,6 +248,7 @@ function createContext(existing: Session[]) {
 	const context = {
 		athlete: { id: "ath_coach" },
 		db: { $transaction: vi.fn().mockImplementation((run) => run(tx)) },
+		services: { taskManager: { runAfterResponse: after } },
 	};
 
 	return { context, sessions, tx };

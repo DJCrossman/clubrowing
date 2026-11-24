@@ -1,4 +1,4 @@
-import { after } from "next/server";
+import type { ViewerContext } from "@/domain/common/context";
 import { createLogger } from "@/lib/logger";
 import {
 	detectScheduleChange,
@@ -8,7 +8,6 @@ import {
 	type SessionSnapshot,
 } from "@/lib/schedule/changes";
 import type { CreateEvent } from "@/schemas";
-import type { PushService } from "@/server/services/push-service";
 
 const logger = createLogger("schedule.notify");
 
@@ -70,11 +69,14 @@ export function toEventSnapshot(
 // Pushes go out once the response is flushed, so a save never waits on them and
 // a delivery failure can't roll back what the coach already saved.
 export function sendAfterResponse(
-	push: PushService,
+	{
+		push,
+		taskManager,
+	}: Pick<ViewerContext["services"], "push" | "taskManager">,
 	notifications: ScheduleNotification[],
 ) {
 	if (notifications.length === 0) return;
-	after(async () => {
+	taskManager.runAfterResponse(async () => {
 		for (const { athleteIds, message } of notifications) {
 			try {
 				await push.sendPush(athleteIds, message);

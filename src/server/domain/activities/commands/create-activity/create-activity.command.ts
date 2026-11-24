@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { notifyActivityAdded } from "@/domain/activities/common/activity-notifications";
 import {
 	activityInclude,
@@ -29,7 +28,9 @@ export async function createActivityCommand(
 		include: activityInclude,
 	});
 	if (row.athleteId !== athlete?.id) {
-		after(() => notifyActivityAdded(services.push, row));
+		services.taskManager.runAfterResponse(() =>
+			notifyActivityAdded(services.push, row),
+		);
 	}
 	return mapToActivityDto(row);
 }

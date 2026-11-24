@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { attachLoggedActivitiesToWorkout } from "@/domain/activities/common/scheduled-workout";
 import type { AdminContext } from "@/domain/common/context";
 import {
@@ -14,9 +13,11 @@ export async function createEventsCommand(
 	{
 		db,
 		athlete,
+		services,
 	}: {
 		db: Pick<AdminContext["db"], "$transaction">;
 		athlete: { id: string } | null;
+		services: Pick<AdminContext["services"], "taskManager">;
 	},
 ) {
 	// A season of sessions is hundreds of round trips over the Neon adapter, too
@@ -56,7 +57,7 @@ export async function createEventsCommand(
 					startTimes.push(startAt);
 					if (isFilled) filled++;
 					if (workout) {
-						after(() =>
+						services.taskManager.runAfterResponse(() =>
 							attachLoggedActivitiesToWorkout({
 								db,
 								event: {

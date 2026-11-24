@@ -5,6 +5,7 @@ import type { createGitHubService } from "@/server/services/github-service";
 import type { createPushService } from "@/server/services/push-service";
 import type { createRcaService } from "@/server/services/rca-service";
 import type { createStravaService } from "@/server/services/strava-service";
+import type { createTaskManager } from "@/server/services/task-manager";
 
 type BaseContext = {
 	db: typeof db;
@@ -14,6 +15,7 @@ type BaseContext = {
 		rca: ReturnType<typeof createRcaService>;
 		push: ReturnType<typeof createPushService>;
 		github: ReturnType<typeof createGitHubService>;
+		taskManager: ReturnType<typeof createTaskManager>;
 	};
 };
 

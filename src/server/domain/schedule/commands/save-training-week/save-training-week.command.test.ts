@@ -5,11 +5,6 @@ import type { CreateEvent } from "@/schemas";
 const after = vi.fn();
 const sendPush = vi.fn();
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	after,
-}));
-
 const { saveTrainingWeekCommand } = await import(
 	"./save-training-week.command"
 );
@@ -535,7 +530,7 @@ function createContext(existingEvents: ExistingEvent[]) {
 				return fn(tx);
 			},
 		},
-		services: { push: { sendPush } },
+		services: { push: { sendPush }, taskManager: { runAfterResponse: after } },
 	} as unknown as AdminContext;
 
 	return { context, calls, tx };

@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { attachLoggedActivitiesToWorkout } from "@/domain/activities/common/scheduled-workout";
 import type { AdminContext } from "@/domain/common/context";
 import { DomainError } from "@/domain/common/domain-error";
@@ -59,7 +58,7 @@ export async function saveTrainingWeekCommand(
 	);
 	for (const { workout, startAt } of newlyPlannedSessions) {
 		if (workout) {
-			after(() =>
+			services.taskManager.runAfterResponse(() =>
 				attachLoggedActivitiesToWorkout({
 					db,
 					event: {
@@ -80,7 +79,7 @@ export async function saveTrainingWeekCommand(
 	]);
 
 	sendAfterResponse(
-		services.push,
+		services,
 		input.notify ? planChangeNotifications(existing, afterById) : [],
 	);
 	return {

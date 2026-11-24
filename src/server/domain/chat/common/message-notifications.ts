@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import type { ViewerContext } from "@/domain/common/context";
 import { getGroupMemberIds } from "@/domain/groups/common";
 import type { ChannelKind, message } from "@/generated/prisma/client";
@@ -37,7 +36,7 @@ export function notifyChannelAfterResponse(
 	{ db, services }: Pick<ViewerContext, "db" | "services">,
 	message: NotifiableMessage,
 ) {
-	after(async () => {
+	services.taskManager.runAfterResponse(async () => {
 		try {
 			const channel = await db.channel.findUnique({
 				where: { id: message.channelId },

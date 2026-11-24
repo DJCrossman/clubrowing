@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { attachLoggedActivitiesToWorkout } from "@/domain/activities/common/scheduled-workout";
 import type { AdminContext } from "@/domain/common/context";
 import { createEventRow } from "@/domain/schedule/common/event-writes";
@@ -7,14 +6,14 @@ import type { CreateEvent } from "@/schemas";
 
 export async function createEventCommand(
 	input: CreateEvent,
-	{ db, athlete }: AdminContext,
+	{ db, athlete, services }: AdminContext,
 ) {
 	const row = await db.$transaction((tx) =>
 		createEventRow(tx, input, athlete?.id ?? null),
 	);
 	const { workout } = row;
 	if (workout) {
-		after(() =>
+		services.taskManager.runAfterResponse(() =>
 			attachLoggedActivitiesToWorkout({
 				db,
 				event: {

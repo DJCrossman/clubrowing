@@ -25,7 +25,7 @@ export async function deleteEventCommand(
 		}
 	});
 	sendAfterResponse(
-		services.push,
+		services,
 		notify ? planChangeNotifications([event], new Map([[id, null]])) : [],
 	);
 	return { id };

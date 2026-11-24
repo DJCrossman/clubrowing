@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { attachLoggedActivitiesToWorkout } from "@/domain/activities/common/scheduled-workout";
 import type { AdminContext } from "@/domain/common/context";
 import { DomainError } from "@/domain/common/domain-error";
@@ -43,7 +42,7 @@ export async function updateEventCommand(
 	);
 	const { workout } = row;
 	if (!existing.workoutId && workout) {
-		after(() =>
+		services.taskManager.runAfterResponse(() =>
 			attachLoggedActivitiesToWorkout({
 				db,
 				event: {
@@ -56,7 +55,7 @@ export async function updateEventCommand(
 	}
 	const [event] = await mapToEventDtos(db, [row], athlete?.id ?? null);
 	sendAfterResponse(
-		services.push,
+		services,
 		notify
 			? planChangeNotifications(
 					[existing],

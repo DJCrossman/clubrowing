@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import type { AuthenticatedContext } from "@/domain/common/context";
 import { createLogger } from "@/lib/logger";
 import { syncConcept2ActivitiesFinalizeCallback } from "./sync-concept2-activities.finalize";
@@ -20,7 +19,7 @@ export async function syncConcept2ActivitiesCommand(
 		},
 	});
 
-	after(() =>
+	services.taskManager.runAfterResponse(() =>
 		syncConcept2ActivitiesFinalizeCallback({
 			ctx: { db, athlete, services },
 			batchId: batch.id,
