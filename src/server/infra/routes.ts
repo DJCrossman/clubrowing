@@ -1,3 +1,6 @@
+import { getAnalyticsProcedure } from "@/server/infra/trpc/analytics/queries/get-analytics.procedure";
+import { getGroupMetersProcedure } from "@/server/infra/trpc/analytics/queries/get-group-meters.procedure";
+import { getLeaderboardProcedure } from "@/server/infra/trpc/analytics/queries/get-leaderboard.procedure";
 import { bulkCreateBoatsProcedure } from "@/server/infra/trpc/boats/commands/bulk-create-boats.procedure";
 import { createBoatProcedure } from "@/server/infra/trpc/boats/commands/create-boat.procedure";
 import { updateBoatProcedure } from "@/server/infra/trpc/boats/commands/update-boat.procedure";
@@ -49,9 +52,6 @@ import { getConcept2UserProcedure } from "@/server/routers/activities/queries/ge
 import { getPendingInboxBatchesProcedure } from "@/server/routers/activities/queries/get-pending-inbox-batches/get-pending-inbox-batches.procedure";
 import { getStravaActivitiesProcedure } from "@/server/routers/activities/queries/get-strava-activities/get-strava-activities.procedure";
 import { getStravaAthleteProcedure } from "@/server/routers/activities/queries/get-strava-athlete/get-strava-athlete.procedure";
-import { getAnalyticsProcedure } from "@/server/routers/analytics/queries/get-analytics/get-analytics.procedure";
-import { getGroupMetersProcedure } from "@/server/routers/analytics/queries/get-group-meters/get-group-meters.procedure";
-import { getLeaderboardProcedure } from "@/server/routers/analytics/queries/get-leaderboard/get-leaderboard.procedure";
 import { bulkCreateAthletesProcedure } from "@/server/routers/athletes/commands/bulk-create-athletes/bulk-create-athletes.procedure";
 import { createAthleteProcedure } from "@/server/routers/athletes/commands/create-athlete/create-athlete.procedure";
 import { updateAthleteProcedure } from "@/server/routers/athletes/commands/update-athlete/update-athlete.procedure";

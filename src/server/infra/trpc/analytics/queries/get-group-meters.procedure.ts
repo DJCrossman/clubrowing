@@ -1,7 +1,7 @@
 import { getGroupByIdInputSchema } from "@/schemas";
+import { getGroupMetersQuery } from "@/server/domain/analytics/queries/get-group-meters/get-group-meters.query";
 import { viewerProcedure } from "@/server/infra/trpc/procedures/viewer.procedure";
 import { canViewGroup } from "@/server/routers/groups/common";
-import { getGroupMetersQuery } from "./get-group-meters.query";
 
 export const getGroupMetersProcedure = viewerProcedure
 	.input(getGroupByIdInputSchema)

@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { paginate } from "@/lib/pagination";
 import { ActivityType, WorkoutType, withPagination } from "@/schemas";
+import { isErgTest } from "@/server/domain/analytics/common/is-erg-test";
 import type { Context } from "@/server/domain/common/context";
 import {
 	activityInclude,
 	mapToActivityDto,
 } from "@/server/routers/activities/common/map-to-activity-dto";
-import { isErgTest } from "@/server/routers/analytics/common/is-erg-test";
 
 export const getActivitiesInputSchema = withPagination({
 	columns: ["startDate", "name", "type"] as const,

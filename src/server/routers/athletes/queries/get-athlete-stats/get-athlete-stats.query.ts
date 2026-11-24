@@ -1,6 +1,6 @@
 import type { AthleteStats, GetAthleteStatsInput } from "@/schemas";
+import { isErgTest } from "@/server/domain/analytics/common/is-erg-test";
 import type { Context } from "@/server/domain/common/context";
-import { isErgTest } from "@/server/routers/analytics/common/is-erg-test";
 
 export async function getAthleteStatsQuery(
 	input: GetAthleteStatsInput,
